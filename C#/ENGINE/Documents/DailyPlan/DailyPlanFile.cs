@@ -1,24 +1,24 @@
 using System;
+using ENGINE.Documents;   // RandomFile이 있는 네임스페이스
 
 namespace ENGINE.Documents.DailyPlan;
 
 /// <summary>
 /// DailyPlan 파일 하나에 대한 메타 정보
-/// (경로, 날짜, 라인명 등을 나중에 여기에 붙여갈 수 있음)
+/// RandomFile(경로, 날짜) + LineName 이 추가된 형태
 /// </summary>
-public class DailyPlanFile
+public class DailyPlanFile : RandomFile
 {
-    public string Path { get; }
-    public DateTime? Date { get; }
-    public string? LineName { get; }
+    public string? LineName { get; } // 생산 라인 이름
+    public bool? Mixed { get; } // 혼류 생산 여부
 
-    public DailyPlanFile(string path, DateTime? date = null, string? lineName = null)
+    public DailyPlanFile(string path, DateTime? date = null, string? lineName = null, bool? mixed = null)
+        : base(path, date)   // ← 부모(RandomFile)의 생성자 호출
     {
-        Path = path;
-        Date = date;
         LineName = lineName;
+        Mixed = mixed;
     }
 
     public override string ToString()
-        => $"{System.IO.Path.GetFileName(Path)} (Date={Date?.ToShortDateString() ?? "?"}, Line={LineName ?? "?"})";
+        => $"{base.ToString()}, Line={LineName ?? "?"}, Mixed={Mixed?.ToString() ?? "?"}";
 }

@@ -1,7 +1,7 @@
 using System;
-using System.Reflecion;
+using System.Reflection;
 
-namespace LARS.Core;
+namespace Engine.Core;
 
 public static class  LARS_Version
 {
@@ -12,6 +12,6 @@ public static class  LARS_Version
         => Assembly
             .GetExecutingAssembly()
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
-            .AssemblyInformationalVersion
-            ?? Current.ToString();
+            .InformationalVersion
+           ?? Current.ToString();
 }
