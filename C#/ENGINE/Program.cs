@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using ENGINE.Core;
 using ENGINE.Documents.DailyPlan;
+using Microsoft.VisualBasic.FileIO;
 
 namespace ENGINE;
 
@@ -26,6 +28,8 @@ public class Program
 
         while (true)
         {
+            //Console.WriteLine("DownloadPath  : "+ );
+            Console.WriteLine ("----------------------------------------------------------------------");
             Console.WriteLine("1. 코어 업데이트 체크");
             Console.WriteLine("2. DailyPlan 전체 가공");
             Console.WriteLine("0. 종료");

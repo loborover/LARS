@@ -1,7 +1,7 @@
 using System;
 using System.Reflection;
 
-namespace Engine.Core;
+namespace ENGINE.Core;
 
 public static class  LARS_Version
 {
