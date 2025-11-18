@@ -28,8 +28,12 @@ public class Program
 
         while (true)
         {
-            //Console.WriteLine("DownloadPath  : "+ );
-            Console.WriteLine ("----------------------------------------------------------------------");
+            Console.WriteLine(new string('-', 50)); // 구분선 50자
+            Console.WriteLine("현재 버전 : " + versionService.GetLocalVersion());
+            Console.WriteLine("DownloadPath  : " + Directories.DownloadPath);
+            Console.WriteLine("DPPath  : " + Directories.DPPath);
+            Console.WriteLine("BOMPath  : " + Directories.BOMPath);
+            Console.WriteLine(new string('-', 50));
             Console.WriteLine("1. 코어 업데이트 체크");
             Console.WriteLine("2. DailyPlan 전체 가공");
             Console.WriteLine("0. 종료");
