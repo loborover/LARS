@@ -1,0 +1,24 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LARS", "LARS.csproj", "{599AA664-AD41-C875-82E7-D40AB4DBAB5C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{599AA664-AD41-C875-82E7-D40AB4DBAB5C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{599AA664-AD41-C875-82E7-D40AB4DBAB5C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{599AA664-AD41-C875-82E7-D40AB4DBAB5C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{599AA664-AD41-C875-82E7-D40AB4DBAB5C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {16B6351C-D749-428E-8484-99571A8F97FC}
+	EndGlobalSection
+EndGlobal
