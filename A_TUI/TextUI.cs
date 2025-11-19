@@ -1,21 +1,19 @@
 using System;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using Microsoft.VisualBasic.FileIO;
-using ENGINE;
+using ENGINE;                    // VersionService, Updater, Directories, DailyPlanProcessor 등
 
-namespace UI.texts;
+namespace UI.Texts;              // 네임스페이스만 조금 정리 (대소문자 맞추기)
 
-public class Main
+public static class TextUI       // Main 대신 TextUI 같은 이름이 더 직관적
 {
-    public static async Task Mainmenu(string[] args)
+    public static async Task ShowMainMenuAsync(string[] args)
     {
         Console.WriteLine("=== LARS (Logistics Automation and Reporting System) ===");
         Console.WriteLine();
 
         // 1) 버전/업데이트 서비스 준비
         var localVersionPath = "Version.txt"; // 실행 폴더 기준, 나중에 원하는 경로로 변경
-        var remoteVersionUrl = null as string;
+        string? remoteVersionUrl = null;
         // TODO: GitHub Raw / 사내 서버의 version.txt URL 로 교체
 
         var versionService = new VersionService(localVersionPath, remoteVersionUrl);
@@ -29,9 +27,9 @@ public class Main
         {
             Console.WriteLine(new string('-', 50)); // 구분선 50자
             Console.WriteLine("현재 버전 : " + versionService.GetLocalVersion());
-            Console.WriteLine("DownloadPath  : " + Directories.DownloadPath);
-            Console.WriteLine("DPPath  : " + Directories.DPPath);
-            Console.WriteLine("BOMPath  : " + Directories.BOMPath);
+            Console.WriteLine("DownloadPath : " + Directories.DownloadPath);
+            Console.WriteLine("DPPath       : " + Directories.DPPath);
+            Console.WriteLine("BOMPath      : " + Directories.BOMPath);
             Console.WriteLine(new string('-', 50));
             Console.WriteLine("1. 코어 업데이트 체크");
             Console.WriteLine("2. DailyPlan 전체 가공");
@@ -65,6 +63,4 @@ public class Main
 
         Console.WriteLine("프로그램을 종료합니다.");
     }
-
-
 }
