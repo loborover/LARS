@@ -1,15 +1,14 @@
-﻿using System;
+using System;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using ENGINE.Core;
-using ENGINE.Documents.DailyPlan;
 using Microsoft.VisualBasic.FileIO;
+using ENGINE;
 
-namespace ENGINE;
+namespace UI.texts;
 
-public class Program
+public class Main
 {
-    public static async Task Main(string[] args)
+    public static async Task Mainmenu(string[] args)
     {
         Console.WriteLine("=== LARS (Logistics Automation and Reporting System) ===");
         Console.WriteLine();
@@ -66,4 +65,6 @@ public class Program
 
         Console.WriteLine("프로그램을 종료합니다.");
     }
+
+
 }

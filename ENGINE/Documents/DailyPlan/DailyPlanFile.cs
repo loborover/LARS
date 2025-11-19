@@ -1,7 +1,7 @@
 using System;
 using ENGINE.Documents;   // RandomFile이 있는 네임스페이스
 
-namespace ENGINE.Documents.DailyPlan;
+namespace ENGINE.Documents;
 
 /// <summary>
 /// DailyPlan 파일 하나에 대한 메타 정보

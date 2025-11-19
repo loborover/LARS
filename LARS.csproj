@@ -11,8 +11,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 
-    <RootNamespace>ENGINE</RootNamespace>
-    <AssemblyName>ENGINE</AssemblyName>
+    <RootNamespace>LARS</RootNamespace>
+    <AssemblyName>LARS</AssemblyName>
   </PropertyGroup>
 
 </Project>

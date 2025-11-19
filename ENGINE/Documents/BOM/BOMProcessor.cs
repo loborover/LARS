@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace ENGINE.Documents.BOM;
+namespace ENGINE.Documents;
 
 /// <summary>
 /// BOM 관련 파일을 찾고, 가공(처리)하는 역할을 담당하는 클래스
