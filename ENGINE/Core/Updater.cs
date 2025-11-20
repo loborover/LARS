@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace ENGINE.Core;
+namespace ENGINE;
 
 /// <summary>
 /// LARS 코어 업데이트 흐름을 담당하는 클래스

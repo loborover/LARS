@@ -2,14 +2,13 @@ using System;
 using System.Threading.Tasks;
 using ENGINE;                    // VersionService, Updater, Directories, DailyPlanProcessor 등
 
-namespace UI.Texts;              // 네임스페이스만 조금 정리 (대소문자 맞추기)
+namespace UI.Texts;              
 
 public static class TextUI       // Main 대신 TextUI 같은 이름이 더 직관적
 {
     public static async Task ShowMainMenuAsync(string[] args)
     {
         Console.WriteLine("=== LARS (Logistics Automation and Reporting System) ===");
-        Console.WriteLine();
 
         // 1) 버전/업데이트 서비스 준비
         var localVersionPath = "Version.txt"; // 실행 폴더 기준, 나중에 원하는 경로로 변경

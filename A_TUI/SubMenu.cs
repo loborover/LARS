@@ -1,10 +1,8 @@
-// SubMenu.cs (실제 메뉴 클래스)
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using ENGINE; // (가정: 기존 코드에 있던 네임스페이스)
-using UI.Texts; // (가정: 기존 코드에 있던 네임스페이스)
-
+///<summary> SubMenu.cs (실제 메뉴 클래스) </summary>
 namespace UI.Texts
 {
     // MenuTemplate을 상속받아 구현

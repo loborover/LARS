@@ -1,4 +1,4 @@
-// MenuItem.cs (메뉴 항목 정의)
+///<summary> MenuItem.cs (메뉴 항목 정의) </summary>
 public struct MenuItem
 {
     // 메뉴에 표시될 기능의 제목

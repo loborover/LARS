@@ -1,8 +1,7 @@
-// MenuTemplate.cs (메뉴 로직 템플릿)
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-
+///<summary> MenuTemplate.cs (메뉴 로직 템플릿)</summary>
 public abstract class MenuTemplate
 {
     // 하위 클래스에서 정의해야 할 메뉴 제목

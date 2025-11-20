@@ -3,7 +3,7 @@ using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 
-namespace ENGINE.Core;
+namespace ENGINE;
 
 /// <summary>
 /// 로컬/원격 버전 정보를 읽어오고, Version 형식으로 반환하는 서비스

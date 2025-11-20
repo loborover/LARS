@@ -48,6 +48,7 @@ public class DailyPlanProcessor
     {
         Console.WriteLine($"[가공 시작] {dp.Path}");
         // TODO: 여기서 엑셀 열고, 기존 VBA AutoReport_DailyPlan 로직을 C#으로 옮길 예정
+        Autoreport_DailyPlan(dp.Path);
         Console.WriteLine($"[가공 완료] {dp.Path}");
     }
 
@@ -60,5 +61,10 @@ public class DailyPlanProcessor
         {
             ProcessSingle(dp);
         }
+    }
+    ///<summary>DailyPlan 문서 자동화 </summary>
+        public void Autoreport_DailyPlan(string? Filepath=null)
+    {
+                
     }
 }
