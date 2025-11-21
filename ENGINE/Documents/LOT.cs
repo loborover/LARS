@@ -1,10 +1,7 @@
 namespace LARS.ENGINE.Documents;
 
-/// <summary>
-/// LOT 공통 메타 정보
-/// (파트별명, 파트번호, 파트단위, 제조사 등)
-/// </summary>
-public record LOT
+/// <summary> LOT 공통 메타 정보(파트별명, 파트번호, 파트단위, 제조사 등) </summary>
+public record struct LOT
 {
     public string? WorkOrder { get; } 
     public string? Tools { get; } 

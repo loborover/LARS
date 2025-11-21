@@ -46,9 +46,7 @@ public class BOMProcessor
         Console.WriteLine($"[가공 완료] {dp.Path}");
     }
 
-    /// <summary>
-    /// 소스 폴더의 BOM 파일들을 전부 순회하면서 가공합니다.
-    /// </summary>
+    /// <summary> 소스 폴더의 BOM 파일들을 전부 순회하면서 가공합니다. </summary>
     public void ProcessAll()
     {
         foreach (var dp in FindBOMFiles())
@@ -56,9 +54,7 @@ public class BOMProcessor
             ProcessSingle(dp);
         }
     }
-    /// <summary>
-    /// Target AutoReport
-    /// </summary>
+    /// <summary> Target AutoReport </summary>
     private string AutoReport(string Target)
     {
         string Exportpath = Target;
@@ -66,4 +62,19 @@ public class BOMProcessor
         /// 
         return Exportpath;
     }
+    /// <summary> 사용자가 만든 Column List를 활용함 .json </summary>
+    private List<string> GetColumnList()
+    {
+        List<string> ColumnList = new List<string>()
+        {
+            "파트번호",
+            "파트별명",
+            "파트단위",
+            "제조사",
+            "수량",
+            "비고"
+        };
+        return ColumnList;
+    }
+
 }

@@ -1,5 +1,3 @@
-using LARS.ENGINE.Documents.DailyPlan;
-
 namespace LARS.ENGINE.Documents.itemCounter;
 
 /// <summary>

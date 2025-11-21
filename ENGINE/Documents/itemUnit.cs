@@ -1,10 +1,7 @@
 namespace LARS.ENGINE.Documents;
 
-/// <summary>
-/// 각 item별 공통 메타 정보
-/// (파트별명, 파트번호, 파트단위, 제조사 등)
-/// </summary>
-public class itemUnit
+/// <summary> 각 item별 공통 메타 정보 (파트별명, 파트번호, 파트단위, 제조사 등) </summary>
+public record struct itemUnit
 {
     public string? NickName { get; } 
     public string? PartNumber { get; } 
