@@ -1,8 +1,7 @@
-using System;
-using System.Threading.Tasks;
-using ENGINE;                    // VersionService, Updater, Directories, DailyPlanProcessor 등
+using LARS.ENGINE.Core;
+using LARS.ENGINE.Documents.DailyPlan;
 
-namespace UI.Texts;              
+namespace LARS.UI.CLI;
 
 public static class TextUI       // Main 대신 TextUI 같은 이름이 더 직관적
 {

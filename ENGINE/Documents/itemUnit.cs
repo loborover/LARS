@@ -1,6 +1,4 @@
-using System;
-
-namespace ENGINE.Documents;
+namespace LARS.ENGINE.Documents;
 
 /// <summary>
 /// 각 item별 공통 메타 정보

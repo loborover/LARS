@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Text.Json;
 
-namespace ENGINE;
+namespace LARS.ENGINE.Core;
 
 public static class Directories
 {

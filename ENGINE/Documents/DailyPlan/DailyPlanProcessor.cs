@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-
-namespace ENGINE.Documents;
+namespace LARS.ENGINE.Documents.DailyPlan;
 
 /// <summary>
 /// DailyPlan 관련 파일을 찾고, 가공(처리)하는 역할을 담당하는 클래스
@@ -63,8 +59,10 @@ public class DailyPlanProcessor
         }
     }
     ///<summary>DailyPlan 문서 자동화 </summary>
-        public void Autoreport_DailyPlan(string? Filepath=null)
+    public void Autoreport_DailyPlan(string? Filepath=null)
     {
-                
+        // DataSortAndReplacing
+        // interior_Setup
+        // 
     }
 }

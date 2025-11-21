@@ -34,11 +34,11 @@ Private vColor As String ' F
 Private vSuffix As String ' A
 Private vPivot(0 To 1) As Long
 
-'ÃÊ±âÈ­ ÀÌº¥Æ® ¸Ş¼­µå
+'ì´ˆê¸°í™” ì´ë²¤íŠ¸ ë©”ì„œë“œ
 'Private Sub Class_Initialize()
 '    ReDim Preserve vBooleans(1 To VarCount) As Boolean
 'End Sub
-'¼Ò¸ê ÀÌº¥Æ® ¸Ş¼­µå
+'ì†Œë©¸ ì´ë²¤íŠ¸ ë©”ì„œë“œ
 'Private Sub Class_Terminate()
     
 'End Sub
@@ -86,7 +86,7 @@ Public Property Get col() As Long
     col = vPivot(1)
 End Property
 Friend Sub Set_Pivot(Optional ByRef Target As Range = Nothing, _
-                             Optional ByVal Row As Long = -255, Optional ByVal Column As Long = -255)  ' Pivot ¼³Á¤
+                             Optional ByVal Row As Long = -255, Optional ByVal Column As Long = -255)  ' Pivot ì„¤ì •
     Select Case Target Is Nothing
     Case False
         vPivot(0) = Target.Row
@@ -96,7 +96,7 @@ Friend Sub Set_Pivot(Optional ByRef Target As Range = Nothing, _
         If Column > 0 Then vPivot(1) = Column
     End Select
 End Sub
-Private Sub ParseModelinfo(ByRef WOFN As String) ' ¸ğµ¨¸íÀ» ºĞ¸®, ±¸ºĞÇÏ´Â ¼­ºê·çÆ¾
+Private Sub ParseModelinfo(ByRef WOFN As String) ' ëª¨ë¸ëª…ì„ ë¶„ë¦¬, êµ¬ë¶„í•˜ëŠ” ì„œë¸Œë£¨í‹´
     
     Dim Dot As Long
     

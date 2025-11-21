@@ -1,3 +1,3 @@
-global using ENGINE.Documents;
+///global using ENGINE.Documents;
 
-namespace ENGINE;
+namespace LARS.ENGINE;

@@ -1,6 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+namespace LARS.UI.CLI;
 ///<summary> MenuTemplate.cs (메뉴 로직 템플릿)</summary>
 public abstract class MenuTemplate
 {

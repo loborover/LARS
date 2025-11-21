@@ -1,3 +1,5 @@
+namespace LARS.UI.CLI;
+
 ///<summary> MenuItem.cs (메뉴 항목 정의) </summary>
 public struct MenuItem
 {

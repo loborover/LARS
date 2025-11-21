@@ -1,8 +1,9 @@
-namespace ENGINE.Documents;
+namespace LARS.ENGINE.Documents;
+
+///File 집합
 
 /// <summary>
-/// 모든 문서/파일 공통 메타 정보
-/// (경로, 날짜 등)
+/// 모든 문서/파일 공통 메타 정보 (경로, 날짜 등)
 /// </summary>
 public record RandomFile
 {

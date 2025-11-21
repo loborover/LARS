@@ -1,13 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-
-namespace ENGINE.Documents;
+namespace LARS.ENGINE.Documents.BOM;
 
 /// <summary>
 /// BOM 관련 파일을 찾고, 가공(처리)하는 역할을 담당하는 클래스
-/// 지금은 파일 검색 + 자리만 잡고, 나중에 엑셀 가공 로직을 채워넣습니다.
 /// </summary>
+/// 지금은 파일 검색 + 자리만 잡고, 나중에 엑셀 가공 로직을 채워넣습니다.
 public class BOMProcessor
 {
     private readonly string _sourceDirectory;
@@ -40,14 +36,13 @@ public class BOMProcessor
     }
 
     /// <summary>
-    /// BOM 파일 하나를 가공하는 자리.
-    /// 지금은 단순히 "여기서 엑셀 열어서 가공할 것"이라고 출력만 하고,
-    /// 나중에 EPPlus/ClosedXML 로직을 이 안에 넣습니다.
+    /// BOM 파일 하나를 가공하는 자리.    
     /// </summary>
     public void ProcessSingle(BOMFile dp)
     {
         Console.WriteLine($"[가공 시작] {dp.Path}");
         // TODO: 여기서 엑셀 열고, 기존 VBA AutoReport_BOM 로직을 C#으로 옮길 예정
+            AutoReport(dp.Path);
         Console.WriteLine($"[가공 완료] {dp.Path}");
     }
 
@@ -60,5 +55,15 @@ public class BOMProcessor
         {
             ProcessSingle(dp);
         }
+    }
+    /// <summary>
+    /// Target AutoReport
+    /// </summary>
+    private string AutoReport(string Target)
+    {
+        string Exportpath = Target;
+        /// 사용할 열 선정, 열 제목 변경
+        /// 
+        return Exportpath;
     }
 }

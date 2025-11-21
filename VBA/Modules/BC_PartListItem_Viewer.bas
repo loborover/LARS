@@ -28,7 +28,7 @@ Public Sub Read_PartList(Optional Handle As Boolean, Optional ByRef Target_Listv
     
     With Target_Listview
         For i = 1 To PartList.Count
-UI.UpdateProgressBar UI.PB_BOM, (i - i / 3) / PartList.Count * 100
+    UI.UpdateProgressBar UI.PB_BOM, (i - i / 3) / PartList.Count * 100
             Dim vDate As String
             Dim PLCount As Long
             vDate = GetPartListWhen(PartList(i), DayCount)
@@ -41,7 +41,7 @@ UI.UpdateProgressBar UI.PB_BOM, (i - i / 3) / PartList.Count * 100
                 .SubItems(4) = CheckFileAlreadyWritten_PDF(vDate, dc_PartList) 'PDF
             End With
         .ListItems(PLCount).Checked = True ' 체크박스 체크
-UI.UpdateProgressBar UI.PB_BOM, i / PartList.Count * 100
+    UI.UpdateProgressBar UI.PB_BOM, i / PartList.Count * 100
 
     With UI.ListView_PLfF_item.ListItems ' User interface ListVeiw input
         .Clear
@@ -50,7 +50,7 @@ UI.UpdateProgressBar UI.PB_BOM, i / PartList.Count * 100
             .Add r, vCFR(r), vCFR(r)
         Next r
     End With
-SkipLoop:
+    SkipLoop:
         Next i
     End With
     
@@ -81,15 +81,15 @@ Public Sub Print_PartList(Optional Handle As Boolean)
     
     ListCount = Chkditem.Count
     For i = 1 To ListCount
-UI.UpdateProgressBar UI.PB_BOM, (i - 0.99) / ListCount * 100
+    UI.UpdateProgressBar UI.PB_BOM, (i - 0.99) / ListCount * 100
         Set PLitem = PLLV.ListItems.Item(Chkditem(i))
         Set PL_Processing_WB = Workbooks.open(PLitem.SubItems(2))
-UI.UpdateProgressBar UI.PB_BOM, (i - 0.91) / ListCount * 100
+    UI.UpdateProgressBar UI.PB_BOM, (i - 0.91) / ListCount * 100
         wLine = PLitem.SubItems(1) ' Line 이름 인계
         Set Target_WorkSheet = PL_Processing_WB.Worksheets(1): Set ws = Target_WorkSheet: Set Brush.DrawingWorksheet = Target_WorkSheet ' 워크시트 타게팅
         PL_Processing_WB.Windows(1).WindowState = xlMinimized ' 최소화
         AutoReport_PartList PL_Processing_WB '자동화 서식작성 코드
-UI.UpdateProgressBar UI.PB_BOM, (i - 0.87) / ListCount * 100
+    UI.UpdateProgressBar UI.PB_BOM, (i - 0.87) / ListCount * 100
         If PrintNow.PartList Then
             Printer.PrinterNameSet  ' 기본프린터 이름 설정, 유지되는지 확인
             ws.PrintOut ActivePrinter:=DefaultPrinter, From:=1, to:=2, copies:=PaperCopies
@@ -97,15 +97,15 @@ UI.UpdateProgressBar UI.PB_BOM, (i - 0.87) / ListCount * 100
         Else
             PLitem.SubItems(3) = "Pass" 'Print
         End If
-UI.UpdateProgressBar UI.PB_BOM, (i - 0.73) / ListCount * 100
+    UI.UpdateProgressBar UI.PB_BOM, (i - 0.73) / ListCount * 100
 '저장을 위해 타이틀 수정
         Title = "PartList " & PLLV.ListItems.Item(Chkditem(i)).text & "_" & wLine
-UI.UpdateProgressBar UI.PB_BOM, (i - 0.65) / ListCount * 100
+    UI.UpdateProgressBar UI.PB_BOM, (i - 0.65) / ListCount * 100
 '저장여부 결정
         SavedPath = SaveFilesWithCustomDirectory("PartList", PL_Processing_WB, Printer.PS_PartList(PrintArea), Title, True, False, OriginalKiller.PartList)
-UI.UpdateProgressBar UI.PB_BOM, (i - 0.45) / ListCount * 100
+    UI.UpdateProgressBar UI.PB_BOM, (i - 0.45) / ListCount * 100
         PLitem.SubItems(4) = "Done" 'PDF
-UI.UpdateProgressBar UI.PB_BOM, (i - 0.35) / ListCount * 100
+    UI.UpdateProgressBar UI.PB_BOM, (i - 0.35) / ListCount * 100
         If MRB_PL Then
             Dim tWB As Workbook, Target As Range
             Set tWB = Workbooks.open(SavedPath & ".xlsx")  ' 메뉴얼 모드일 때 열기
@@ -114,8 +114,8 @@ UI.UpdateProgressBar UI.PB_BOM, (i - 0.35) / ListCount * 100
             Target.Select
             ActiveWindow.FreezePanes = True
         End If
-'Progress Update
-UI.UpdateProgressBar UI.PB_BOM, i / ListCount * 100
+    'Progress Update
+    UI.UpdateProgressBar UI.PB_BOM, i / ListCount * 100
     Next i
         
     If Handle Then MsgBox ListCount & "장의 PartList 출력 완료"

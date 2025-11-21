@@ -1,4 +1,4 @@
-namespace ENGINE.Documents;
+namespace LARS.ENGINE.Documents.BOM;
 /// <summary>
 /// BOM 파일 하나에 대한 메타 정보
 /// RandomFile(경로, 날짜) + ModelNumber 이 추가된 형태

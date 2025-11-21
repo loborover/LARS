@@ -1,6 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
-using UI.Texts;          // 방금 만든 TextUI를 가져옴
+﻿using LARS.UI.CLI;
 
 namespace LARS;          // 프로그램 루트 네임스페이스
 
