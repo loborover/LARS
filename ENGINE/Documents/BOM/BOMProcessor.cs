@@ -35,9 +35,7 @@ public class BOMProcessor
         }
     }
 
-    /// <summary>
-    /// BOM 파일 하나를 가공하는 자리.    
-    /// </summary>
+    /// <summary> BOM 파일 하나를 가공하는 자리. </summary>
     public void ProcessSingle(BOMFile dp)
     {
         Console.WriteLine($"[가공 시작] {dp.Path}");
@@ -76,5 +74,4 @@ public class BOMProcessor
         };
         return ColumnList;
     }
-
 }

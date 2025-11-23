@@ -30,17 +30,17 @@ Private Sub AutoReport_BOM(ByRef Wb As Workbook)
     For i = 1 To InsertRow
         ws.Rows(1).Insert Shift:=xlShiftDown, CopyOrigin:=xlFormatFromLeftOrAbove
     Next i
-'마지막 열을 다시 구해서 셀병합 영역지정
+    '마지막 열을 다시 구해서 셀병합 영역지정
     LastCol = ws.Cells(InsertRow + 1, ws.Columns.Count).End(xlToLeft).Column
     Set TitleRange = ws.Range(ws.Cells(1, 1), ws.Cells(InsertRow, LastCol))
     TitleRange.Merge
-'제목 입력
+    '제목 입력
     Call AutoTitle(ws, ColumnsForReport)
-'AutoFilltering
+    'AutoFilltering
     Call AutoFilltering_BOM(ws, ColumnsForReport)
-'CurrentRegion 메소드로 TableRange 영역지정
+    'CurrentRegion 메소드로 TableRange 영역지정
     Set TableRange = TitleRange.CurrentRegion
-'Interior Borders, Columns Width
+    'Interior Borders, Columns Width
     Call Interior_Set_BOM(ws, TableRange)
 End Sub
 
@@ -86,9 +86,7 @@ Private Sub AutoTitle(ws As Worksheet, ColumnList As Collection)
     
     Title = ws.Cells(findrow, FindCol).value
     StrIndex = InStr(Title, "@")
-    If Not StrIndex = 0 Then
-        Title = Left(Title, StrIndex - 1)
-    End If
+    If Not StrIndex = 0 Then Title = Left(Title, StrIndex - 1)
     ws.Cells(1, 1).value = Title
         
     With ws.Cells(1, 1)

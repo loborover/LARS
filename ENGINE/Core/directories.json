@@ -1,5 +1,6 @@
 {
-    "DownloadPath":"C:\\Downloads",
+    "ImportPath":"C:/Imports",
+    "ExportPath":"C:/Exports",
     "DailyPlanPath":"DailyPlan",
     "PartListPath":"PartList",
     "BOMPath":"BOM"
