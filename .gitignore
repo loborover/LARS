@@ -1,6 +1,7 @@
 bin/
 obj/
 .vs/
+.drawio
 *.exe
 *.dll
 *.cache

@@ -6,7 +6,10 @@ public class Runner
 {
     public static void Main(string[] args)
     {
-        // 여기서 TextUI 메뉴 실행
+        // 업데이트 체크
+        // 초기화 진행
+        // 메인메뉴 로드
         TextUI.ShowMainMenuAsync(args).GetAwaiter().GetResult();
+
     }
 }

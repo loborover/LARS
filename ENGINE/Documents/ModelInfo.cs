@@ -1,9 +1,6 @@
 namespace LARS.ENGINE.Documents;
 
-/// <summary>
-/// ModelInfo 공통 메타 정보
-/// (모델번호, 별명, 종류, 연료, 등급, 색상, 수출대상국가, 개발단계 등)
-/// </summary>
+/// <summary> ModelInfo 공통 메타 정보 (모델번호, 별명, 종류, 연료, 등급, 색상, 수출대상국가, 개발단계 등) </summary>
 public record struct ModelInfo
 {
     public string FullNumber { get; init;} 

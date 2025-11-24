@@ -1,7 +1,8 @@
 {
-    "ImportPath":"C:/Imports",
-    "ExportPath":"C:/Exports",
+    "ImportPath":"C:/Users/Administrator/Documents/LARS/Import",
+    "ExportPath":"C:/Users/Administrator/Documents/LARS/Export",
     "DailyPlanPath":"DailyPlan",
     "PartListPath":"PartList",
-    "BOMPath":"BOM"
+    "BOMPath":"BOM",
+    "ItmeCounterPath":"itemCounter"
 } 

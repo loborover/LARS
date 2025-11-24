@@ -1,3 +1,6 @@
+using System.Runtime.CompilerServices;
+using LARS.ENGINE.Core;
+
 namespace LARS.ENGINE.Documents.BOM;
 
 /// <summary>
@@ -36,12 +39,12 @@ public class BOMProcessor
     }
 
     /// <summary> BOM 파일 하나를 가공하는 자리. </summary>
-    public void ProcessSingle(BOMFile dp)
+    public void ProcessSingle(BOMFile dp, Boolean? WriteLines=false)
     {
-        Console.WriteLine($"[가공 시작] {dp.Path}");
+        if (WriteLines == true) Console.WriteLine($"[가공 시작] {dp.Path}");
         // TODO: 여기서 엑셀 열고, 기존 VBA AutoReport_BOM 로직을 C#으로 옮길 예정
-            AutoReport(dp.Path);
-        Console.WriteLine($"[가공 완료] {dp.Path}");
+        AutoReport(dp.Path);
+        if (WriteLines == true) Console.WriteLine($"[가공 완료] {dp.Path}");
     }
 
     /// <summary> 소스 폴더의 BOM 파일들을 전부 순회하면서 가공합니다. </summary>
@@ -63,6 +66,7 @@ public class BOMProcessor
     /// <summary> 사용자가 만든 Column List를 활용함 .json </summary>
     private List<string> GetColumnList()
     {
+        //string SourcePath = Directories.ConfigFilePath
         List<string> ColumnList = new List<string>()
         {
             "파트번호",

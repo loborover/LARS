@@ -5,13 +5,12 @@ public static class Directories
 {
     public static string OwnPath { get; }
     public static string DocumentsPath { get; }
-
     public static string ConfigFilePath { get; }
-
-    public static string DefaultDownloadPath { get; }
-    public static string DefaultDailyPlanPath { get; }
-    public static string DefaultPartListPath { get; }
-    public static string DefaultBOMPath { get; }
+    private static string DefaultDownloadPath { get; }
+    private static string DefaultDailyPlanPath { get; }
+    private static string DefaultPartListPath { get; }
+    private static string DefaultBOMPath { get; }
+    private static string DefaultItemCounterPath { get; }
 
     private static DirectorySettings _settings;
 
@@ -20,18 +19,20 @@ public static class Directories
     // DownloadPath : JSON 값 있으면 그거 / 없으면 DefaultDownloadPath
     public static string DownloadPath
         => ResolvePath(OwnPath, _settings.DownloadPath, DefaultDownloadPath);
-
     // DPPath : JSON 값 없으면 Documents\DailyPlan
-    public static string DPPath
+    public static string DailyPlanPath
         => ResolvePath(DocumentsPath, _settings.DailyPlanPath, DefaultDailyPlanPath);
 
-    // PLPath : JSON 값 없으면 Documents\PartList
-    public static string PLPath
+    // PartListPath : JSON 값 없으면 Documents\PartList
+    public static string PartListPath
         => ResolvePath(DocumentsPath, _settings.PartListPath, DefaultPartListPath);
 
     // BOMPath : JSON 값 없으면 Documents\BOM
     public static string BOMPath
         => ResolvePath(DocumentsPath, _settings.BOMPath, DefaultBOMPath);
+    // ItemCounterPath : JSON 값 없으면 Documents\BOM
+    public static string ItemCounterPath
+        => ResolvePath(DocumentsPath, _settings.ItemCounterPath, DefaultItemCounterPath);
 
     // ----- static ctor : 프로그램 시작 시 한 번만 실행 -----
     static Directories()
@@ -42,12 +43,13 @@ public static class Directories
 
         // 2) 기본 Documents 폴더 = 실행 폴더 기준 Documents 하위
         DocumentsPath = Path.Combine(OwnPath, "Documents");
-
-        // 3) 기본 서브 폴더 이름들
-        DefaultDownloadPath  = Path.Combine(OwnPath,     "Downloads");
         DefaultDailyPlanPath = Path.Combine(DocumentsPath, "DailyPlan");
         DefaultPartListPath  = Path.Combine(DocumentsPath, "PartList");
         DefaultBOMPath       = Path.Combine(DocumentsPath, "BOM");
+        DefaultItemCounterPath = Path.Combine(DocumentsPath, "itemCounter");
+
+        // 3) 기본 서브 폴더 이름들
+        DefaultDownloadPath  = Path.Combine(OwnPath, "Downloads");
 
         // 4) 설정 파일 위치 : 실행 폴더\directories.json
         ConfigFilePath = Path.Combine(OwnPath, "directories.json");
@@ -58,9 +60,10 @@ public static class Directories
         // 6) 실제로 쓸 경로들 폴더 생성
         EnsureDirectoryExists(DocumentsPath);
         EnsureDirectoryExists(DownloadPath);
-        EnsureDirectoryExists(DPPath);
-        EnsureDirectoryExists(PLPath);
+        EnsureDirectoryExists(DailyPlanPath);
+        EnsureDirectoryExists(PartListPath);
         EnsureDirectoryExists(BOMPath);
+        EnsureDirectoryExists(ItemCounterPath);
     }
 
     // ----- public setter 메서드 (원하면 나중에 UI에서 호출) -----
@@ -71,28 +74,30 @@ public static class Directories
         SaveSettings();
         EnsureDirectoryExists(DownloadPath);
     }
-
     public static void SetDailyPlanPath(string newPath)
     {
         _settings.DailyPlanPath = newPath; // 상대/절대 둘 다 허용
         SaveSettings();
-        EnsureDirectoryExists(DPPath);
+        EnsureDirectoryExists(DailyPlanPath);
     }
-
     public static void SetPartListPath(string newPath)
     {
         _settings.PartListPath = newPath;
         SaveSettings();
-        EnsureDirectoryExists(PLPath);
+        EnsureDirectoryExists(PartListPath);
     }
-
     public static void SetBOMPath(string newPath)
     {
         _settings.BOMPath = newPath;
         SaveSettings();
         EnsureDirectoryExists(BOMPath);
     }
-
+    public static void SetItemCounterPath(string newPath)
+    {
+        _settings.ItemCounterPath = newPath;
+        SaveSettings();
+        EnsureDirectoryExists(ItemCounterPath);
+    }
     // ----- 내부 유틸들 -----
 
     private static DirectorySettings LoadSettings()
@@ -158,4 +163,7 @@ public class DirectorySettings
     public string? DailyPlanPath { get; set; }
     public string? PartListPath { get; set; }
     public string? BOMPath { get; set; }
+    public string? ItemCounterPath { get; set; }
+    public string? ImportPath { get; set; }
+    public string? ExportPath { get; set; }
 }

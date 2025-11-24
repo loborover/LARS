@@ -3,9 +3,9 @@ using System.Reflection;
 
 namespace LARS.ENGINE.Core;
 
-public static class LARS_Version
+public static class _Version
 {
-    public static Version Current
+    static _Version Current
         => Assembly.GetExecutingAssembly().GetName().Version!;
 
     public static string Display

@@ -7,7 +7,7 @@ public static class TextUI       // Main 대신 TextUI 같은 이름이 더 직�
 {
     public static async Task ShowMainMenuAsync(string[] args)
     {
-        Console.WriteLine("=== LARS (Logistics Automation and Reporting System) ===");
+        Console.WriteLine("=== LARS (Logistics Automation and Reporting System) ===");        
 
         // 1) 버전/업데이트 서비스 준비
         var localVersionPath = "Version.txt"; // 실행 폴더 기준, 나중에 원하는 경로로 변경
@@ -26,8 +26,9 @@ public static class TextUI       // Main 대신 TextUI 같은 이름이 더 직�
             Console.WriteLine(new string('-', 50)); // 구분선 50자
             Console.WriteLine("현재 버전 : " + versionService.GetLocalVersion());
             Console.WriteLine("DownloadPath : " + Directories.DownloadPath);
-            Console.WriteLine("DPPath       : " + Directories.DPPath);
+            Console.WriteLine("DPPath       : " + Directories.DailyPlanPath);
             Console.WriteLine("BOMPath      : " + Directories.BOMPath);
+            Console.WriteLine("itemCounter  : " + Directories.ItemCounterPath);
             Console.WriteLine(new string('-', 50));
             Console.WriteLine("1. 코어 업데이트 체크");
             Console.WriteLine("2. DailyPlan 전체 가공");
