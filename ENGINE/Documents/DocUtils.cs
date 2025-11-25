@@ -46,4 +46,8 @@ internal class Util
     {
         // .json 저장 기능
     }
+    internal void Set2Default()
+    {
+        
+    }
 }
