@@ -1,6 +1,3 @@
-using System.Runtime.CompilerServices;
-using LARS.ENGINE.Core;
-
 namespace LARS.ENGINE.Documents.BOM;
 
 /// <summary>
@@ -62,20 +59,5 @@ public class BOMProcessor
         /// 사용할 열 선정, 열 제목 변경
         /// 
         return Exportpath;
-    }
-    /// <summary> 사용자가 만든 Column List를 활용함 .json </summary>
-    private List<string> GetColumnList()
-    {
-        //string SourcePath = Directories.ConfigFilePath
-        List<string> ColumnList = new List<string>()
-        {
-            "파트번호",
-            "파트별명",
-            "파트단위",
-            "제조사",
-            "수량",
-            "비고"
-        };
-        return ColumnList;
     }
 }

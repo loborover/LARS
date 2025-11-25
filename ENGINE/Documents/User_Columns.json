@@ -1,29 +1,62 @@
 {
-    "BOM":
+    "Default":
     {
-        "Lvl":"",
-        "Part No":"",
-        "Description":"",
-        "Qty":"",
-        "UOM":"",
-        "Maker":"",
-        "Supply Type":""
+        "BOM":
+        {
+            "Lvl":"",
+            "Part No":"",
+            "Description":"",
+            "Qty":"",
+            "UOM":"",
+            "Maker":"",
+            "Supply Type":""
+        },
+        "DailyPlan":
+        {
+            "W/O":"",
+            "부품번호":"",
+            "W/O 계획수량":"",
+            "W/O Input":"",
+            "W/O실적":""
+        },
+        "PartList":
+        {
+            "투입\n시점":"",
+            "W/O":"",
+            "모델":"",
+            "Suffix":"",
+            "계획 수량":"",
+            "Tool":""
+        }
     },
-    "DailyPlan":
+    "UserSet":
     {
-        "W/O":"",
-        "부품번호":"",
-        "W/O 계획수량":"",
-        "W/O Input":"",
-        "W/O실적":""
-    },
-    "PartList":
-    {
-        "투입\n시점":"",
-        "W/O":"",
-        "모델":"",
-        "Suffix":"",
-        "계획 수량":"",
-        "Tool":""
+        "BOM":
+        {
+            "Lvl":"",
+            "Part No":"",
+            "Description":"",
+            "Qty":"",
+            "UOM":"",
+            "Maker":"",
+            "Supply Type":""
+        },
+        "DailyPlan":
+        {
+            "W/O":"",
+            "부품번호":"",
+            "W/O 계획수량":"",
+            "W/O Input":"",
+            "W/O실적":""
+        },
+        "PartList":
+        {
+            "투입\n시점":"",
+            "W/O":"",
+            "모델":"",
+            "Suffix":"",
+            "계획 수량":"",
+            "Tool":""
+        }
     }
 }
