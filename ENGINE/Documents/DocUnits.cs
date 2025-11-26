@@ -1,7 +1,7 @@
 namespace LARS.ENGINE.Documents;
 
 /// <summary> 각 item별 공통 메타 정보 (파트별명, 파트번호, 파트단위, 제조사 등) </summary>
-public record struct ItemUnit(string? NickName = null, string? PartNumber = null, string? Vender = null, long? QTY = 1);
+public record struct ItemUnit(string? NickName = null, string? PartNumber = null, string? Vender = null, long QTY = 1);
 
 /// <summary> ModelInfo 공통 메타 정보 (모델번호, 별명, 종류, 연료, 등급, 색상, 수출대상국가, 개발단계 등) </summary>
 public record struct ModelInfo
@@ -19,7 +19,7 @@ public record struct ModelInfo
     {
         FullNumber = ParseRawData(fullnumber);    
     }
-    private string ParseRawData(string Target)
+    private static string ParseRawData(string Target)
     {
         ///Parsing Process needed 
         ///Checkout NumberingRules
@@ -30,13 +30,13 @@ public record struct ModelInfo
 }
 
 /// <summary> LOT 공통 메타 정보(파트별명, 파트번호, 파트단위, 제조사 등) </summary>
-public record struct LOT
+public readonly record struct LOT
 {
-    public string? WorkOrder { get; } 
-    public string? Tools { get; } 
+    public string? WorkOrder { get; init;} 
+    public string? Tools { get; init;} 
     public DateTime? InputTime { get; init;} 
     public DateTime? RunningDay { get; init;} 
-    public long Counts { get; } 
+    public long Counts { get; init;}
     public ModelInfo ProductModel { get; init;} 
     ///ProductModel
 

@@ -1,12 +1,10 @@
-using System.Collections.Generic;
 using System.Text.Json;
-using System.Text.Json.Nodes;
-
-
-namespace LARS.ENGINE.Core.Documents;
+using DocumentFormat.OpenXml.Wordprocessing;
+using LARS.ENGINE.Core;
+namespace LARS.ENGINE.Documents;
 
 /// <summary> 문서작성에 필요한 공유 기능들을 모아둔 클래스임 </summary>
-internal class Util
+internal class DocUtil
 {    
     internal enum DocTypes : sbyte
         {
@@ -15,39 +13,68 @@ internal class Util
             PartList = -3,
             itemCounter = -4
         }
-    private readonly string SourcePath = Directories.OwnPath; // Directories.json 주소 지정 필요
-    static Util()
-    {
-        
-    }
+    internal readonly string SourcePath = Directories.OwnPath; // Directories.json 주소 지정 필요
     ///<summary> 사용자가 만든 Column List를 활용함 User_Columns.json </summary>
-    internal class GetColumnList
+    internal TargetList GetColumnList(DocTypes types)
     {
-        // 내부로직 필요
+        User_Columns Target = LoadConfig(SourcePath);
+        TargetList targetList= new TargetList();
+
         
-
-        ///<summary> Key만 반환함 </summary>
-        internal List<string> Key(DocTypes documentType)
-        {
-            List<string> ColumnList = new List<string>();
-
-            return ColumnList;
-        }
-        ///<summary> Value만 반환함 </summary>
-        internal List<string> Val(DocTypes documentType)
-        {
-            List<string> ColumnList = new List<string>();
-
-            return ColumnList;
-        }
+        return targetList;
     }
+    internal class TargetList
+    {
+        internal static string? TargetPath=null;
+        List<string> Key(long index=1)
+        {
+            List<string> Targets = new List<string>();
+
+        return Targets;   
+        }
+        List<string> Val(long index=1)
+        {
+            List<string> Targets = new List<string>();
+
+        return Targets;   
+        }        
+    }
+    
     /// <summary> 사용자가 지정한 Title의 Column들을 기록함. </summary>
     internal void SetColumnList(string keyTarget, string ColumnTitle)
     {
         // .json 저장 기능
     }
-    internal void Set2Default()
+    internal void Reset2Default()
     {
         
+    }
+    internal class User_Columns
+    {
+        internal required Dictionary<string, Dictionary<string, string>> Default{get; set;}
+        internal required Dictionary<string, Dictionary<string, string>> UserSet{get; set;}
+    }
+    /// <summary>
+    /// 지정된 경로에 있는 JSON 파일을 읽어 DocConfig 객체로 반환합니다.
+    /// </summary>
+    public static User_Columns LoadConfig(string filePath)
+    {
+        if (!File.Exists(filePath))
+            throw new FileNotFoundException($"JSON 파일을 찾을 수 없습니다: {filePath}");
+
+        string json = File.ReadAllText(filePath);
+
+        // System.Text.Json 옵션 (키 이름을 그대로 사용)
+        var options = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,   // 대소문자 구분 없이 매핑
+            ReadCommentHandling = JsonCommentHandling.Skip, // // 주석 무시
+            AllowTrailingCommas = true
+        };
+
+        User_Columns config = JsonSerializer.Deserialize<User_Columns>(json, options)
+                         ?? throw new InvalidOperationException("JSON 파싱에 실패했습니다.");
+
+        return config;
     }
 }

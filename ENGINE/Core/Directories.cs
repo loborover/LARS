@@ -46,7 +46,7 @@ public static class Directories
         DefaultDailyPlanPath = Path.Combine(DocumentsPath, "DailyPlan");
         DefaultPartListPath  = Path.Combine(DocumentsPath, "PartList");
         DefaultBOMPath       = Path.Combine(DocumentsPath, "BOM");
-        DefaultItemCounterPath = Path.Combine(DocumentsPath, "itemCounter");
+        DefaultItemCounterPath = Path.Combine(DocumentsPath, "ItemCounter");
 
         // 3) 기본 서브 폴더 이름들
         DefaultDownloadPath  = Path.Combine(OwnPath, "Downloads");
