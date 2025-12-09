@@ -381,7 +381,7 @@ End Function
 '---------------------------
 ' 3) 한국어 요일 반환
 '---------------------------
-Private Function WeekdayKorean(d As Date) As String
+Public Function WeekdayKorean(d As Date) As String
     Select Case Weekday(d, vbSunday)
         Case vbSunday:    WeekdayKorean = "일"
         Case vbMonday:    WeekdayKorean = "월"

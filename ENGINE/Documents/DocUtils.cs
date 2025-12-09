@@ -1,10 +1,9 @@
 using System.Text.Json;
-using DocumentFormat.OpenXml.Wordprocessing;
 using LARS.ENGINE.Core;
 namespace LARS.ENGINE.Documents;
 
 /// <summary> 문서작성에 필요한 공유 기능들을 모아둔 클래스임 </summary>
-internal class DocUtil
+internal class DocUtils
 {    
     internal enum DocTypes : sbyte
         {
@@ -13,31 +12,37 @@ internal class DocUtil
             PartList = -3,
             itemCounter = -4
         }
-    internal readonly string SourcePath = Directories.OwnPath; // Directories.json 주소 지정 필요
+    internal static readonly string SourcePath = Directories.OwnPath; // Directories.json 주소 지정 필요
     ///<summary> 사용자가 만든 Column List를 활용함 User_Columns.json </summary>
-    internal TargetList GetColumnList(DocTypes types)
+    internal static TargetList GetColumnList(DocTypes? types=null)
     {
         User_Columns Target = LoadConfig(SourcePath);
         TargetList targetList= new TargetList();
-
-        
+        switch (types)
+        {
+            case DocTypes.BOM:
+                break;
+            case DocTypes.DailyPlan:
+                break;
+            case DocTypes.PartList:
+                break;
+            case DocTypes.itemCounter:
+                break;
+            default:
+                break;
+        }
         return targetList;
     }
     internal class TargetList
     {
+        internal List<string> Key{get; init;} = new List<string>();
+        internal List<string> Val{get; init;} = new List<string>();
         internal static string? TargetPath=null;
-        List<string> Key(long index=1)
+        internal TargetList()
         {
-            List<string> Targets = new List<string>();
-
-        return Targets;   
+            Key.Add("");
+            Val.Add("");
         }
-        List<string> Val(long index=1)
-        {
-            List<string> Targets = new List<string>();
-
-        return Targets;   
-        }        
     }
     
     /// <summary> 사용자가 지정한 Title의 Column들을 기록함. </summary>
@@ -55,9 +60,9 @@ internal class DocUtil
         internal required Dictionary<string, Dictionary<string, string>> UserSet{get; set;}
     }
     /// <summary>
-    /// 지정된 경로에 있는 JSON 파일을 읽어 DocConfig 객체로 반환합니다.
+    /// 지정된 경로에 있는 JSON 파일을 읽어 User_Columns 객체로 반환합니다.
     /// </summary>
-    public static User_Columns LoadConfig(string filePath)
+    internal static User_Columns LoadConfig(string filePath)
     {
         if (!File.Exists(filePath))
             throw new FileNotFoundException($"JSON 파일을 찾을 수 없습니다: {filePath}");

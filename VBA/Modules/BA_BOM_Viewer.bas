@@ -1,46 +1,46 @@
 Attribute VB_Name = "BA_BOM_Viewer"
 Option Explicit
-'í•œë²ˆ ë§Œë“  Titleì˜ ê°’ì„ ì´ ëª¨ë“ˆì•ˆì—ì„œ ë‹¤ë¥¸ ì„œë¸Œë£¨í‹´, í•¨ìˆ˜ì—ì„œ ì°¸ì¡°í•˜ê¸° ìœ„í•´ ëª¨ë“ˆë¶€ì—ì„œ ì„ ì–¸
+'ÇÑ¹ø ¸¸µç TitleÀÇ °ªÀ» ÀÌ ¸ğµâ¾È¿¡¼­ ´Ù¸¥ ¼­ºê·çÆ¾, ÇÔ¼ö¿¡¼­ ÂüÁ¶ÇÏ±â À§ÇØ ¸ğµâºÎ¿¡¼­ ¼±¾ğ
 Private Title As String
 Private PrintRange As Range
 Private ColumnsForReport As New Collection
-' ë¬¸ì„œ ì„œì‹ ìë™í™”
+' ¹®¼­ ¼­½Ä ÀÚµ¿È­
 Private Sub AutoReport_BOM(ByRef Wb As Workbook)
     Dim ws As Worksheet
     Set ws = Wb.ActiveSheet
     Dim LastCol As Long
-    Dim i As Long 'ë°˜ë³µë¬¸ìš© ë³€ìˆ˜
-    Dim DelCell As Range 'ë°˜ë³µë¬¸ìš© ë³€ìˆ˜
+    Dim i As Long '¹İº¹¹®¿ë º¯¼ö
+    Dim DelCell As Range '¹İº¹¹®¿ë º¯¼ö
     Dim TitleRange As Range
     Dim TableRange As Range
     
     SetUsingColumns ColumnsForReport
     
     LastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
-    ' ê° ì—´ì´ ColumnsForReportì— í¬í•¨ë˜ì–´ ìˆëŠ”ì§€ í™•ì¸í•˜ê³ , í¬í•¨ë˜ì§€ ì•ŠëŠ” ê²½ìš° ì—´ ì‚­ì œ
-    For i = LastCol To 1 Step -1 'Step ì—°ì‚°ìëŠ” i ë³€ìˆ˜ì˜ ìˆœì„œë§ˆë‹¤ ì–´ë–¤ ì—°ì‚°ì„ í• ì§€ ê²°ì •
+    ' °¢ ¿­ÀÌ ColumnsForReport¿¡ Æ÷ÇÔµÇ¾î ÀÖ´ÂÁö È®ÀÎÇÏ°í, Æ÷ÇÔµÇÁö ¾Ê´Â °æ¿ì ¿­ »èÁ¦
+    For i = LastCol To 1 Step -1 'Step ¿¬»êÀÚ´Â i º¯¼öÀÇ ¼ø¼­¸¶´Ù ¾î¶² ¿¬»êÀ» ÇÒÁö °áÁ¤
         Set DelCell = ws.Cells(1, i)
-        ' í˜„ì¬ ì—´ì´ ColumnsForReportì— ì—†ìœ¼ë©´ ì‚­ì œ
+        ' ÇöÀç ¿­ÀÌ ColumnsForReport¿¡ ¾øÀ¸¸é »èÁ¦
         If Not IsInCollection(DelCell.value, ColumnsForReport) Then ws.Columns(i).Delete
     Next i
     
-    Dim InsertRow As Long 'ì¶”ê°€í–‰ ê°¯ìˆ˜
+    Dim InsertRow As Long 'Ãß°¡Çà °¹¼ö
     InsertRow = 3
-    'ì œëª© ì…ë ¥ì„ ìœ„í•œ ê³µë°± í–‰ InsertRowì˜ ê°’ ë§Œí¼ ì¶”ê°€
+    'Á¦¸ñ ÀÔ·ÂÀ» À§ÇÑ °ø¹é Çà InsertRowÀÇ °ª ¸¸Å­ Ãß°¡
     For i = 1 To InsertRow
         ws.Rows(1).Insert Shift:=xlShiftDown, CopyOrigin:=xlFormatFromLeftOrAbove
     Next i
-    'ë§ˆì§€ë§‰ ì—´ì„ ë‹¤ì‹œ êµ¬í•´ì„œ ì…€ë³‘í•© ì˜ì—­ì§€ì •
+'¸¶Áö¸· ¿­À» ´Ù½Ã ±¸ÇØ¼­ ¼¿º´ÇÕ ¿µ¿ªÁöÁ¤
     LastCol = ws.Cells(InsertRow + 1, ws.Columns.Count).End(xlToLeft).Column
     Set TitleRange = ws.Range(ws.Cells(1, 1), ws.Cells(InsertRow, LastCol))
     TitleRange.Merge
-    'ì œëª© ì…ë ¥
+'Á¦¸ñ ÀÔ·Â
     Call AutoTitle(ws, ColumnsForReport)
-    'AutoFilltering
+'AutoFilltering
     Call AutoFilltering_BOM(ws, ColumnsForReport)
-    'CurrentRegion ë©”ì†Œë“œë¡œ TableRange ì˜ì—­ì§€ì •
+'CurrentRegion ¸Ş¼Òµå·Î TableRange ¿µ¿ªÁöÁ¤
     Set TableRange = TitleRange.CurrentRegion
-    'Interior Borders, Columns Width
+'Interior Borders, Columns Width
     Call Interior_Set_BOM(ws, TableRange)
 End Sub
 
@@ -77,7 +77,7 @@ Private Sub AutoTitle(ws As Worksheet, ColumnList As Collection)
     Dim findrow As Long
     Dim FindCol As Long
     Dim StrIndex As Long
-    'ëª¨ë“ˆì„ ì–¸ë¶€ì˜ Titleë³€ìˆ˜ ì´ˆê¸°í™”
+    '¸ğµâ¼±¾ğºÎÀÇ Titleº¯¼ö ÃÊ±âÈ­
     Title = ""
     
     FindCol = ws.UsedRange.Find(What:=ColumnList(1)).Column
@@ -86,11 +86,13 @@ Private Sub AutoTitle(ws As Worksheet, ColumnList As Collection)
     
     Title = ws.Cells(findrow, FindCol).value
     StrIndex = InStr(Title, "@")
-    If Not StrIndex = 0 Then Title = Left(Title, StrIndex - 1)
+    If Not StrIndex = 0 Then
+        Title = Left(Title, StrIndex - 1)
+    End If
     ws.Cells(1, 1).value = Title
         
     With ws.Cells(1, 1)
-        .Font.Name = "LGìŠ¤ë§ˆíŠ¸ì²´ Bold"
+        .Font.Name = "LG½º¸¶Æ®Ã¼ Bold"
         .Font.Size = 25
         .Font.Bold = True
         .HorizontalAlignment = xlCenter
@@ -137,9 +139,9 @@ Public Sub Read_BOM(Optional Handle As Boolean)
     Dim BOM As New Collection
         
     AutoReportHandler.ListView_BOM.ListItems.Clear
-    ' ì§€ì •í•œ ì£¼ì†Œì— ì§€ì •í•œ Stringê°’ì„ ê°€ì§„ íŒŒì¼ë§Œ ì¶”ì¶œí•˜ëŠ” êµ¬ë¬¸, ì²´ê³„ë„ ì—†ëŠ”ê²ƒë“¤ ë§¨ë‚  ì¡°ì§ë³€ê²½í•´ì„œ ì´ê±° ìì£¼ ì¶”ì  ì—…ë°ì´íŠ¸ í•´ì•¼ëŒ ã…¡ã…¡
+    ' ÁöÁ¤ÇÑ ÁÖ¼Ò¿¡ ÁöÁ¤ÇÑ String°ªÀ» °¡Áø ÆÄÀÏ¸¸ ÃßÃâÇÏ´Â ±¸¹®, Ã¼°èµµ ¾ø´Â°Íµé ¸Ç³¯ Á¶Á÷º¯°æÇØ¼­ ÀÌ°Å ÀÚÁÖ ÃßÀû ¾÷µ¥ÀÌÆ® ÇØ¾ß´ï ¤Ñ¤Ñ
     Set BOM = FindFilesWithTextInName(Z_Directory.Source, "@CVZ")
-    If BOM.Count = 0 Then: If Handle Then MsgBox "ì—°ê²°ëœ ì£¼ì†Œì— BOM íŒŒì¼ì´ ì—†ìŒ": Exit Sub
+    If BOM.Count = 0 Then: If Handle Then MsgBox "¿¬°áµÈ ÁÖ¼Ò¿¡ BOM ÆÄÀÏÀÌ ¾øÀ½": Exit Sub
     
     With AutoReportHandler.ListView_BOM
         
@@ -153,7 +155,7 @@ Public Sub Read_BOM(Optional Handle As Boolean)
                 .SubItems(2) = "Ready" 'Print
                 .SubItems(3) = CheckFileAlreadyWritten_PDF(vModelName, dc_BOM) 'PDF
             End With
-            AutoReportHandler.ListView_BOM.ListItems(i).Checked = True ' ì²´í¬ë°•ìŠ¤ ì²´í¬
+            AutoReportHandler.ListView_BOM.ListItems(i).Checked = True ' Ã¼Å©¹Ú½º Ã¼Å©
             
             AutoReportHandler.UpdateProgressBar AutoReportHandler.PB_BOM, i / BOM.Count * 100
         Next i
@@ -161,7 +163,7 @@ Public Sub Read_BOM(Optional Handle As Boolean)
     End With
     
     If Handle Then
-        MsgBox "BOMì‹œíŠ¸ " & BOM.Count & "ì¢… ì—°ê²°ì™„ë£Œ"
+        MsgBox "BOM½ÃÆ® " & BOM.Count & "Á¾ ¿¬°á¿Ï·á"
     End If
     
 End Sub
@@ -178,78 +180,78 @@ Public Sub Print_BOM(Optional Handle As Boolean)
     ListCount = BOMLV.ListItems.Count
     
     If ListCount = 0 Then
-        MsgBox "ì—°ê²°ëœ ë°ì´í„° ì—†ìŒ"
+        MsgBox "¿¬°áµÈ µ¥ÀÌÅÍ ¾øÀ½"
         Exit Sub
     End If
     
-    For i = 1 To ListCount ' ì²´í¬ë°•ìŠ¤ í™œì„±í™”ëœ ì•„ì´í…œ ì„ ë³„
+    For i = 1 To ListCount ' Ã¼Å©¹Ú½º È°¼ºÈ­µÈ ¾ÆÀÌÅÛ ¼±º°
         Set BOMitem = BOMLV.ListItems.Item(i)
         If BOMitem.Checked Then Chkditem.Add BOMitem.Index 'SubItems(1)
     Next i
     
-    If Chkditem.Count < 1 Then MsgBox "ì„ íƒëœ ë¬¸ì„œ ì—†ìŒ": Exit Sub
+    If Chkditem.Count < 1 Then MsgBox "¼±ÅÃµÈ ¹®¼­ ¾øÀ½": Exit Sub
 
     ListCount = Chkditem.Count
     For i = 1 To ListCount
-AutoReportHandler.UpdateProgressBar AutoReportHandler.PB_BOM, ((i - 0.9) / ListCount * 100) ' 10í”„ë¡œ
+AutoReportHandler.UpdateProgressBar AutoReportHandler.PB_BOM, ((i - 0.9) / ListCount * 100) ' 10ÇÁ·Î
         Set BOMitem = BOMLV.ListItems.Item(Chkditem(i))
-        Set BOMwb = Workbooks.open(BOMitem.SubItems(1)) ' Chkditem(i) / ì£¼ì†Œê°’ìœ¼ë¡œ í˜¸ì¶œí•¨
+        Set BOMwb = Workbooks.Open(BOMitem.SubItems(1)) ' Chkditem(i) / ÁÖ¼Ò°ªÀ¸·Î È£ÃâÇÔ
         Dim ws As Worksheet
         Set ws = BOMwb.Worksheets(1)
         BOMwb.Windows(1).WindowState = xlMinimized
-AutoReportHandler.UpdateProgressBar AutoReportHandler.PB_BOM, ((i - 0.7) / ListCount * 100) ' 30í”„ë¡œ
-'ìë™í™” ì„œì‹ì‘ì„± ì½”ë“œ
+AutoReportHandler.UpdateProgressBar AutoReportHandler.PB_BOM, ((i - 0.7) / ListCount * 100) ' 30ÇÁ·Î
+'ÀÚµ¿È­ ¼­½ÄÀÛ¼º ÄÚµå
         AutoReport_BOM BOMwb
-AutoReportHandler.UpdateProgressBar AutoReportHandler.PB_BOM, ((i - 0.5) / ListCount * 100)  ' 50í”„ë¡œ
-'í”„ë¦°íŠ¸ì—¬ë¶€ ê²°ì •
+AutoReportHandler.UpdateProgressBar AutoReportHandler.PB_BOM, ((i - 0.5) / ListCount * 100)  ' 50ÇÁ·Î
+'ÇÁ¸°Æ®¿©ºÎ °áÁ¤
         If PrintNow.BOM Then
             
-            Printer.PrinterNameSet ' ê¸°ë³¸í”„ë¦°í„° ì´ë¦„ ì„¤ì •, ìœ ì§€ë˜ëŠ”ì§€ í™•ì¸
+            Printer.PrinterNameSet ' ±âº»ÇÁ¸°ÅÍ ÀÌ¸§ ¼³Á¤, À¯ÁöµÇ´ÂÁö È®ÀÎ
             AutoPageSetup ws, PS_BOM(ws, FncSetPR(ws, ColumnsForReport)) ' PageSetup
             ws.PrintOut ActivePrinter:=DefaultPrinter
             BOMitem.SubItems(2) = "Done"  'Print
-            Application.Wait Now + TimeValue("0:00:01") '1ì´ˆ ë”œë ˆì´
+            Application.Wait Now + TimeValue("0:00:01") '1ÃÊ µô·¹ÀÌ
         Else
             BOMitem.SubItems(2) = "Pass" 'Print
         End If
-AutoReportHandler.UpdateProgressBar AutoReportHandler.PB_BOM, ((i - 0.3) / ListCount * 100) ' 70í”„ë¡œ
-'ì €ì¥ì„ ìœ„í•´ íƒ€ì´í‹€ ìˆ˜ì •, ìœˆë„ìš°ì—ì„œ "." ì´í›„ì˜ Stringì€ í™•ì¥ìë¡œ ì¸ì‹í•˜ê¸° ë•Œë¬¸
+AutoReportHandler.UpdateProgressBar AutoReportHandler.PB_BOM, ((i - 0.3) / ListCount * 100) ' 70ÇÁ·Î
+'ÀúÀåÀ» À§ÇØ Å¸ÀÌÆ² ¼öÁ¤, À©µµ¿ì¿¡¼­ "." ÀÌÈÄÀÇ StringÀº È®ÀåÀÚ·Î ÀÎ½ÄÇÏ±â ¶§¹®
         Title = Replace(Title, ".", "_")
-'ì €ì¥ì—¬ë¶€ ê²°ì •
+'ÀúÀå¿©ºÎ °áÁ¤
         SaveFilesWithCustomDirectory "BOM", BOMwb, PS_BOMforPDF(ws, FncSetPR(ws, ColumnsForReport)), Title, False, True, OriginalKiller.BOM
         BOMitem.SubItems(3) = "Done" 'PDF
 'Progress Update
-AutoReportHandler.UpdateProgressBar AutoReportHandler.PB_BOM, (i / ListCount * 100) ' 100í”„ë¡œ
+AutoReportHandler.UpdateProgressBar AutoReportHandler.PB_BOM, (i / ListCount * 100) ' 100ÇÁ·Î
     Next i
     
     If Handle Then
-        MsgBox ListCount & "ì¢…ì˜ BOM ì¶œë ¥ ì™„ë£Œ"
+        MsgBox ListCount & "Á¾ÀÇ BOM Ãâ·Â ¿Ï·á"
     End If
     
 End Sub
 
 Private Function GetModelName(BOMdirectory As String) As String
-    ' Excel ì• í”Œë¦¬ì¼€ì´ì…˜ì„ ìƒˆë¡œìš´ ì¸ìŠ¤í„´ìŠ¤ë¡œ ìƒì„±
+    ' Excel ¾ÖÇÃ¸®ÄÉÀÌ¼ÇÀ» »õ·Î¿î ÀÎ½ºÅÏ½º·Î »ı¼º
     Dim xlApp As Excel.Application
     Set xlApp = New Excel.Application
     xlApp.Visible = False
 
-    Dim Wb As Workbook: Set Wb = xlApp.Workbooks.open(BOMdirectory) ' ì›Œí¬ë¶ ì—´ê¸°
-    Dim ws As Worksheet: Set ws = Wb.Worksheets(1) ' ì›Œí¬ì‹œíŠ¸ ì„ íƒ
+    Dim Wb As Workbook: Set Wb = xlApp.Workbooks.Open(BOMdirectory) ' ¿öÅ©ºÏ ¿­±â
+    Dim ws As Worksheet: Set ws = Wb.Worksheets(1) ' ¿öÅ©½ÃÆ® ¼±ÅÃ
 
-    ' ê°’ì„ ì½ì–´ì˜¤ê¸°
-    'Dim Title As String ëª¨ë“ˆì„ ì–¸ë¶€ì˜ Title í™œìš©
+    ' °ªÀ» ÀĞ¾î¿À±â
+    'Dim Title As String ¸ğµâ¼±¾ğºÎÀÇ Title È°¿ë
     Dim Str As Long
     Title = ws.Cells(2, 3).value
     Str = InStr(Title, "@")
     Title = Left(Title, Str - 1)
     GetModelName = Title
 
-    ' ì›Œí¬ë¶ ë‹«ê¸°
+    ' ¿öÅ©ºÏ ´İ±â
     Wb.Close SaveChanges:=False
     Set Wb = Nothing
 
-    ' Excel ì• í”Œë¦¬ì¼€ì´ì…˜ ì¢…ë£Œ
+    ' Excel ¾ÖÇÃ¸®ÄÉÀÌ¼Ç Á¾·á
     xlApp.Quit
     Set xlApp = Nothing
 End Function

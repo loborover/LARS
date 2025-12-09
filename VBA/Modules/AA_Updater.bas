@@ -63,14 +63,14 @@ Sub ExportAllModulesDirectlyToTextAndMarkdown()
     With txtStream
         .Charset = "utf-8"
         .Type = 2
-        .open
+        .Open
     End With
 
     Set mdStream = CreateObject("ADODB.Stream")
     With mdStream
         .Charset = "utf-8"
         .Type = 2
-        .open
+        .Open
     End With
 
     ' 구성 요소 반복
@@ -167,7 +167,7 @@ Sub ForceUpdateMacro()
         If DownloadFile(fileUrl, savePath) Then
             ' 기존 파일 닫기 및 새 파일 실행
             ThisWorkbook.Close False
-            Workbooks.open savePath
+            Workbooks.Open savePath
         Else
             MsgBox "업데이트 다운로드에 실패했습니다.", vbExclamation
         End If
@@ -181,7 +181,7 @@ Function GetWebText(url As String) As String
     Set http = CreateObject("MSXML2.XMLHTTP")
     
     ' 요청 전송
-    http.open "GET", url, False
+    http.Open "GET", url, False
     http.Send
     
     ' 응답 확인
@@ -200,14 +200,14 @@ Function DownloadFile(url As String, savePath As String) As Boolean
     Set http = CreateObject("MSXML2.XMLHTTP")
     
     ' 파일 다운로드 요청
-    http.open "GET", url, False
+    http.Open "GET", url, False
     http.Send
     
     ' 다운로드 확인
     If http.Status = 200 Then
         Set stream = CreateObject("ADODB.Stream")
         stream.Type = 1
-        stream.open
+        stream.Open
         stream.Write http.responseBody
         stream.SaveToFile savePath, 2
         stream.Close

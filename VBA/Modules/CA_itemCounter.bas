@@ -331,7 +331,7 @@ EH_GetObject:
     newApp.Visible = WantVisible
 
     On Error GoTo EH_OpenNew
-    Set WbOut = newApp.Workbooks.open(fileName:=TargetDir, ReadOnly:=True, Notify:=False)
+    Set WbOut = newApp.Workbooks.Open(fileName:=TargetDir, ReadOnly:=True, Notify:=False)
     Set AppOut = newApp
     BindWorkbook = True
     Exit Function
