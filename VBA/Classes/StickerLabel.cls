@@ -17,8 +17,8 @@ Private DrawingWS As Worksheet
 'Private Sub Class_Terminate()
 '
 'End Sub
-Friend Property Set Worksheet(ByRef value As Worksheet)
-    Set DrawingWS = value
+Friend Property Set Worksheet(ByRef Value As Worksheet)
+    Set DrawingWS = Value
 End Property
 
 Public Function Left(ByRef Xaxis As Single, ByRef Yaxis As Single, _

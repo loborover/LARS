@@ -38,7 +38,7 @@ Public Property Get Another() As ModelInfo
     Set Another = vPrevious
 End Property
 Public Function Set_Another_Model(ByRef Target As Range) As ModelInfo
-    vPrevious.FullName = Target.value
+    vPrevious.FullName = Target.Value
     vPrevious.Set_Pivot Target
     Set Set_Another_Model = vPrevious
 End Function
@@ -66,17 +66,17 @@ Public Sub NextModel(ByRef NextTarget As Range)
     Set vPrevious = vCurrent.Copy  ' 현재 > 이전
     Set vCurrent = vNext.Copy  ' 다음 > 현재
     Set vNext = New ModelInfo
-    vNext.WorkOrder = NextTarget.Offset(0, -1).value
-    vNext.FullName = NextTarget.value
+    vNext.WorkOrder = NextTarget.Offset(0, -1).Value
+    vNext.FullName = NextTarget.Value
     vNext.Set_Pivot NextTarget
     
     vLOT = vLOT + 1 ' 모델이 누적될 때마다 전부 셈
     
 End Sub
 Public Sub SetModel(ByRef Current_Target As Range, ByRef Next_Target As Range)
-    vCurrent.FullName = Current_Target.value
+    vCurrent.FullName = Current_Target.Value
     vCurrent.Set_Pivot Current_Target
-    vNext.FullName = Next_Target.value
+    vNext.FullName = Next_Target.Value
     vNext.Set_Pivot Next_Target
 End Sub
 

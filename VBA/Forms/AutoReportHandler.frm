@@ -39,15 +39,15 @@ Public Property Let Doc_BackColor(Target As ObjPivotAxis)
 End Property
 
 Private Sub CB_Yoil_DP_Click()
-    BB_DailyPlan_Viewer.Yoil_DP = CB_Yoil_DP.value
+    BB_DailyPlan_Viewer.Yoil_DP = CB_Yoil_DP.Value
 End Sub
 
 Private Sub CbBx_Feeder_Change()
-    D_ListView_Feeder_item_Updater CbBx_Feeder.value
+    D_ListView_Feeder_item_Updater CbBx_Feeder.Value
 End Sub
 
 Private Sub CbBx_Target_Printer_Change()
-    Printer.DefaultPrinter = CbBx_Target_Printer.value
+    Printer.DefaultPrinter = CbBx_Target_Printer.Value
 End Sub
 
 Private Sub Userform_Initialize() '전처리
@@ -56,30 +56,30 @@ Private Sub Userform_Initialize() '전처리
     Dim i As Long, wLine As Long, wDate As Long ' 반복문용 변수
     Set ws = ThisWorkbook.Worksheets("Setting"): Set UI = Me
     
-    Me.Version_Label.Caption = "V." & ws.Cells.Find("Version", lookAt:=xlWhole, MatchCase:=True).Offset(0, 1).value
+    Me.Version_Label.Caption = "V." & ws.Cells.Find("Version", lookAt:=xlWhole, MatchCase:=True).Offset(0, 1).Value
     
     If Not Printer.Bool_IPNS Then Printer.PrinterNameSet ' 프린터 세팅되어 있는지 확인 후 프린터 목록 초기화
     For i = 1 To Printer.PrinterName.Count
         With Me.CbBx_Target_Printer
             .Additem Printer.PrinterName(i)
-            If (Printer.DefaultPrinter = Printer.PrinterName(i)) Then .value = Printer.PrinterName(i)
+            If (Printer.DefaultPrinter = Printer.PrinterName(i)) Then .Value = Printer.PrinterName(i)
         End With
     Next i
     
-    DP_BCBR_Slidebar.value = 218 ' Brightness 초기화
+    DP_BCBR_Slidebar.Value = 218 ' Brightness 초기화
     wLine = 35: wDate = 65
     
     ' CheckBox initializing
-    Me.CB_PNBOM.value = True
-    Me.CB_KO_ALL.value = True
-    Me.CB_MRDP.value = True
-    Me.CB_MRPL.value = True
+    Me.CB_PNBOM.Value = True
+    Me.CB_KO_ALL.Value = True
+    Me.CB_MRDP.Value = True
+    Me.CB_MRPL.Value = True
     CB_PNDP_Click
-    Me.CB_PNDP.value = False
+    Me.CB_PNDP.Value = False
     CB_PNPL_Click
-    Me.CB_PNPL.value = False
-    Me.CB_Lvl1_BOM.value = True
-    Me.CB_LvlS_BOM.value = True
+    Me.CB_PNPL.Value = False
+    Me.CB_Lvl1_BOM.Value = True
+    Me.CB_LvlS_BOM.Value = True
     CB_PL_Ddays_Click
 
     With Me.ListView_BOM
@@ -130,24 +130,24 @@ Private Sub Userform_Initialize() '전처리
 '        .ColumnHeaders.Add text:="PartList", Width:=50
     End With
         
-    With Me.DP_PN_Counter: .Min = 1: .Max = 999: .value = 1: Me.DP_PN_Copies_TB.text = .value: End With
-    With Me.PL_PN_Counter: .Min = 1: .Max = 999: .value = 1: Me.DP_PN_Copies_TB.text = .value: End With
-    With Me.PL_Ddays_Counter: .Min = 1: .Max = 999: .value = 2: Me.PL_Ddays_TB.text = .value: End With
+    With Me.DP_PN_Counter: .Min = 1: .Max = 999: .Value = 1: Me.DP_PN_Copies_TB.text = .Value: End With
+    With Me.PL_PN_Counter: .Min = 1: .Max = 999: .Value = 1: Me.DP_PN_Copies_TB.text = .Value: End With
+    With Me.PL_Ddays_Counter: .Min = 1: .Max = 999: .Value = 2: Me.PL_Ddays_TB.text = .Value: End With
     
     With Me.MultiPage_FeederChecker
         For i = 0 To .Pages.Count - 1
-            .value = i
+            .Value = i
             DoEvents
         Next i
-        .value = 1
+        .Value = 1
     End With
     
     With Me.MultiPage1
         For i = 0 To .Pages.Count - 1
-            .value = i
+            .Value = i
             DoEvents
         Next i
-        .value = 1
+        .Value = 1
     End With
     
     SetUp_FeederTrackers ' Feeder.bas 연결
@@ -164,7 +164,7 @@ Private Sub DP_BCBR_TB_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shi
 
         inputStr = Replace(DP_BCBR_TB.text, "%", "")
         If Trim(inputStr) = "" Then Exit Sub
-        If Not isNumeric(inputStr) Then Exit Sub
+        If Not IsNumeric(inputStr) Then Exit Sub
 
         numericVal = CDbl(inputStr)
         If numericVal < 0 Then numericVal = 0
@@ -178,7 +178,7 @@ Private Sub DP_BCBR_TB_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shi
         DP_BCBR_TB.text = Format(numericVal, "0.0") & "%"
         Application.EnableEvents = True
 
-        DP_BCBR_Slidebar.value = scaledVal
+        DP_BCBR_Slidebar.Value = scaledVal
         Call DP_BCBR_Slidebar_Change
 
         KeyCode = 0 ' 삑 소리 방지
@@ -186,118 +186,118 @@ Private Sub DP_BCBR_TB_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shi
 End Sub
 
 Private Sub DP_BCBR_Slidebar_Change()
-    Me.DP_BCBR_TB.text = Format((DP_BCBR_Slidebar.value / 255 * 100), "0.0") & "%"
-    DP_BCBR_Slidebar.SelLength = DP_BCBR_Slidebar.value
-    Brght = DP_BCBR_Slidebar.value
+    Me.DP_BCBR_TB.text = Format((DP_BCBR_Slidebar.Value / 255 * 100), "0.0") & "%"
+    DP_BCBR_Slidebar.SelLength = DP_BCBR_Slidebar.Value
+    Brght = DP_BCBR_Slidebar.Value
     DP_BCBR_TB.BackColor = RGB(Brght, Brght, Brght)
     Brght = 255 + (Brght * -1)
     DP_BCBR_TB.ForeColor = RGB(Brght, Brght, Brght)
 End Sub
 
 Public Property Get Brightness() As Single
-    Brightness = DP_BCBR_Slidebar.value
+    Brightness = DP_BCBR_Slidebar.Value
 End Property
 Private Sub CB_MR_All_Click()
-    If CB_MR_All.value Then
-        vCB.Manual_Reporting(1) = CB_MRDP.value
-        vCB.Manual_Reporting(2) = CB_MRPL.value
-        CB_MRDP.value = CB_MR_All.value
-        CB_MRPL.value = CB_MR_All.value
-        CB_MRDP.Enabled = Not CB_MR_All.value
-        CB_MRPL.Enabled = Not CB_MR_All.value
+    If CB_MR_All.Value Then
+        vCB.Manual_Reporting(1) = CB_MRDP.Value
+        vCB.Manual_Reporting(2) = CB_MRPL.Value
+        CB_MRDP.Value = CB_MR_All.Value
+        CB_MRPL.Value = CB_MR_All.Value
+        CB_MRDP.Enabled = Not CB_MR_All.Value
+        CB_MRPL.Enabled = Not CB_MR_All.Value
     Else
-        CB_MRDP.value = vCB.Manual_Reporting(1)
-        CB_MRPL.value = vCB.Manual_Reporting(2)
-        CB_MRDP.Enabled = Not CB_MR_All.value
-        CB_MRPL.Enabled = Not CB_MR_All.value
+        CB_MRDP.Value = vCB.Manual_Reporting(1)
+        CB_MRPL.Value = vCB.Manual_Reporting(2)
+        CB_MRDP.Enabled = Not CB_MR_All.Value
+        CB_MRPL.Enabled = Not CB_MR_All.Value
     End If
 End Sub
 Private Sub CB_KO_ALL_Click()
-    If CB_KO_ALL.value Then
-        vCB.Kill_Original(1) = CB_KO_BOM.value
-        vCB.Kill_Original(2) = CB_KO_DP.value
-        vCB.Kill_Original(3) = CB_KO_PL.value
-        CB_KO_BOM.value = CB_KO_ALL.value
-        CB_KO_DP.value = CB_KO_ALL.value
-        CB_KO_PL.value = CB_KO_ALL.value
-        CB_KO_BOM.Enabled = Not CB_KO_ALL.value
-        CB_KO_DP.Enabled = Not CB_KO_ALL.value
-        CB_KO_PL.Enabled = Not CB_KO_ALL.value
+    If CB_KO_ALL.Value Then
+        vCB.Kill_Original(1) = CB_KO_BOM.Value
+        vCB.Kill_Original(2) = CB_KO_DP.Value
+        vCB.Kill_Original(3) = CB_KO_PL.Value
+        CB_KO_BOM.Value = CB_KO_ALL.Value
+        CB_KO_DP.Value = CB_KO_ALL.Value
+        CB_KO_PL.Value = CB_KO_ALL.Value
+        CB_KO_BOM.Enabled = Not CB_KO_ALL.Value
+        CB_KO_DP.Enabled = Not CB_KO_ALL.Value
+        CB_KO_PL.Enabled = Not CB_KO_ALL.Value
     Else
-        CB_KO_BOM.value = vCB.Kill_Original(1)
-        CB_KO_DP.value = vCB.Kill_Original(2)
-        CB_KO_PL.value = vCB.Kill_Original(3)
-        CB_KO_BOM.Enabled = Not CB_KO_ALL.value
-        CB_KO_DP.Enabled = Not CB_KO_ALL.value
-        CB_KO_PL.Enabled = Not CB_KO_ALL.value
+        CB_KO_BOM.Value = vCB.Kill_Original(1)
+        CB_KO_DP.Value = vCB.Kill_Original(2)
+        CB_KO_PL.Value = vCB.Kill_Original(3)
+        CB_KO_BOM.Enabled = Not CB_KO_ALL.Value
+        CB_KO_DP.Enabled = Not CB_KO_ALL.Value
+        CB_KO_PL.Enabled = Not CB_KO_ALL.Value
     End If
 End Sub
 
 Private Sub CB_PNALL_Click()
-    If CB_PNALL.value Then
+    If CB_PNALL.Value Then
 '전처리 PrintNow 값 살려두기
-        vCB.Print_Now(1) = CB_PNBOM.value
-        vCB.Print_Now(2) = CB_PNDP.value
-        vCB.Print_Now(3) = CB_PNPL.value
+        vCB.Print_Now(1) = CB_PNBOM.Value
+        vCB.Print_Now(2) = CB_PNDP.Value
+        vCB.Print_Now(3) = CB_PNPL.Value
 ' 전체 True 설정
-        CB_PNBOM.value = CB_PNALL.value
-        CB_PNDP.value = CB_PNALL.value
-        CB_PNPL.value = CB_PNALL.value
+        CB_PNBOM.Value = CB_PNALL.Value
+        CB_PNDP.Value = CB_PNALL.Value
+        CB_PNPL.Value = CB_PNALL.Value
 ' 잠금설정
-        CB_PNBOM.Enabled = Not CB_PNALL.value
-        CB_PNDP.Enabled = Not CB_PNALL.value
-        CB_PNPL.Enabled = Not CB_PNALL.value
+        CB_PNBOM.Enabled = Not CB_PNALL.Value
+        CB_PNDP.Enabled = Not CB_PNALL.Value
+        CB_PNPL.Enabled = Not CB_PNALL.Value
     Else
 'PrintNow값 반환
-        CB_PNBOM.value = vCB.Print_Now(1)
-        CB_PNDP.value = vCB.Print_Now(2)
-        CB_PNPL.value = vCB.Print_Now(3)
+        CB_PNBOM.Value = vCB.Print_Now(1)
+        CB_PNDP.Value = vCB.Print_Now(2)
+        CB_PNPL.Value = vCB.Print_Now(3)
 ' 잠금설정
-        CB_PNBOM.Enabled = Not CB_PNALL.value
-        CB_PNDP.Enabled = Not CB_PNALL.value
-        CB_PNPL.Enabled = Not CB_PNALL.value
+        CB_PNBOM.Enabled = Not CB_PNALL.Value
+        CB_PNDP.Enabled = Not CB_PNALL.Value
+        CB_PNPL.Enabled = Not CB_PNALL.Value
     End If
 End Sub
 
 Private Sub CB_PNBOM_Click()
-    PrintNow.BOM = CB_PNBOM.value
+    PrintNow.BOM = CB_PNBOM.Value
 End Sub
 
 Private Sub CB_PNDP_Click()
-    PrintNow.DailyPlan = CB_PNDP.value
+    PrintNow.DailyPlan = CB_PNDP.Value
     
-    Me.DP_PN_Copies_TB.Enabled = Me.CB_PNDP.value
-    Me.DP_PN_Counter.Enabled = Me.CB_PNDP.value
+    Me.DP_PN_Copies_TB.Enabled = Me.CB_PNDP.Value
+    Me.DP_PN_Counter.Enabled = Me.CB_PNDP.Value
 End Sub
 Private Sub CB_PNPL_Click()
-    PrintNow.PartList = CB_PNPL.value
+    PrintNow.PartList = CB_PNPL.Value
     
-    Me.PL_PN_Copies_TB.Enabled = Me.CB_PNPL.value
-    Me.PL_PN_Counter.Enabled = Me.CB_PNPL.value
+    Me.PL_PN_Copies_TB.Enabled = Me.CB_PNPL.Value
+    Me.PL_PN_Counter.Enabled = Me.CB_PNPL.Value
 End Sub
 Private Sub CB_MRDP_Click()
-    BB_DailyPlan_Viewer.MRB_DP = CB_MRDP.value
+    BB_DailyPlan_Viewer.MRB_DP = CB_MRDP.Value
 End Sub
 Private Sub CB_MRPL_Click()
-    BC_PartListItem_Viewer.MRB_PL = CB_MRPL.value
+    BC_PartListItem_Viewer.MRB_PL = CB_MRPL.Value
 End Sub
 Private Sub CB_PL_Ddays_Click()
-    Me.PL_Ddays_Counter.Enabled = Me.CB_PL_Ddays.value
-    Me.PL_Ddays_TB.Enabled = Me.CB_PL_Ddays.value
+    Me.PL_Ddays_Counter.Enabled = Me.CB_PL_Ddays.Value
+    Me.PL_Ddays_TB.Enabled = Me.CB_PL_Ddays.Value
 End Sub
 
 Private Sub CB_KO_BOM_Click()
-    OriginalKiller.BOM = CB_KO_BOM.value
+    OriginalKiller.BOM = CB_KO_BOM.Value
 End Sub
 
 Private Sub CB_KO_DP_Click()
-    OriginalKiller.DailyPlan = CB_KO_DP.value
+    OriginalKiller.DailyPlan = CB_KO_DP.Value
 End Sub
 Private Sub CB_KO_PL_Click()
-    OriginalKiller.PartList = CB_KO_PL.value
+    OriginalKiller.PartList = CB_KO_PL.Value
 End Sub
 Private Sub CB_Lvl1_BOM_Click()
-    If CB_Lvl1_BOM.value Then
+    If CB_Lvl1_BOM.Value Then
         BOM_Level.Add "0"
         BOM_Level.Add ".1"
     Else
@@ -307,7 +307,7 @@ Private Sub CB_Lvl1_BOM_Click()
     End If
 End Sub
 Private Sub CB_Lvl2_BOM_Click()
-    If CB_Lvl2_BOM.value Then
+    If CB_Lvl2_BOM.Value Then
         BOM_Level.Add "..2"
     Else
         For ii = BOM_Level.Count To 1 Step -1
@@ -316,7 +316,7 @@ Private Sub CB_Lvl2_BOM_Click()
     End If
 End Sub
 Private Sub CB_Lvl3_BOM_Click()
-    If CB_Lvl3_BOM.value Then
+    If CB_Lvl3_BOM.Value Then
         BOM_Level.Add "...3"
     Else
         For ii = BOM_Level.Count To 1 Step -1
@@ -325,7 +325,7 @@ Private Sub CB_Lvl3_BOM_Click()
     End If
 End Sub
 Private Sub CB_LvlS_BOM_Click()
-    If CB_LvlS_BOM.value Then
+    If CB_LvlS_BOM.Value Then
         BOM_Level.Add "*S*"
     Else
         For ii = BOM_Level.Count To 1 Step -1
@@ -334,22 +334,22 @@ Private Sub CB_LvlS_BOM_Click()
     End If
 End Sub
 Private Sub CB_LvlAll_BOM_Click()
-    If CB_LvlAll_BOM.value Then
+    If CB_LvlAll_BOM.Value Then
 '전처리 PrintNow 값 살려두기
-        BOMLevelCheckBox(1) = CB_Lvl1_BOM.value
-        BOMLevelCheckBox(2) = CB_Lvl2_BOM.value
-        BOMLevelCheckBox(3) = CB_Lvl3_BOM.value
-        BOMLevelCheckBox(4) = CB_LvlS_BOM.value
+        BOMLevelCheckBox(1) = CB_Lvl1_BOM.Value
+        BOMLevelCheckBox(2) = CB_Lvl2_BOM.Value
+        BOMLevelCheckBox(3) = CB_Lvl3_BOM.Value
+        BOMLevelCheckBox(4) = CB_LvlS_BOM.Value
 ' 전체 True 설정
-        CB_Lvl1_BOM.value = CB_LvlAll_BOM.value
-        CB_Lvl2_BOM.value = CB_LvlAll_BOM.value
-        CB_Lvl3_BOM.value = CB_LvlAll_BOM.value
-        CB_LvlS_BOM.value = CB_LvlAll_BOM.value
+        CB_Lvl1_BOM.Value = CB_LvlAll_BOM.Value
+        CB_Lvl2_BOM.Value = CB_LvlAll_BOM.Value
+        CB_Lvl3_BOM.Value = CB_LvlAll_BOM.Value
+        CB_LvlS_BOM.Value = CB_LvlAll_BOM.Value
 ' 잠금설정
-        CB_Lvl1_BOM.Enabled = Not CB_LvlAll_BOM.value
-        CB_Lvl2_BOM.Enabled = Not CB_LvlAll_BOM.value
-        CB_Lvl3_BOM.Enabled = Not CB_LvlAll_BOM.value
-        CB_LvlS_BOM.Enabled = Not CB_LvlAll_BOM.value
+        CB_Lvl1_BOM.Enabled = Not CB_LvlAll_BOM.Value
+        CB_Lvl2_BOM.Enabled = Not CB_LvlAll_BOM.Value
+        CB_Lvl3_BOM.Enabled = Not CB_LvlAll_BOM.Value
+        CB_LvlS_BOM.Enabled = Not CB_LvlAll_BOM.Value
 ' BOM_Level 컬렉션 초기화
         For ii = BOM_Level.Count To 1 Step -1
             BOM_Level.Remove ii
@@ -366,27 +366,27 @@ Private Sub CB_LvlAll_BOM_Click()
         BOM_Level.Add "......6"
     Else
 'PrintNow값 반환
-        CB_Lvl1_BOM.value = BOMLevelCheckBox(1)
-        CB_Lvl2_BOM.value = BOMLevelCheckBox(2)
-        CB_Lvl3_BOM.value = BOMLevelCheckBox(3)
-        CB_LvlS_BOM.value = BOMLevelCheckBox(4)
+        CB_Lvl1_BOM.Value = BOMLevelCheckBox(1)
+        CB_Lvl2_BOM.Value = BOMLevelCheckBox(2)
+        CB_Lvl3_BOM.Value = BOMLevelCheckBox(3)
+        CB_LvlS_BOM.Value = BOMLevelCheckBox(4)
 ' 잠금설정
-        CB_Lvl1_BOM.Enabled = Not CB_LvlAll_BOM.value
-        CB_Lvl2_BOM.Enabled = Not CB_LvlAll_BOM.value
-        CB_Lvl3_BOM.Enabled = Not CB_LvlAll_BOM.value
-        CB_LvlS_BOM.Enabled = Not CB_LvlAll_BOM.value
+        CB_Lvl1_BOM.Enabled = Not CB_LvlAll_BOM.Value
+        CB_Lvl2_BOM.Enabled = Not CB_LvlAll_BOM.Value
+        CB_Lvl3_BOM.Enabled = Not CB_LvlAll_BOM.Value
+        CB_LvlS_BOM.Enabled = Not CB_LvlAll_BOM.Value
 ' BOM_Level 컬렉션 초기화
         For ii = BOM_Level.Count To 1 Step -1
             BOM_Level.Remove ii
         Next ii
 ' BOM_Level 컬렉션 재설정
-        If CB_Lvl1_BOM.value Then
+        If CB_Lvl1_BOM.Value Then
             BOM_Level.Add ".1"
             BOM_Level.Add "0"
         End If
-        If CB_Lvl2_BOM.value Then BOM_Level.Add "..2"
-        If CB_Lvl3_BOM.value Then BOM_Level.Add "...3"
-        If CB_LvlS_BOM.value Then BOM_Level.Add "*S*"
+        If CB_Lvl2_BOM.Value Then BOM_Level.Add "..2"
+        If CB_Lvl3_BOM.Value Then BOM_Level.Add "...3"
+        If CB_LvlS_BOM.Value Then BOM_Level.Add "*S*"
     End If
 End Sub
 Private Sub AB_ReadBOM_Click()
@@ -490,13 +490,13 @@ End Sub
 Private Sub DP_PN_Copies_TB_Change()
     If Me.DP_PN_Copies_TB.text = "" Or Val(Me.DP_PN_Copies_TB.text) = 0 Then
         Me.DP_PN_Copies_TB.text = 1
-        Me.DP_PN_Counter.value = 1
+        Me.DP_PN_Counter.Value = 1
     Else
-        Me.DP_PN_Counter.value = Val(Me.DP_PN_Copies_TB.text)
+        Me.DP_PN_Counter.Value = Val(Me.DP_PN_Copies_TB.text)
     End If
 End Sub
 Private Sub DP_PN_Counter_Change()
-    Me.DP_PN_Copies_TB.text = Me.DP_PN_Counter.value
+    Me.DP_PN_Copies_TB.text = Me.DP_PN_Counter.Value
 End Sub
 
 Private Sub PL_PN_Copies_TB_KeyPress(ByVal KeyAscii As MSForms.ReturnInteger)
@@ -508,13 +508,13 @@ End Sub
 Private Sub PL_PN_Copies_TB_Change()
     If Me.PL_PN_Copies_TB.text = "" Or Val(Me.PL_PN_Copies_TB.text) = 0 Then
         Me.PL_PN_Copies_TB.text = 1
-        Me.PL_PN_Counter.value = 1
+        Me.PL_PN_Counter.Value = 1
     Else
-        Me.PL_PN_Counter.value = Val(Me.PL_PN_Copies_TB.text)
+        Me.PL_PN_Counter.Value = Val(Me.PL_PN_Copies_TB.text)
     End If
 End Sub
 Private Sub PL_PN_Counter_Change()
-    Me.PL_PN_Copies_TB.text = Me.PL_PN_Counter.value
+    Me.PL_PN_Copies_TB.text = Me.PL_PN_Counter.Value
 End Sub
 
 Private Sub PL_Ddays_TB_KeyPress(ByVal KeyAscii As MSForms.ReturnInteger)
@@ -526,15 +526,15 @@ End Sub
 Private Sub PL_Ddays_TB_Change()
     If Me.PL_Ddays_TB.text = "" Or Val(Me.PL_Ddays_TB.text) = 0 Then
         Me.PL_Ddays_TB.text = 1
-        Me.PL_Ddays_Counter.value = 1
+        Me.PL_Ddays_Counter.Value = 1
     ElseIf Me.PL_Ddays_TB.text > Me.PL_Ddays_Counter.Max Then
         Me.PL_Ddays_TB.text = Me.PL_Ddays_Counter.Max
     Else
-        Me.PL_Ddays_Counter.value = Val(Me.PL_Ddays_TB.text)
+        Me.PL_Ddays_Counter.Value = Val(Me.PL_Ddays_TB.text)
     End If
 End Sub
 Private Sub PL_Ddays_Counter_Change()
-    Me.PL_Ddays_TB.text = Me.PL_Ddays_Counter.value
+    Me.PL_Ddays_TB.text = Me.PL_Ddays_Counter.Value
 End Sub
 Public Sub UpdateProgressBar(ProgressBar As MSComctlLib.ProgressBar, _
                                         ByRef Index As Single, _
@@ -543,7 +543,7 @@ Public Sub UpdateProgressBar(ProgressBar As MSComctlLib.ProgressBar, _
     With ProgressBar
         .Min = vMin
         .Max = vMax
-        .value = Index
+        .Value = Index
     End With
 End Sub
 
@@ -552,5 +552,5 @@ Public Property Get itemLevel() As Collection
 End Property
 
 Private Sub MultiPage_FeederChecker_Change()
-    If MultiPage_FeederChecker.value = 0 Then D_ListView_Feeder_Updater
+    If MultiPage_FeederChecker.Value = 0 Then D_ListView_Feeder_Updater
 End Sub

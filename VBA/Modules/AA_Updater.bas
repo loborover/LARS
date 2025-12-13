@@ -136,7 +136,7 @@ Sub ForceUpdateMacro()
     
     ' Setting 확인
     Set ws = ThisWorkbook.Worksheets("Setting")
-    If ("Dev" = ws.Cells.Find(What:="Develop", lookAt:=xlWhole, MatchCase:=True).Offset(0, 1).value) Then
+    If ("Dev" = ws.Cells.Find(What:="Develop", lookAt:=xlWhole, MatchCase:=True).Offset(0, 1).Value) Then
         #If Not isDev Then
             MsgBox "개발 모드이므로 업데이트 진행 제한", vbInformation, "개발여부 확인"
         #End If
@@ -151,7 +151,7 @@ Sub ForceUpdateMacro()
     fileUrl = "http://mod.lge.com/hub/seongsu1.lee/excelmacroupdater/-/raw/main/AutoReport.xlsb"
     
     ' 현재 사용 중인 버전 (Setting Worksheet의 Version 행을 찾아 값 열의 값을 참조함)
-    localVersion = VersionCell.Offset(0, 1).value
+    localVersion = VersionCell.Offset(0, 1).Value
     
     ' 최신 버전 확인
     latestVersion = GetWebText(versionUrl)

@@ -204,7 +204,7 @@ Public Function fCCNEC(ByVal TargetRange As Range) As Long
     foundValue = False
     
     For Each cell In TargetRange
-        If Not IsEmpty(cell.value) Then
+        If Not IsEmpty(cell.Value) Then
             If Not foundValue Then
                 foundValue = True ' 최초의 값 있는 셀을 찾음
             End If
@@ -252,10 +252,10 @@ Public Function ForLining(ByRef Target As Range, Optional Division As RorC = Row
 End Function
 
 ' Utillity CFAW_PDF
-Public Function CheckFileAlreadyWritten_PDF(ByRef Document_Name As String, dt As DocumentTypes) As String
+Public Function CheckFileAlreadyWritten_PDF(ByRef Document_Name As String, DT As DocumentTypes) As String
     Dim Document_Path As String, DTs As String
     
-    Select Case dt
+    Select Case DT
         Case -11 ' BOM
             DTs = "BOM"
             Document_Name = Replace(Document_Name, ".", "_") & ".pdf"
@@ -286,14 +286,14 @@ Public Sub SelfMerge(ByRef MergeTarget As Range)
     For r = 1 To MergeTarget.Rows.Count
         For c = 1 To MergeTarget.Columns.Count
             Set cell = MergeTarget.Cells(r, c)
-            If Trim(cell.value) <> "" Then ValueList = ValueList & cell.value & vbLf
+            If Trim(cell.Value) <> "" Then ValueList = ValueList & cell.Value & vbLf
         Next c
     Next r
     
     ' 병합 및 텍스트 삽입
     With MergeTarget
         .Merge
-        .value = ValueList
+        .Value = ValueList
         .HorizontalAlignment = xlCenter
         .VerticalAlignment = xlCenter
     End With
@@ -337,7 +337,7 @@ Public Sub DeleteDuplicateRowsInColumn(ByVal targetCol As Long, ByRef startRow A
     ' 아래에서 위로 순회하면서 중복 검사 및 삭제
     For i = EndRow To startRow Step -1
         ' 지정된 컬럼의 값을 가져와 공백 제거
-        cellVal = Trim$(tgtWs.Cells(i, targetCol).value)
+        cellVal = Trim$(tgtWs.Cells(i, targetCol).Value)
 
         ' 빈 문자열이 아닐 때만 검사
         If Len(cellVal) > 0 Then
@@ -398,33 +398,33 @@ End Function
 '   예) "DailyPlan 5월-28일_C11.xlsx"
 '---------------------------
 Private Function ParseMDToken(ByVal fullPath As String, Optional ByVal BaseYear As Long = 0) As MDToken
-    Dim t As MDToken, nm As String
-    Dim ms As String, ds As String, ln As String, dt As Date, Y As Long
+    Dim T As MDToken, nm As String
+    Dim ms As String, ds As String, ln As String, DT As Date, Y As Long
    
     nm = mid$(fullPath, InStrRev(fullPath, "\") + 1)
     nm = Replace$(nm, ".xlsx", "", , , vbTextCompare)
-    t.fullPath = fullPath
-    t.fileName = nm
+    T.fullPath = fullPath
+    T.fileName = nm
    
     ' 문서타입
     If InStr(1, nm, "DailyPlan", vbTextCompare) > 0 Then
-        t.DocType = dc_DailyPlan
+        T.DocType = dc_DailyPlan
     ElseIf InStr(1, nm, "PartList", vbTextCompare) > 0 Then
-        t.DocType = dc_PartList
+        T.DocType = dc_PartList
     Else
-        t.DocType = 0 ' 알 수 없음
+        T.DocType = 0 ' 알 수 없음
     End If
    
     ' 월/일   (예: "5월-28일" / "09월-05일")
     ms = RxFirst("([0-9]{1,2})(?=월)", nm)
     ds = RxFirst("([0-9]{1,2})(?=일)", nm)
    
-    If Len(ms) > 0 Then t.Month = CInt(ms)
-    If Len(ds) > 0 Then t.Day = CInt(ds)
+    If Len(ms) > 0 Then T.Month = CInt(ms)
+    If Len(ds) > 0 Then T.Day = CInt(ds)
    
     ' 라인   (예: "_C11" , "C11")
     ln = RxFirst("C([0-9]{1,3})", nm)
-    If Len(ln) > 0 Then t.LineAddr = "C" & ln
+    If Len(ln) > 0 Then T.LineAddr = "C" & ln
    
     ' 연도
     If BaseYear = 0 Then
@@ -433,18 +433,18 @@ Private Function ParseMDToken(ByVal fullPath As String, Optional ByVal BaseYear 
         Y = BaseYear
     End If
    
-    If t.Month >= 1 And t.Day >= 1 Then
+    If T.Month >= 1 And T.Day >= 1 Then
         On Error Resume Next
-        dt = DateSerial(Y, t.Month, t.Day)
+        DT = DateSerial(Y, T.Month, T.Day)
         On Error GoTo 0
-        If dt > 0 Then
-            t.DateValue = dt
-            t.WeekdayVb = Weekday(dt, vbSunday)
-            t.WeekdayK = WeekdayKorean(dt)
+        If DT > 0 Then
+            T.DateValue = DT
+            T.WeekdayVb = Weekday(DT, vbSunday)
+            T.WeekdayK = WeekdayKorean(DT)
         End If
     End If
    
-    ParseMDToken = t
+    ParseMDToken = T
 End Function
 
 '---------------------------------------------
@@ -460,7 +460,7 @@ Public Sub FillListView_ByFilter(ByRef files As Collection, ByRef lv As ListView
         Optional ByVal BaseYear As Long = 0)
    
     Dim i As Long
-    Dim t As MDToken
+    Dim T As MDToken
     Dim it As listItem
    
     With lv
@@ -476,22 +476,22 @@ Public Sub FillListView_ByFilter(ByRef files As Collection, ByRef lv As ListView
     End With
    
     For i = 1 To files.Count
-        t = ParseMDToken(CStr(files(i)), BaseYear)
-        If wantDocType <> 0 Then If t.DocType <> wantDocType Then GoTo CONTINUE_NEXT ' 타입 필터
-        If Len(wantLine) > 0 Then If StrComp(t.LineAddr, wantLine, vbTextCompare) <> 0 Then GoTo CONTINUE_NEXT ' 라인 필터
-        If wantWeekday <> 0 Then If t.WeekdayVb <> wantWeekday Then GoTo CONTINUE_NEXT ' 요일 필터
+        T = ParseMDToken(CStr(files(i)), BaseYear)
+        If wantDocType <> 0 Then If T.DocType <> wantDocType Then GoTo CONTINUE_NEXT ' 타입 필터
+        If Len(wantLine) > 0 Then If StrComp(T.LineAddr, wantLine, vbTextCompare) <> 0 Then GoTo CONTINUE_NEXT ' 라인 필터
+        If wantWeekday <> 0 Then If T.WeekdayVb <> wantWeekday Then GoTo CONTINUE_NEXT ' 요일 필터
        
         ' ListView 입력
-        If t.DateValue > 0 Then
-            Set it = lv.ListItems.Add(, , Format$(t.DateValue, "m월-d일"))
+        If T.DateValue > 0 Then
+            Set it = lv.ListItems.Add(, , Format$(T.DateValue, "m월-d일"))
         Else
             Set it = lv.ListItems.Add(, , "미상")
         End If
        
-        it.SubItems(1) = t.WeekdayK
-        it.SubItems(2) = IIf(Len(t.LineAddr) > 0, t.LineAddr, "-")
-        it.SubItems(3) = IIf(t.DocType = dc_DailyPlan, "DailyPlan", IIf(t.DocType = dc_PartList, "PartList", "-"))
-        it.SubItems(4) = t.fullPath
+        it.SubItems(1) = T.WeekdayK
+        it.SubItems(2) = IIf(Len(T.LineAddr) > 0, T.LineAddr, "-")
+        it.SubItems(3) = IIf(T.DocType = dc_DailyPlan, "DailyPlan", IIf(T.DocType = dc_PartList, "PartList", "-"))
+        it.SubItems(4) = T.fullPath
         it.Checked = True
        
 CONTINUE_NEXT:
@@ -531,7 +531,7 @@ End Function
 '--- 날짜/라인 키 빌드: 파일명 예) "DailyPlan 5월-28일_C11.xlsx"
 Private Function BuildKeyFromPath(ByVal fullPath As String, Optional ByVal BaseYear As Long = 0) As String
     Dim nm As String, m As String, d As String, ln As String
-    Dim Y As Long, dt As Date
+    Dim Y As Long, DT As Date
    
     nm = mid$(fullPath, InStrRev(fullPath, "\") + 1)
     nm = Replace$(nm, ".xlsx", "", , , vbTextCompare)
@@ -547,15 +547,15 @@ Private Function BuildKeyFromPath(ByVal fullPath As String, Optional ByVal BaseY
    
     If BaseYear = 0 Then Y = Year(Date) Else Y = BaseYear
     On Error Resume Next
-    dt = DateSerial(Y, CLng(m), CLng(d))
+    DT = DateSerial(Y, CLng(m), CLng(d))
     On Error GoTo 0
-    If dt = 0 Then
+    If DT = 0 Then
         BuildKeyFromPath = vbNullString
         Exit Function
     End If
    
     ' 키 정규화: yyyy-mm-dd|C##
-    BuildKeyFromPath = Format$(dt, "yyyy-mm-dd") & "|" & "C" & CStr(CLng(ln))
+    BuildKeyFromPath = Format$(DT, "yyyy-mm-dd") & "|" & "C" & CStr(CLng(ln))
 End Function
 
 '--- 교집합을 outLV에 채우기 (입력: 파일 경로 컬렉션 2개)

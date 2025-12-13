@@ -6,6 +6,7 @@ Private Enum CollectorTypes
     Duplicate = -6
 End Enum
 
+Public 예외처리 As Boolean
 Public MRB_PL As Boolean ' Manual_Reporting_Bool_PartList
 
 Private BoW As Single ' Black or White
@@ -65,7 +66,7 @@ Public Sub Print_PartList(Optional Handle As Boolean)
     Dim ws As Worksheet
     
     BoW = UI.Brightness
-    If UI.CB_PL_Ddays.value Then DayCount = UI.PL_Ddays_TB.text Else DayCount = 4
+    If UI.CB_PL_Ddays.Value Then DayCount = UI.PL_Ddays_TB.text Else DayCount = 4
     Set Brush = New Painter
     
     PaperCopies = CInt(UI.PL_PN_Copies_TB.text)
@@ -165,7 +166,7 @@ Private Sub AR_1_EssentialDataExtraction() ' AutoReport 초반 설정 / 필수 데이터 
     For i = vStart To vEnd
         If CritCol(2) >= DayCount Or vEnd = i Then '<- N위치
             vStart = i: Exit For
-        ElseIf ws.Cells(i, CritCol(1)).value <> ws.Cells(i + 1, CritCol(1)).value Then
+        ElseIf ws.Cells(i, CritCol(1)).Value <> ws.Cells(i + 1, CritCol(1)).Value Then
             CritCol(2) = CritCol(2) + 1
         End If
     Next i
@@ -174,13 +175,13 @@ Private Sub AR_1_EssentialDataExtraction() ' AutoReport 초반 설정 / 필수 데이터 
     
     CritCol(1) = ws.Rows(1).Find("잔량", lookAt:=xlWhole, LookIn:=xlValues).Column
     For i = CritCol(1) To 1 Step -1 ' 불필요한 열 삭제처리
-        If Not IsInCollection(ws.Cells(1, i).value, vCFR) Then ws.Columns(i).Delete
+        If Not IsInCollection(ws.Cells(1, i).Value, vCFR) Then ws.Columns(i).Delete
     Next i
     CritCol(1) = ws.Rows(1).Find("모델", lookAt:=xlWhole, LookIn:=xlValues).Column
     
     For i = vStart To vEnd ' 제목 외 데이터 행 시작부터 끝까지 데이터 처리
         Set vCell = ws.Cells(i, CritCol(1))
-        vCell.value = vCell.value & "." & vCell.Offset(0, 1).value ' 모델, Suffix 열 병합
+        vCell.Value = vCell.Value & "." & vCell.Offset(0, 1).Value ' 모델, Suffix 열 병합
     Next i
     ws.Columns(vCell.Offset(0, 1).Column).Delete ' 불필요한 열 삭제처리
     CritCol(1) = ws.Rows(1).Find("계획 수량", lookAt:=xlWhole, LookIn:=xlValues).Offset(0, 1).Column
@@ -188,12 +189,12 @@ Private Sub AR_1_EssentialDataExtraction() ' AutoReport 초반 설정 / 필수 데이터 
     PartCombine ws.Range(ws.Cells(1, CritCol(1)), ws.Cells(1, CritCol(2))), vStart, vEnd ' 단일 파트명으로 병합처리
     DeleteDuplicateRowsInColumn (CritCol(1) - 4), vStart, vEnd, ws ' WorkOrder 중복 행 제거
     For Each vCell In ws.Range(ws.Cells(1, CritCol(1)), ws.Cells(1, CritCol(2))) ' 제목 열 수정
-        vCell.value = Replace(ExtractBracketValue(vCell.value), "_", vbLf)
+        vCell.Value = Replace(ExtractBracketValue(vCell.Value), "_", vbLf)
     Next vCell
     Replacing_Parts ws.Range(ws.Cells(vStart, CritCol(1)), ws.Cells(vEnd, CritCol(2)))
-    ws.Cells(1, 5).value = "수량" ' 제목열 정리
+    ws.Cells(1, 5).Value = "수량" ' 제목열 정리
     ws.Columns(6).Insert: ws.Columns(6).Insert
-    ws.Cells(1, 6).value = wLine & "-Line": ws.Cells(1, 6).Resize(1, 2).Merge
+    ws.Cells(1, 6).Value = wLine & "-Line": ws.Cells(1, 6).Resize(1, 2).Merge
     ws.Name = "PartList_Total"
     'Set CopiedArea = ws.Range(ws.Cells(1, 1), ws.Cells(vEnd, 7)) ' 카피드에리어 설정단, 동적 추적으로 바꿀 것.
     If PL_Processing_WB.Worksheets.Count > 1 Then PL_Processing_WB.Worksheets(2).Delete
@@ -226,7 +227,7 @@ Private Sub Interior_Set_PartList(Optional ws As Worksheet)
     
     For Each xCell In Target
         With xCell
-            If .value = "" Then .Interior.Color = RGB(BoW, BoW, BoW) ' Brightness
+            If .Value = "" Then .Interior.Color = RGB(BoW, BoW, BoW) ' Brightness
             .HorizontalAlignment = xlLeft
             .VerticalAlignment = xlCenter
         End With
@@ -285,13 +286,13 @@ Private Function GetPartListWhen(PartListDirectiory As String, Optional ByRef DD
     DDC = -1 ' 마지막 값 선보정
     SC = cell.Row + 1: EC = ws.Cells(ws.Rows.Count, cell.Column).End(xlUp).Row
     For i = SC To EC
-        If ws.Cells(i, cell.Column).value <> ws.Cells(i + 1, cell.Column).value Then DDC = DDC + 1
+        If ws.Cells(i, cell.Column).Value <> ws.Cells(i + 1, cell.Column).Value Then DDC = DDC + 1
     Next i
     UI.PL_Ddays_Counter.Max = DDC
-    Title = cell.Offset(1, 0).value ' YYYYMMDD 포맷된 날짜값 인계
+    Title = cell.Offset(1, 0).Value ' YYYYMMDD 포맷된 날짜값 인계
     Title = mid(Title, 5, 2) & "월-" & mid(Title, 7, 2) & "일"
     GetPartListWhen = Title ' 날짜형 제목값 인계
-    wLine = ws.Rows(1).Find(What:="Line", lookAt:=xlWhole, LookIn:=xlValues).Offset(1, 0).value ' 라인 값 추출
+    wLine = ws.Rows(1).Find(What:="Line", lookAt:=xlWhole, LookIn:=xlValues).Offset(1, 0).Value ' 라인 값 추출
     SC = ws.Rows(1).Find(What:="잔량", lookAt:=xlWhole, LookIn:=xlValues).Offset(0, 1).Column + 1
     EC = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
     Set cell = ws.Range(ws.Cells(1, SC), ws.Cells(1, EC))
@@ -314,7 +315,7 @@ Private Function PartCollector(ByRef PartNamesArea As Range, _
     ' 부품명 수집 반복문
     On Error Resume Next
     For Each cell In PartNamesArea
-        BracketVal = ExtractBracketValue(cell.value)
+        BracketVal = ExtractBracketValue(cell.Value)
             For i = 1 To UniqueParts.Count
                 If BracketVal = UniqueParts(i) Then Duplicated.Add BracketVal, BracketVal ' 중복되는 부품명 수집
             Next i
@@ -342,8 +343,8 @@ Private Sub Replacing_Parts(ByRef RangeTarget As Range) ' RpP
    
     ' 대상 셀을 하나씩 순회
     For Each vCell In RangeTarget
-        If Len(vCell.value) > 0 Then ' 빈 셀 무시
-            Target = vCell.value ' 원본 텍스트 추출
+        If Len(vCell.Value) > 0 Then ' 빈 셀 무시
+            Target = vCell.Value ' 원본 텍스트 추출
            
             ' 제거 대상 문자열 치환
             For i = LBound(removeList) To UBound(removeList)
@@ -390,28 +391,29 @@ Private Sub Replacing_Parts(ByRef RangeTarget As Range) ' RpP
             Loop Until End_P >= Len(Target) ' 전체 문자열 끝까지 반복
             
             ' 예외처리
-            If ws.Cells(1, vCell.Column).value = "Burner" Then
-                Select Case Target
-                Case Is = "[기미] 4102/4202/4402/4502" ' Signature
-                    Target = "Oval, Best"
-                Case Is = "[기미] 4102/4202/4402/4502 [SABAF S.P.A.] 6904/7302" ' Best
-                    Target = "Oval, Best, Sabaf"
-                Case Is = "[기미] 4102/4202/4402/4502(2)" ' Better
-                    Target = "Oval, Better"
-                Case Is = "[] 8606/8706 [기미] 7906/8506" ' Old Gas Model
-                    Target = "(Old) Better"
-                Case Else ' 에러처리
-                    Target = "Matching Error Plz Chk Sub RpP"
-                End Select
-            Else
-                ' 일반처리 / 최종 문자열 재구성
-                Target = ""
-                For i = 1 To vVender.Count
-                    Target = Target & " [" & vVender(i) & "] " & vParts(vVender(i))
-                Next i
-            End If
-
-            vCell.value = Trim(Target) ' 결과를 셀에 기록
+            'If 예외처리 Then
+                If ws.Cells(1, vCell.Column).Value = "Burner" Then
+                    Select Case Target
+                    Case Is = "[기미] 4102/4202/4402/4502" ' Signature
+                        Target = "[피킹] Oval/Best"
+                    Case Is = "[기미] 4102/4202/4402/4502 [SABAF S.P.A.] 6904/7302" ' Best
+                        Target = "[피킹] Oval/Best/Sabaf"
+                    Case Is = "[기미] 4102/4202/4402/4502(2)" ' Better
+                        Target = "[피킹] Oval/Better"
+                    Case Is = "[] 8606/8706 [기미] 7906/8506" ' Old Gas Model
+                        Target = "[Old] Better"
+                    Case Else ' 에러처리
+                        Target = "Matching Error Plz Chk Sub RpP"
+                    End Select
+                Else
+                    ' 일반처리 / 최종 문자열 재구성
+                    Target = ""
+                    For i = 1 To vVender.Count
+                        Target = Target & " [" & vVender(i) & "] " & vParts(vVender(i))
+                    Next i
+                End If
+            'End If
+            vCell.Value = Trim(Target) ' 결과를 셀에 기록
         End If
     Next vCell
 End Sub
@@ -435,7 +437,7 @@ Private Sub PartCombine(ByRef PartNamesArea As Range, ByVal rStart As Long, ByVa
     For i = 1 To Duplicated.Count
         Set UniqueParts = New Collection
         For Each cell In PartNamesArea
-            BracketVal = ExtractBracketValue(cell.value)
+            BracketVal = ExtractBracketValue(cell.Value)
             If BracketVal = Duplicated(i) Then UniqueParts.Add cell ' 중복된 부품 셀 선별
         Next cell
         For CBTr = rStart To rEnd ' 파트별 병합
@@ -461,14 +463,14 @@ Private Sub CCBC(ByRef Target As Collection, Optional ByVal TargetRow As Long = 
     
     If CER.Count < 1 Then Exit Sub
     For i = 1 To CER.Count ' 필요 정보 취합
-        If Trim(CER(i).value) <> "" Then ValueList = ValueList & CER(i).value & vbLf
-        If i > 1 Then CER(i).value = "" ' 취합 후 잉여셀의 값 삭제
+        If Trim(CER(i).Value) <> "" Then ValueList = ValueList & CER(i).Value & vbLf
+        If i > 1 Then CER(i).Value = "" ' 취합 후 잉여셀의 값 삭제
     Next i
     If Right$(ValueList, 1) = vbLf Then ValueList = Left$(ValueList, Len(ValueList) - 1)
     
     ' 중앙정렬 및 텍스트 삽입
     With CER(1)
-        .value = ValueList
+        .Value = ValueList
         .HorizontalAlignment = xlCenter
         .VerticalAlignment = xlCenter
     End With
@@ -488,7 +490,7 @@ Private Sub MarkingUP_items(ByRef Target As D_Maps)
                 Set CrrR = .Sub_Lot(i).Start_R.Offset(0, tCol - sCol + 5)
                 If Not .Count(SubG) = i Then
                     Set NxtR = .Sub_Lot(i + 1).Start_R.Offset(0, tCol - sCol + 5)
-                    If CrrR.value <> NxtR.value Then eRow = CrrR.Row
+                    If CrrR.Value <> NxtR.Value Then eRow = CrrR.Row
                 Else
                     eRow = CrrR.Row
                 End If

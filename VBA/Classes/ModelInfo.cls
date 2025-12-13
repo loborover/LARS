@@ -46,14 +46,14 @@ Private vPivot(0 To 1) As Long
 Public Property Get WorkOrder() As String
     WorkOrder = vWorkOrder
 End Property
-Public Property Let WorkOrder(value As String)
-    vWorkOrder = value
+Public Property Let WorkOrder(Value As String)
+    vWorkOrder = Value
 End Property
 Public Property Get FullName() As String
     FullName = vFullName
 End Property
-Public Property Let FullName(value As String)
-    If vFullName <> value Then ParseModelinfo value
+Public Property Let FullName(Value As String)
+    If vFullName <> Value Then ParseModelinfo Value
 End Property
 Public Property Get Suffix() As String
     Suffix = vSuffix

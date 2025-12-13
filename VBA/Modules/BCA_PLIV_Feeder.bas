@@ -30,7 +30,7 @@ Public Sub SortColumnByFeeder(ByRef Feeder As Collection)
     
     For Each Chk In itemRange
         ' Feeder 컬렉션내의 항목인지 검사 후 목록 중 없을 경우 해당 열을 숨김처리 하는 코드
-        ws.Columns(Chk.Column).Hidden = Not IsInCollection(Chk.value, Feeder)
+        ws.Columns(Chk.Column).Hidden = Not IsInCollection(Chk.Value, Feeder)
     Next Chk
 End Sub
 
@@ -63,22 +63,22 @@ End Sub
 
 Public Sub A_Delete_Feeder()
     ' 선택된 값과 콤보 리스트 중 중복되는 인덱스를 찾아 해당 피더를 삭제하는 코드
-    If UI.CbBx_Feeder.ListCount = 0 Then UI.CbBx_Feeder.value = "": Exit Sub
+    If UI.CbBx_Feeder.ListCount = 0 Then UI.CbBx_Feeder.Value = "": Exit Sub
     Dim i As Long
-    Dim Target As String: Target = UI.CbBx_Feeder.value
+    Dim Target As String: Target = UI.CbBx_Feeder.Value
     Feeders.Remove Target
-    UI.CbBx_Feeder.value = ""
+    UI.CbBx_Feeder.Value = ""
     For i = 0 To UI.CbBx_Feeder.ListCount - 1
         If UI.CbBx_Feeder.List(i) = Target Then UI.CbBx_Feeder.RemoveItem i: Exit Sub
     Next i
 End Sub
 Public Sub A_New_Feeder()
     ' 콤보박스 리스트와 중복되지 않게끔 피더 이름을 추가하고 피더유닛을 생성함
-    If UI.CbBx_Feeder.value = "" Then Exit Sub
+    If UI.CbBx_Feeder.Value = "" Then Exit Sub
     Dim NewFeeder As New FeederUnit
-    If Not FOTFC(UI.CbBx_Feeder.value, UI.CbBx_Feeder) Then
-        UI.CbBx_Feeder.Additem UI.CbBx_Feeder.value
-        NewFeeder.Name = UI.CbBx_Feeder.value
+    If Not FOTFC(UI.CbBx_Feeder.Value, UI.CbBx_Feeder) Then
+        UI.CbBx_Feeder.Additem UI.CbBx_Feeder.Value
+        NewFeeder.Name = UI.CbBx_Feeder.Value
         Feeders.Add NewFeeder, NewFeeder.Name
     Else
         MsgBox "중복된 Feeder 추가", vbCritical

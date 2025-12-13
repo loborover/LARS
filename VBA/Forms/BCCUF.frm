@@ -17,9 +17,9 @@ Private Const Color_Inversion_Criterion As Long = 204
 Private pvRGB(1 To 2) As New ObjPivotAxis
 Private Sub Userform_Initialize()
     
-    BCR_Slidebar.value = 210
-    BCG_Slidebar.value = 210
-    BCB_Slidebar.value = 210
+    BCR_Slidebar.Value = 210
+    BCG_Slidebar.Value = 210
+    BCB_Slidebar.Value = 210
 End Sub
 Public Property Get Documents_BackColor() As ObjPivotAxis
     Set Documents_BackColor = pvRGB(2)
@@ -38,7 +38,7 @@ Private Sub Bright_TB_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shif
 
         inputStr = Replace(Bright_TB.text, "%", "")
         If Trim(inputStr) = "" Then Exit Sub
-        If Not isNumeric(inputStr) Then Exit Sub
+        If Not IsNumeric(inputStr) Then Exit Sub
 
         numericVal = CDbl(inputStr)
         If numericVal < 0 Then numericVal = 0
@@ -52,7 +52,7 @@ Private Sub Bright_TB_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shif
         Bright_TB.text = Format(numericVal, "0.0") & "%"
         Application.EnableEvents = True
 
-        Bright_Slidebar.value = scaledVal
+        Bright_Slidebar.Value = scaledVal
         Call Bright_Slidebar_Change
 
         KeyCode = 0 ' 秽 家府 规瘤
@@ -66,7 +66,7 @@ Private Sub BCR_TB_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift A
 
         inputStr = Replace(BCR_TB.text, "%", "")
         If Trim(inputStr) = "" Then Exit Sub
-        If Not isNumeric(inputStr) Then Exit Sub
+        If Not IsNumeric(inputStr) Then Exit Sub
 
         numericVal = CDbl(inputStr)
         If numericVal < 0 Then numericVal = 0
@@ -80,7 +80,7 @@ Private Sub BCR_TB_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift A
         BCR_TB.text = Format(numericVal, "0.0") & "%"
         Application.EnableEvents = True
 
-        BCR_Slidebar.value = scaledVal
+        BCR_Slidebar.Value = scaledVal
         Call BCR_Slidebar_Change
 
         KeyCode = 0 ' 秽 家府 规瘤
@@ -94,7 +94,7 @@ Private Sub BCG_TB_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift A
 
         inputStr = Replace(BCG_TB.text, "%", "")
         If Trim(inputStr) = "" Then Exit Sub
-        If Not isNumeric(inputStr) Then Exit Sub
+        If Not IsNumeric(inputStr) Then Exit Sub
 
         numericVal = CDbl(inputStr)
         If numericVal < 0 Then numericVal = 0
@@ -108,7 +108,7 @@ Private Sub BCG_TB_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift A
         BCG_TB.text = Format(numericVal, "0.0") & "%"
         Application.EnableEvents = True
 
-        BCG_Slidebar.value = scaledVal
+        BCG_Slidebar.Value = scaledVal
         Call BCG_Slidebar_Change
 
         KeyCode = 0 ' 秽 家府 规瘤
@@ -122,7 +122,7 @@ Private Sub BCB_TB_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift A
 
         inputStr = Replace(BCB_TB.text, "%", "")
         If Trim(inputStr) = "" Then Exit Sub
-        If Not isNumeric(inputStr) Then Exit Sub
+        If Not IsNumeric(inputStr) Then Exit Sub
 
         numericVal = CDbl(inputStr)
         If numericVal < 0 Then numericVal = 0
@@ -136,7 +136,7 @@ Private Sub BCB_TB_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift A
         BCB_TB.text = Format(numericVal, "0.0") & "%"
         Application.EnableEvents = True
 
-        BCB_Slidebar.value = scaledVal
+        BCB_Slidebar.Value = scaledVal
         Call BCB_Slidebar_Change
 
         KeyCode = 0 ' 秽 家府 规瘤
@@ -144,16 +144,16 @@ Private Sub BCB_TB_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift A
 End Sub
 
 Private Sub Bright_Slidebar_Change()
-    Me.Bright_TB.text = Format((Bright_Slidebar.value / 255 * 100), "0.0") & "%"
-    Bright_Slidebar.SelLength = Bright_Slidebar.value
-    Brght = Bright_Slidebar.value
+    Me.Bright_TB.text = Format((Bright_Slidebar.Value / 255 * 100), "0.0") & "%"
+    Bright_Slidebar.SelLength = Bright_Slidebar.Value
+    Brght = Bright_Slidebar.Value
     Bright_TB.BackColor = RGB(Brght, Brght, Brght)
     Brght = 255 + (Brght * -1)
     Bright_TB.ForeColor = RGB(Brght, Brght, Brght)
     Update_Colors
 End Sub
 Private Sub BCR_Slidebar_Change()
-    pvRGB(1).X = BCR_Slidebar.value
+    pvRGB(1).X = BCR_Slidebar.Value
     BCR_TB.text = Format((pvRGB(1).X / 255 * 100), "0.0") & "%"
     BCR_TB.BackColor = RGB(pvRGB(1).X, 0, 0)
     BCR_Slidebar.SelLength = pvRGB(1).X
@@ -165,7 +165,7 @@ Private Sub BCR_Slidebar_Change()
     Update_Colors
 End Sub
 Private Sub BCG_Slidebar_Change()
-    pvRGB(1).Y = BCG_Slidebar.value
+    pvRGB(1).Y = BCG_Slidebar.Value
     BCG_TB.text = Format((pvRGB(1).Y / 255 * 100), "0.0") & "%"
     BCG_TB.BackColor = RGB(0, pvRGB(1).Y, 0)
     BCG_Slidebar.SelLength = pvRGB(1).Y
@@ -177,7 +177,7 @@ Private Sub BCG_Slidebar_Change()
     Update_Colors
 End Sub
 Private Sub BCB_Slidebar_Change()
-    pvRGB(1).Z = BCB_Slidebar.value
+    pvRGB(1).Z = BCB_Slidebar.Value
     BCB_TB.text = Format((pvRGB(1).Z / 255 * 100), "0.0") & "%"
     BCB_TB.BackColor = RGB(0, 0, pvRGB(1).Z)
     BCB_Slidebar.SelLength = pvRGB(1).Z

@@ -15,7 +15,7 @@ Public Sub MergeDateTime_Flexible(ByRef ws As Worksheet, _
 
     Dim LastRow As Long, r As Long
     Dim vD As Variant, vT As Variant
-    Dim dt As Date
+    Dim DT As Date
 
     If ws Is Nothing Then Exit Sub
 
@@ -34,8 +34,8 @@ Public Sub MergeDateTime_Flexible(ByRef ws As Worksheet, _
             vT = Empty
         End If
 
-        If TryParseDateTimeFlex(vD, vT, dt) Then
-            ws.Cells(r, targetCol).value = dt ' 값은 Date 직렬값
+        If TryParseDateTimeFlex(vD, vT, DT) Then
+            ws.Cells(r, targetCol).Value = DT ' 값은 Date 직렬값
         Else
             ws.Cells(r, targetCol).ClearContents
         End If
@@ -43,7 +43,7 @@ Public Sub MergeDateTime_Flexible(ByRef ws As Worksheet, _
 
     ' 표시 형식(값은 Date 그대로 유지)
     ws.Range(ws.Cells(startRow, targetCol), ws.Cells(LastRow, targetCol)).NumberFormat = Formatting
-    ws.Cells(startRow - 1, targetCol).value = TargetHeader
+    ws.Cells(startRow - 1, targetCol).Value = TargetHeader
 
 CleanExit:
     Application.EnableEvents = True
@@ -87,7 +87,7 @@ Private Function TryParseDateTimeFlex(ByVal vDate As Variant, ByVal vTime As Var
     If Len(s) = 0 Then Exit Function
 
     ' a) "YYYYMMDD" 단독
-    If Len(s) = 8 And isNumeric(s) Then
+    If Len(s) = 8 And IsNumeric(s) Then
         If TryParseYmd8_ToDate(s, baseDate) Then
             outDT = baseDate ' 시간 00:00
             TryParseDateTimeFlex = True
@@ -119,7 +119,7 @@ Private Function TryParseYmd8_ToDate(ByVal v As Variant, ByRef outDate As Date) 
     TryParseYmd8_ToDate = False
     If IsEmpty(v) Or IsError(v) Then Exit Function
 
-    If isNumeric(v) Then
+    If IsNumeric(v) Then
         n = CLng(v)
         If n <= 0 Then Exit Function
         Y = n \ 10000
@@ -128,7 +128,7 @@ Private Function TryParseYmd8_ToDate(ByVal v As Variant, ByRef outDate As Date) 
     Else
         s = Trim$(CStr(v))
         If Len(s) <> 8 Then Exit Function
-        If Not isNumeric(s) Then Exit Function
+        If Not IsNumeric(s) Then Exit Function
         Y = CLng(Left$(s, 4))
         m = CLng(mid$(s, 5, 2))
         d = CLng(Right$(s, 2))
@@ -152,7 +152,7 @@ Private Function TryParse_Ymd8_And_TimeText(ByVal s As String, ByRef outDT As Da
     If Len(sTrim) < 8 Then Exit Function
 
     ' 앞 8자리가 YYYYMMDD인가?
-    If Not isNumeric(Left$(sTrim, 8)) Then Exit Function
+    If Not IsNumeric(Left$(sTrim, 8)) Then Exit Function
     datePart = Left$(sTrim, 8)
     If Not TryParseYmd8_ToDate(datePart, baseDate) Then Exit Function
 
@@ -207,7 +207,7 @@ Private Function TryGetTimeFraction_Flex(ByVal v As Variant, ByRef outFrac As Do
         outFrac = TimeValue(sNorm)
         If Err.Number = 0 Then TryGetTimeFraction_Flex = True
         On Error GoTo 0
-    ElseIf Len(sNorm) = 6 And isNumeric(sNorm) Then
+    ElseIf Len(sNorm) = 6 And IsNumeric(sNorm) Then
         ' "hhmmss"
         hh = CLng(Left$(sNorm, 2))
         nn = CLng(mid$(sNorm, 3, 2))
@@ -221,17 +221,17 @@ End Function
 
 ' 한국어 오전/오후를 AM/PM으로 치환하고, 불필요한 중복 공백 정리
 Private Function NormalizeKoreanAmPm(ByVal s As String) As String
-    Dim t As String
-    t = s
+    Dim T As String
+    T = s
     ' 변형 케이스 최소화: 앞뒤 공백에 둔감하게
-    t = Replace(t, "오전", "AM")
-    t = Replace(t, "오 후", "PM") ' 혹시 있을 느슨한 표기
-    t = Replace(t, "오후", "PM")
+    T = Replace(T, "오전", "AM")
+    T = Replace(T, "오 후", "PM") ' 혹시 있을 느슨한 표기
+    T = Replace(T, "오후", "PM")
     ' 다중 공백 축소(간단치환)
-    Do While InStr(t, "  ") > 0
-        t = Replace(t, "  ", " ")
+    Do While InStr(T, "  ") > 0
+        T = Replace(T, "  ", " ")
     Loop
-    NormalizeKoreanAmPm = Trim$(t)
+    NormalizeKoreanAmPm = Trim$(T)
 End Function
 
 ' (선택) DateOnly 전용 파서: 숫자형 직렬/텍스트 YYYYMMDD/표준 날짜텍스트를 아우름
@@ -249,7 +249,7 @@ Private Function TryParse_DateOnly(ByVal v As Variant, ByRef outDate As Date) As
     End If
 
     s = Trim$(CStr(v))
-    If Len(s) = 8 And isNumeric(s) Then
+    If Len(s) = 8 And IsNumeric(s) Then
         If TryParseYmd8_ToDate(s, outDate) Then
             TryParse_DateOnly = True
             Exit Function
@@ -367,7 +367,7 @@ Private Function NetDurationSingleDay(ByVal segStart As Date, ByVal segEnd As Da
     NetDurationSingleDay = IIf(dur > 0, dur, 0#)
 End Function
 Public Function isDayDiff(ByRef T1 As Range, ByRef T2 As Range, Optional ByVal MinDays As Long = 1) As Boolean
-    If Not IsDate(T1.value) Or Not IsDate(T2.value) Then isDayDiff = False: Exit Function
-    If Abs(DateValue(CDate(T2.value)) - DateValue(CDate(T1.value))) >= MinDays Then isDayDiff = True
+    If Not IsDate(T1.Value) Or Not IsDate(T2.Value) Then isDayDiff = False: Exit Function
+    If Abs(DateValue(CDate(T2.Value)) - DateValue(CDate(T1.Value))) >= MinDays Then isDayDiff = True
 End Function
 

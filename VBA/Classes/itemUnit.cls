@@ -7,172 +7,205 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
+'==================================================================
+' itemUnit.cls
+'==================================================================
 Option Explicit
+
 '==========================================================
-' Class: itemUnit (간소화 버전)
-' - 아이템 메타정보(Nick/Vender/PartNumber/QTY)
-' - 월/일 기준 카운터: CountPerDay(Key As Variant)
-'   * Key = Date  -> 해당 날짜(MM-DD)에 대응하는 슬롯
-'   * Key = Long  -> 내부 인덱스(1~372 = 12*31) 직접 접근
+' Class: itemUnit
+' 목적:
+'   - 자재 메타정보(Nick/Vender/PartNumber/QTY)
+'   - 날짜별 투입 수량 Count(인덱서 형태)
+'   - ID_Hash 기준으로 병합(MergeCountsFrom)
+'
+' 설계 핵심:
+'   - vDateKey(0) = -1 : placeholder (유효 데이터 아님)
+'   - 유효 날짜 Key는 1..UBound(vDateKey)
 '==========================================================
 
-'----------------------------------------
-' [기본 필드: 메타정보]
-'----------------------------------------
 Private vID As String
-Private vNick As String
-Private vVender As String
-Private vPartNumber As String
+Private vNick As String, vVender As String, vPartNumber As String
 Private vQTY As Long
 
-'----------------------------------------
-' [월일 카운터]
-' - 12개월 * 31일 = 372칸 고정
-' - Index = (Month(d) - 1) * 31 + Day(d)
-'----------------------------------------
-Private mCounts(1 To 372) As Long
+' 날짜별 카운터
+Private vDateKey() As Long
+Private vDateCounts() As Long
+Private mDatesInitialized As Boolean
 
-'==========================================================
-' 1) 메타정보: ID 생성 및 프로퍼티
-'==========================================================
+Private Sub Class_Initialize()
+    mDatesInitialized = False
+End Sub
+
+'------------------------------
+' 메타정보 프로퍼티
+'------------------------------
 Public Property Get ID_Hash() As String
-    ID_Hash = vID          ' 읽기 전용
+    ID_Hash = vID
 End Property
 
 Public Property Get NickName() As String
     NickName = vNick
 End Property
-
 Public Property Let NickName(ByVal Target As String)
-    vNick = Target
-    MakeID
+    vNick = Target: MakeID
 End Property
 
 Public Property Get Vender() As String
     Vender = vVender
 End Property
-
 Public Property Let Vender(ByVal Target As String)
-    vVender = Target
-    MakeID
+    vVender = Target: MakeID
 End Property
 
 Public Property Get PartNumber() As String
     PartNumber = vPartNumber
 End Property
-
 Public Property Let PartNumber(ByVal Target As String)
-    vPartNumber = Target
-    MakeID
+    vPartNumber = Target: MakeID
 End Property
 
 Public Property Get QTY() As Long
     QTY = vQTY
 End Property
-
 Public Property Let QTY(ByVal Target As Long)
     vQTY = Target
 End Property
 
-' ID = Nick_Vender_PartNumber (세 필드가 모두 있을 때만)
 Private Sub MakeID()
     If Len(vNick) > 0 And Len(vVender) > 0 And Len(vPartNumber) > 0 Then
         vID = vVender & "_" & vNick & "_" & vPartNumber
     End If
 End Sub
 
-'==========================================================
-' 2) 수명/상태 관리
-'==========================================================
-Public Sub Clear()
+'------------------------------
+' Count 인덱서
+'   - Count()              : 전체 합계 (읽기 전용)
+'   - Count(Date)          : 해당 날짜 값 읽기
+'   - Count(Date) = value  : 해당 날짜 값 쓰기/생성
+'------------------------------
+Public Property Get Count(Optional ByVal Month_Day As Variant = vbNullString) As Long
+    Dim dKey As Long, idx As Long
+    EnsureDateArraysInitialized
+
+    If Month_Day = vbNullString Then
+        Count = TotalCount
+        Exit Property
+    End If
+
+    dKey = NormalizeDateKey(Month_Day)
+    idx = IndexOfDateKey(dKey)
+
+    If idx >= 0 Then
+        Count = vDateCounts(idx)
+    Else
+        Count = 0
+    End If
+End Property
+
+Public Property Let Count(ByVal Month_Day As Variant, ByVal Value As Long)
+    Dim dKey As Long, idx As Long
+    EnsureDateArraysInitialized
+
+    dKey = NormalizeDateKey(Month_Day)
+    idx = IndexOfDateKey(dKey)
+
+    If idx >= 0 Then
+        vDateCounts(idx) = Value
+    Else
+        idx = AddDateKey(dKey)
+        vDateCounts(idx) = Value
+    End If
+End Property
+
+'------------------------------
+' Merge: 상대 itemUnit의 날짜별 Count를 내 Count에 합산
+'------------------------------
+Public Sub MergeCountsFrom(ByVal OtherItem As itemUnit)
     Dim i As Long
-    For i = LBound(mCounts) To UBound(mCounts)
-        mCounts(i) = 0
+    Dim dDate As Date, dCount As Long
+
+    For i = 1 To OtherItem.DateKeyCount
+        dDate = OtherItem.DateKey(i)
+        dCount = OtherItem.Count(dDate)
+        If dCount <> 0 Then
+            Me.Count(dDate) = Me.Count(dDate) + dCount
+        End If
     Next i
 End Sub
 
-' 필요하면 형식 유지용
-Public Sub Init()
-    Clear
-End Sub
-
-'==========================================================
-' 3) 내부 유틸리티 (인덱스 변환/검사)
-'==========================================================
-' Date -> 월일 인덱스(1~372) 변환
-Private Function MDIndexFromDate(ByVal d As Date) As Long
-    Dim m As Long, dy As Long, idx As Long
-
-    m = Month(d)
-    dy = Day(d)
-
-    If m < 1 Or m > 12 Or dy < 1 Or dy > 31 Then
-        Err.Raise 13, TypeName(Me) & ".MDIndexFromDate", "유효하지 않은 날짜입니다."
+'------------------------------
+' 날짜 Key 열거 (1..DateKeyCount)
+'------------------------------
+Public Property Get DateKeyCount() As Long
+    If Not mDatesInitialized Then
+        DateKeyCount = 0
+    ElseIf UBound(vDateKey) = 0 Then
+        DateKeyCount = 0
+    Else
+        DateKeyCount = UBound(vDateKey)   ' 유효 키는 1..UBound
     End If
+End Property
 
-    idx = (m - 1) * 31 + dy          ' 1 ~ 372
-    MDIndexFromDate = idx
+Public Property Get DateKey(ByVal Index1 As Long) As Date
+    If mDatesInitialized Then
+        If Index1 >= 1 And Index1 <= UBound(vDateKey) Then
+            DateKey = CDate(vDateKey(Index1))
+        End If
+    End If
+End Property
+
+'------------------------------
+' 내부 헬퍼
+'------------------------------
+Private Function TotalCount() As Long
+    Dim i As Long
+    If Not mDatesInitialized Then Exit Function
+    For i = 1 To UBound(vDateCounts)
+        TotalCount = TotalCount + vDateCounts(i)
+    Next i
 End Function
 
-Private Sub CheckIndex(ByVal idx As Long)
-    If idx < LBound(mCounts) Or idx > UBound(mCounts) Then
-        Err.Raise 9, TypeName(Me) & ".CheckIndex", "인덱스 범위를 벗어났습니다.(1~372)"
+Private Sub EnsureDateArraysInitialized()
+    If Not mDatesInitialized Then
+        ReDim vDateKey(0 To 0)
+        ReDim vDateCounts(0 To 0)
+        vDateKey(0) = -1
+        vDateCounts(0) = 0
+        mDatesInitialized = True
     End If
 End Sub
 
-'==========================================================
-' 4) 핵심 인덱서: CountPerDay
-'    - Key As Variant: Date 또는 Long(1~372)
-'==========================================================
-Public Property Get CountPerDay(ByVal Key As Variant) As Long
-    Dim idx As Long
+Private Function NormalizeDateKey(ByVal Month_Day As Variant) As Long
+    NormalizeDateKey = CLng(Int(CDate(Month_Day)))
+End Function
 
-    If VarType(Key) = vbDate Then
-        idx = MDIndexFromDate(CDate(Key))
-    ElseIf isNumeric(Key) Then
-        idx = CLng(Key)
-    Else
-        Err.Raise 13, TypeName(Me) & ".CountPerDay.Get", _
-                    "Key는 Date 또는 Long(1~372) 이어야 합니다."
+Private Function IndexOfDateKey(ByVal dKey As Long) As Long
+    Dim i As Long
+    If Not mDatesInitialized Then
+        IndexOfDateKey = -1
+        Exit Function
     End If
 
-    CheckIndex idx
-    CountPerDay = mCounts(idx)
-End Property
-
-Public Property Let CountPerDay(ByVal Key As Variant, ByVal value As Long)
-    Dim idx As Long
-
-    If VarType(Key) = vbDate Then
-        idx = MDIndexFromDate(CDate(Key))
-    ElseIf isNumeric(Key) Then
-        idx = CLng(Key)
-    Else
-        Err.Raise 13, TypeName(Me) & ".CountPerDay.Let", _
-                    "Key는 Date 또는 Long(1~372) 이어야 합니다."
-    End If
-
-    CheckIndex idx
-    mCounts(idx) = value
-End Property
-
-Public Property Get SumCount() As Long
-    Dim i As Long, Result As Long
-    For i = LBound(mCounts) To UBound(mCounts)
-        Result = Result + mCounts(i)
+    For i = 1 To UBound(vDateKey)
+        If vDateKey(i) = dKey Then
+            IndexOfDateKey = i
+            Exit Function
+        End If
     Next i
-    SumCount = Result
-End Property
 
-Public Function Copy() As itemUnit
-    Dim Copied As New itemUnit, i As Long
-    With Copied
-        .NickName = vNick
-        .PartNumber = vPartNumber
-        .Vender = vVender
-        For i = 1 To 372
-            .CountPerDay(i) = mCounts(i)
-        Next i
-    End With
-    Set Copy = Copied
+    IndexOfDateKey = -1
+End Function
+
+Private Function AddDateKey(ByVal dKey As Long) As Long
+    Dim newIndex As Long
+    If Not mDatesInitialized Then EnsureDateArraysInitialized
+
+    newIndex = UBound(vDateKey) + 1
+    ReDim Preserve vDateKey(0 To newIndex)
+    ReDim Preserve vDateCounts(0 To newIndex)
+
+    vDateKey(newIndex) = dKey
+    vDateCounts(newIndex) = 0
+    AddDateKey = newIndex
 End Function

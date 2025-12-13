@@ -120,7 +120,7 @@ Private Sub AutoReport_DailyPlan(ByRef Wb As Workbook)
 End Sub
 Private Sub AR_1_EssentialDataExtraction(Optional ByRef LastCol As Long = 0, Optional ByRef LastRow As Long = 0) ' AutoReport 초반 설정 / 필수 데이터 영역만 추출함
     '月火水木金土日 요일입력 코드 月火水木金土日
-    Dim i As Long, startRow As Long, vYY As Long, vMM As Long, vDD As Long
+    Dim i As Long, startRow As Long
     Dim DelCell As Range
     Dim CopiedData As New Collection ', TimeKeeper As New Collection
     Dim ws As Worksheet: Set ws = Target_WorkSheet
@@ -134,55 +134,59 @@ Private Sub AR_1_EssentialDataExtraction(Optional ByRef LastCol As Long = 0, Opt
     
     ' 필요없는 행열 삭제/숨기기
     ws.Rows(1).Delete: ws.Columns("B:D").Delete ' 잉여 행열 삭제
-    ws.Cells(1, 1).value = "투입" & vbLf & "시점"
+    ws.Cells(1, 1).Value = "투입" & vbLf & "시점"
     LastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column ' 데이터가 존재하는 마지막 열
 
     For i = LastCol To 2 Step -1
         Set DelCell = ws.Cells(2, i)
         ' 현재 열이 vCFR에 없거나, 숫자(날짜)면서 생산량이 0일 경우 삭제
-        If Not IsInCollection(DelCell.value, vCFR) Xor _
-            (isNumeric(DelCell.value) And DelCell.Offset(1, 0).value > 0) Then ws.Columns(i).Delete ' 숨기려면 .Hidden = True
+        If Not IsInCollection(DelCell.Value, vCFR) Xor _
+            (IsNumeric(DelCell.Value) And DelCell.Offset(1, 0).Value > 0) Then ws.Columns(i).Delete ' 숨기려면 .Hidden = True
     Next i
     ' 새로운 서식 적용을 위한 열 추가 및 수정작업
     Set DelCell = ws.Rows(2).Find(What:="W/O 계획수량", lookAt:=xlWhole)
     If DelCell Is Nothing Then Stop ' 오류나면 정지
-    DelCell.value = "계획" ' 원래의 열 제목이 너무 길어서 수정
-    DelCell.Offset(0, 1).value = "IN" ' 원래의 열 제목이 너무 길어서 수정
-    DelCell.Offset(0, 2).value = "OUT" ' 원래의 열 제목이 너무 길어서 수정
+    DelCell.Value = "계획" ' 원래의 열 제목이 너무 길어서 수정
+    DelCell.Offset(0, 1).Value = "IN" ' 원래의 열 제목이 너무 길어서 수정
+    DelCell.Offset(0, 2).Value = "OUT" ' 원래의 열 제목이 너무 길어서 수정
     startRow = DelCell.Offset(2, 0).Row ' StartRow 추출
     Set DelCell = DelCell.Offset(0, 3) ' 계획 셀에서 오른쪽으로 열이동 3번 하면 금일 날짜 나옴
     ws.Columns(DelCell.Column).Insert Shift:=xlShiftToRight, CopyOrigin:=xlFormatFromLeftOrAbove ' Connecter 2*2셀로 만듦
     ws.Columns(DelCell.Column).Insert Shift:=xlShiftToRight, CopyOrigin:=xlFormatFromLeftOrAbove
-    DelCell.Offset(0, -1).value = "Connecter"
+    DelCell.Offset(0, -1).Value = "Connecter"
     ws.Range(DelCell.Offset(-1, -2), DelCell.Offset(0, -1)).Merge
     
-    Do Until ws.Cells(1, DelCell.Offset(0, 3).Column + 1).value = ""
+    Do Until ws.Cells(1, DelCell.Offset(0, 3).Column + 1).Value = ""
         ws.Columns(DelCell.Offset(0, 3).Column + 1).Delete ' D-day 기준, +3일까지 살리고 싸그리 삭제
     Loop
     LastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column ' 데이터가 존재하는 마지막 열
-    ws.Cells(2, LastCol + 1).value = wLine & "-Line" ' 라인 데이터 기입
+    ws.Cells(2, LastCol + 1).Value = wLine & "-Line" ' 라인 데이터 기입
     ws.Range(ws.Cells(1, LastCol + 1), ws.Cells(2, LastCol + 2)).Merge
     
     LastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column ' 마지막날짜 열 찾기
     LastRow = ws.Cells(ws.Rows.Count, LastCol - 1).End(xlUp).Row ' 마지막 날짜의 마지막 행 찾기
     Title = DelCell.Column ' D-Day 셀의 열 값을 Title변수로 옮김.
     
-    Do Until ws.Cells(LastRow + 1, 2).value = "" ' 마지막 밑으로 값이 있으면 삭제
+    Do Until ws.Cells(LastRow + 1, 2).Value = "" ' 마지막 밑으로 값이 있으면 삭제
         ws.Rows(LastRow + 1).Delete
     Loop
     
     Set DelCell = ws.Rows(2).Find(What:="계획", lookAt:=xlWhole)
-    DelCell.Offset(1, 0).value = Application.WorksheetFunction.Sum(ws.Range(DelCell.Offset(2, 0), ws.Cells(LastRow, DelCell.Column)))
-    If DelCell.Offset(1, 0).value > 9999 Then DelCell.Offset(1, 0).value = Format(DelCell.Offset(1, 0).value / 1000, "0.0") & "k"
+    For i = 0 To 8
+        If i <> 3 And i <> 4 Then
+            DelCell.Offset(1, i).Formula = "=Sum(" & ws.Range(DelCell.Offset(2, i), ws.Cells(LastRow, DelCell.Offset(2, i).Column)).Address & ")"
+            If DelCell.Offset(1, i).Value > 9999 Then DelCell.Offset(1, i).Value = Format(DelCell.Offset(1, i).Value / 1000, "0.0") & "k"
+        End If
+    Next i
     
     For i = startRow To LastRow
-        ws.Cells(i, 20).value = Time_Filtering(ws.Cells(i, 1).value, ws.Cells(i + 1, 1).value)
-        ws.Cells(i, 21).value = ws.Cells(i, 20).value / ws.Cells(i, 4).value
+        ws.Cells(i, 20).Value = Time_Filtering(ws.Cells(i, 1).Value, ws.Cells(i + 1, 1).Value)
+        ws.Cells(i, 21).Value = ws.Cells(i, 20).Value / ws.Cells(i, 4).Value
     Next i
-    ws.Cells(2, 16).value = "Meta_Data"
+    ws.Cells(2, 16).Value = "Meta_Data"
     Dim arr As Variant: arr = Array("3001", "2101", "2102", "3304", "TPL", "UPPH")
     For i = LBound(arr) To UBound(arr)
-        ws.Cells(startRow - 1, 16 + i).value = CStr(arr(i))
+        ws.Cells(startRow - 1, 16 + i).Value = CStr(arr(i))
     Next i
     ws.Range(ws.Columns(20), ws.Columns(21)).NumberFormat = "[m]:ss"
     
@@ -364,7 +368,7 @@ Private Sub Interior_Set_DailyPlan(Optional ByRef FirstRow As Long = 3, Optional
     End With
     
     For Each xCell In tempRange
-        If xCell.value = "" Then xCell.Interior.Color = RGB(BoW, BoW, BoW) ' Brightness
+        If xCell.Value = "" Then xCell.Interior.Color = RGB(BoW, BoW, BoW) ' Brightness
     Next xCell
     
 ' 열 너비 지정
@@ -401,20 +405,20 @@ Private Function GetDailyPlanWhen(DailyPlanDirectiory As String) As String
     Dim cell As Range, Finder As Range
         
     For Each Finder In ws.Rows(2).Cells ' DP에서 날짜를 찾는 줄
-        If Finder.value Like "*월" And Finder.Offset(2, 0).value > 0 Then Set cell = Finder: Exit For
+        If Finder.Value Like "*월" And Finder.Offset(2, 0).Value > 0 Then Set cell = Finder: Exit For
         col(1) = col(1) + 1: If col(1) > 70 Then Exit For
     Next Finder
     If cell Is Nothing Then GetDailyPlanWhen = "It's Not a DailyPlan": GoTo NAD ' 열람한 문서가 DailyPlan이 아닐시 오류처리 단
-    Title = cell.value ' 생산 월
+    Title = cell.Value ' 생산 월
     col(1) = cell.MergeArea.Cells(1, 1).Column: col(2) = cell.MergeArea.Cells(1, cell.MergeArea.Columns.Count).Column ' 생산 일 Range 지정을 위한 열 값 추적
     For Each cell In ws.Range(ws.Cells(3, col(1)), ws.Cells(3, col(2)))
-        If isNumeric(cell.value) And cell.Offset(1, 0).value > 0 And cell.value < smallestValue Then smallestValue = cell.value
+        If IsNumeric(cell.Value) And cell.Offset(1, 0).Value > 0 And cell.Value < smallestValue Then smallestValue = cell.Value
     Next cell
     Title = Title & "-" & smallestValue & "일" ' Title = *월-*일
     GetDailyPlanWhen = Title ' 날짜형 제목값 인계
     Title = smallestValue ' 날짜값
     Set cell = ws.Rows("2:3").Find(What:="생산 라인", lookAt:=xlWhole, LookIn:=xlValues)
-    wLine = cell.Offset(2, 0).value
+    wLine = cell.Offset(2, 0).Value
 NAD:
     Wb.Close SaveChanges:=False: Set Wb = Nothing ' 워크북 닫기
     xlApp.Quit: Set xlApp = Nothing ' Excel 애플리케이션 종료
@@ -471,14 +475,20 @@ Private Function SetRangeForDraw(ByRef Criterion_Target As Range) As Range
     Set SetRangeForDraw = ws.Range(ws.Cells(FirstRow, LastCol), ws.Cells(LastRow, LastCol + 3))
     'Debug.Print "SetRangeForDraw : " & SetRangeForDraw.Address
 End Function
+
 Private Sub DecodeDate(ByRef Target As Range)
+    On Error GoTo Endproc
     Dim ws As Worksheet: Set ws = Target.Worksheet
-    Dim vYY As Long, vMM As Long, vDD As Long, WK As String
-    vDD = CInt(Target.value)
-    vMM = CInt(Val(Target.Offset(-1, 0).value))
-    vYY = CInt(Year(ws.Cells(Target.Row + 2, 1).value))
-    WK = WeekdayKorean(DateSerial(vYY, vMM, vDD))
-    Target.value = vDD & " " & WK
+    Dim vDD As Long, LastRow As Long
+    Dim WK As String, DT As Date
+    
+    LastRow = ws.Cells(ws.Rows.Count, Target.Column).End(xlUp).Row ' 날짜 셀의 마지막 행 추적
+    DT = Int(CDate(ws.Cells(LastRow, 1).Value)) ' 마지막 행의 첫 열이 날짜 데이터가 있는 셀임
+    vDD = CInt(Target.Value) ' 일단 고유 날짜값 저장
+    If Day(DT) <> vDD Then DT = DateSerial(Year(DT), Month(DT), vDD) ' 실제날짜값(DT)과 명시된날짜값(vDD)를 비교후 명시된 날짜값을 추종하도록 설계
+    WK = WeekdayKorean(DT) ' 요일 변환
+    Target.Value = DT ' 최종값 전달
+    Target.NumberFormat = "d aaa" ' 날짜와 요일이 기재되도록 포맷
     With Target
         .WrapText = False ' 줄바꿈 False
         .ShrinkToFit = True ' 셀에 맞춤 True
@@ -486,11 +496,13 @@ Private Sub DecodeDate(ByRef Target As Range)
         .VerticalAlignment = xlCenter ' 세로 중앙정렬
         Select Case WK
             Case Is = "토"
-                .Interior.Color = RGB(100, 155, 255)
+                .Interior.Color = RGB(150, 200, 255)
             Case Is = "일"
-                .Interior.Color = RGB(255, 100, 155)
+                .Interior.Color = RGB(255, 150, 200)
             Case Else
-                .Interior.Color = RGB(100, 255, 155)
+                .Interior.Color = RGB(150, 255, 200)
         End Select
     End With
+Endproc:
 End Sub
+

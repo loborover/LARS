@@ -21,7 +21,7 @@ Private Sub AutoReport_BOM(ByRef Wb As Workbook)
     For i = LastCol To 1 Step -1 'Step 연산자는 i 변수의 순서마다 어떤 연산을 할지 결정
         Set DelCell = ws.Cells(1, i)
         ' 현재 열이 ColumnsForReport에 없으면 삭제
-        If Not IsInCollection(DelCell.value, ColumnsForReport) Then ws.Columns(i).Delete
+        If Not IsInCollection(DelCell.Value, ColumnsForReport) Then ws.Columns(i).Delete
     Next i
     
     Dim InsertRow As Long '추가행 갯수
@@ -84,12 +84,12 @@ Private Sub AutoTitle(ws As Worksheet, ColumnList As Collection)
     findrow = ws.Columns(FindCol).Find(What:=0).Row
     FindCol = ws.UsedRange.Find(What:=ColumnList(2)).Column
     
-    Title = ws.Cells(findrow, FindCol).value
+    Title = ws.Cells(findrow, FindCol).Value
     StrIndex = InStr(Title, "@")
     If Not StrIndex = 0 Then
         Title = Left(Title, StrIndex - 1)
     End If
-    ws.Cells(1, 1).value = Title
+    ws.Cells(1, 1).Value = Title
         
     With ws.Cells(1, 1)
         .Font.Name = "LG스마트체 Bold"
@@ -242,7 +242,7 @@ Private Function GetModelName(BOMdirectory As String) As String
     ' 값을 읽어오기
     'Dim Title As String 모듈선언부의 Title 활용
     Dim Str As Long
-    Title = ws.Cells(2, 3).value
+    Title = ws.Cells(2, 3).Value
     Str = InStr(Title, "@")
     Title = Left(Title, Str - 1)
     GetModelName = Title

@@ -63,7 +63,7 @@ Public Sub TTESTSET()
     SortColumnByFeeder FFF
 End Sub
 
-Sub t()
+Sub T()
 Debug.Print Z_Directory.Backup
 Debug.Print Z_Directory.BOM
 

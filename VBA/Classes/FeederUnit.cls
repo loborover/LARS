@@ -20,8 +20,8 @@ Public Property Get Name() As String
     Name = pName
 End Property
 
-Public Property Let Name(ByVal value As String)
-    pName = value
+Public Property Let Name(ByVal Value As String)
+    pName = Value
 End Property
 
 Public Property Get itemBox() As Collection

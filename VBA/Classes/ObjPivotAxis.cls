@@ -8,11 +8,11 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Private vXaxis As Single, vYaxis As Single, vZaxis As Single
-Public Property Let X(value As Single): vXaxis = value: End Property
+Public Property Let X(Value As Single): vXaxis = Value: End Property
 Public Property Get X() As Single: X = vXaxis: End Property
-Public Property Let Y(value As Single): vYaxis = value: End Property
+Public Property Let Y(Value As Single): vYaxis = Value: End Property
 Public Property Get Y() As Single: Y = vYaxis: End Property
-Public Property Let Z(value As Single): vZaxis = value: End Property
+Public Property Let Z(Value As Single): vZaxis = Value: End Property
 Public Property Get Z() As Single:    Z = vZaxis: End Property
 Public Function Copy() As ObjPivotAxis
     Dim CopiedObj As New ObjPivotAxis

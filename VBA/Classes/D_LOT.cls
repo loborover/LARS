@@ -73,7 +73,7 @@ Private Sub ParseModelinfo()
     On Error GoTo ErrorHandler
     
     For Each vCell In Me.Lot_Range.Cells
-        ValueStr = Trim(CStr(vCell.value))
+        ValueStr = Trim(CStr(vCell.Value))
         If Len(ValueStr) > 0 Then
             Exists = False
             For i = 1 To UniqueList.Count

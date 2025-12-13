@@ -1,6 +1,5 @@
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-BA_BOM_Viewer.bas Start
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+﻿### BA_BOM_Viewer.bas
+````vba
 Option Explicit
 '한번 만든 Title의 값을 이 모듈안에서 다른 서브루틴, 함수에서 참조하기 위해 모듈부에서 선언
 Private Title As String
@@ -23,7 +22,7 @@ Private Sub AutoReport_BOM(ByRef Wb As Workbook)
     For i = LastCol To 1 Step -1 'Step 연산자는 i 변수의 순서마다 어떤 연산을 할지 결정
         Set DelCell = ws.Cells(1, i)
         ' 현재 열이 ColumnsForReport에 없으면 삭제
-        If Not IsInCollection(DelCell.value, ColumnsForReport) Then ws.Columns(i).Delete
+        If Not IsInCollection(DelCell.Value, ColumnsForReport) Then ws.Columns(i).Delete
     Next i
     
     Dim InsertRow As Long '추가행 갯수
@@ -86,12 +85,12 @@ Private Sub AutoTitle(ws As Worksheet, ColumnList As Collection)
     findrow = ws.Columns(FindCol).Find(What:=0).Row
     FindCol = ws.UsedRange.Find(What:=ColumnList(2)).Column
     
-    Title = ws.Cells(findrow, FindCol).value
+    Title = ws.Cells(findrow, FindCol).Value
     StrIndex = InStr(Title, "@")
     If Not StrIndex = 0 Then
         Title = Left(Title, StrIndex - 1)
     End If
-    ws.Cells(1, 1).value = Title
+    ws.Cells(1, 1).Value = Title
         
     With ws.Cells(1, 1)
         .Font.Name = "LG스마트체 Bold"
@@ -197,7 +196,7 @@ Public Sub Print_BOM(Optional Handle As Boolean)
     For i = 1 To ListCount
 AutoReportHandler.UpdateProgressBar AutoReportHandler.PB_BOM, ((i - 0.9) / ListCount * 100) ' 10프로
         Set BOMitem = BOMLV.ListItems.Item(Chkditem(i))
-        Set BOMwb = Workbooks.open(BOMitem.SubItems(1)) ' Chkditem(i) / 주소값으로 호출함
+        Set BOMwb = Workbooks.Open(BOMitem.SubItems(1)) ' Chkditem(i) / 주소값으로 호출함
         Dim ws As Worksheet
         Set ws = BOMwb.Worksheets(1)
         BOMwb.Windows(1).WindowState = xlMinimized
@@ -238,13 +237,13 @@ Private Function GetModelName(BOMdirectory As String) As String
     Set xlApp = New Excel.Application
     xlApp.Visible = False
 
-    Dim Wb As Workbook: Set Wb = xlApp.Workbooks.open(BOMdirectory) ' 워크북 열기
+    Dim Wb As Workbook: Set Wb = xlApp.Workbooks.Open(BOMdirectory) ' 워크북 열기
     Dim ws As Worksheet: Set ws = Wb.Worksheets(1) ' 워크시트 선택
 
     ' 값을 읽어오기
     'Dim Title As String 모듈선언부의 Title 활용
     Dim Str As Long
-    Title = ws.Cells(2, 3).value
+    Title = ws.Cells(2, 3).Value
     Str = InStr(Title, "@")
     Title = Left(Title, Str - 1)
     GetModelName = Title
@@ -257,13 +256,10 @@ Private Function GetModelName(BOMdirectory As String) As String
     xlApp.Quit
     Set xlApp = Nothing
 End Function
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-BA_BOM_Viewer.bas End
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+````
 
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-Fillter.bas Start
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+### Fillter.bas
+````vba
 Sub AutoFilltering_BOM(ws As Worksheet, FillteringCol As Collection)
     
     Dim FirstCol As Long
@@ -299,13 +295,10 @@ Private Function BOM_Array(col As Collection) As Variant
         
     BOM_Array = arr
 End Function
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-Fillter.bas End
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+````
 
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-Printer.bas Start
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+### Printer.bas
+````vba
 Public Type PrintSetting
     PrintArea As String ' 주소
     Orientation As XlPageOrientation ' 인쇄방향
@@ -566,15 +559,13 @@ Sub AutoPageSetup(ByRef ws As Worksheet, PrtStpVar As PrintSetting, _
     Print_setup = True
     
 End Sub
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-Printer.bas End
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+````
 
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-BB_DailyPlan_Viewer.bas Start
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+### BB_DailyPlan_Viewer.bas
+````vba
 Option Explicit
 
+Public Yoil_DP As Boolean ' Day of the week On/Off Switch
 Public MRB_DP As Boolean ' Manual_Reporting_Bool_DailyPlan
 
 Private BoW As Single ' Black or White
@@ -582,7 +573,7 @@ Private DP_Processing_WB As New Workbook ' 모듈내 전역변수로 선언함
 Private Target_WorkSheet As New Worksheet
 Private PrintArea As Range ' 모듈내 프린트영역
 Private Brush As New Painter
-Private Title As String, wLine As String
+Private Title As String, wLine As String, vDate As String
 Private vCFR As Collection ' Columns For Report
 
 Public Sub Read_DailyPlan(Optional Handle As Boolean, Optional ByRef Target_Listview As ListView)
@@ -596,7 +587,7 @@ Public Sub Read_DailyPlan(Optional Handle As Boolean, Optional ByRef Target_List
     With Target_Listview
         For i = 1 To DailyPlan.Count
 AutoReportHandler.UpdateProgressBar AutoReportHandler.PB_BOM, (i - i / 2) / DailyPlan.Count * 100
-            Dim vDate As String
+            ' Dim vDate As String
             Dim DPCount As Long
             vDate = GetDailyPlanWhen(DailyPlan(i))
             If vDate = "It's Not a DailyPlan" Then GoTo SkipLoop
@@ -642,7 +633,7 @@ Public Sub Print_DailyPlan(Optional Handle As Boolean)
     For i = 1 To ListCount
 AutoReportHandler.UpdateProgressBar AutoReportHandler.PB_BOM, (i - 0.99) / ListCount * 100
         Set DPitem = DPLV.ListItems.Item(Chkditem(i))
-        Set DP_Processing_WB = Workbooks.open(DPitem.SubItems(2))
+        Set DP_Processing_WB = Workbooks.Open(DPitem.SubItems(2))
 AutoReportHandler.UpdateProgressBar AutoReportHandler.PB_BOM, (i - 0.91) / ListCount * 100
         wLine = DPitem.SubItems(1) ' Line 이름 인계
         Set Target_WorkSheet = DP_Processing_WB.Worksheets(1): Set ws = Target_WorkSheet: Set Brush.DrawingWorksheet = Target_WorkSheet ' 워크시트 타게팅
@@ -651,7 +642,7 @@ AutoReportHandler.UpdateProgressBar AutoReportHandler.PB_BOM, (i - 0.91) / ListC
 AutoReportHandler.UpdateProgressBar AutoReportHandler.PB_BOM, (i - 0.87) / ListCount * 100
         If PrintNow.DailyPlan Then
             Printer.PrinterNameSet  ' 기본프린터 이름 설정, 유지되는지 확인
-            ws.PrintOut ActivePrinter:=DefaultPrinter, From:=1, to:=2, copies:=PaperCopies
+            ws.PrintOut ActivePrinter:=DefaultPrinter, From:=1, To:=2, copies:=PaperCopies
             DPitem.SubItems(3) = "Done" 'Print
         Else
             DPitem.SubItems(3) = "Pass" 'Print
@@ -665,7 +656,7 @@ AutoReportHandler.UpdateProgressBar AutoReportHandler.PB_BOM, (i - 0.65) / ListC
 AutoReportHandler.UpdateProgressBar AutoReportHandler.PB_BOM, (i - 0.45) / ListCount * 100
         DPitem.SubItems(4) = "Done" 'PDF
 AutoReportHandler.UpdateProgressBar AutoReportHandler.PB_BOM, (i - 0.35) / ListCount * 100
-        If MRB_DP Then Workbooks.open (SavedPath & ".xlsx") ' 메뉴얼 모드일 때 열기
+        If MRB_DP Then Workbooks.Open (SavedPath & ".xlsx") ' 메뉴얼 모드일 때 열기
 'Progress Update
 AutoReportHandler.UpdateProgressBar AutoReportHandler.PB_BOM, i / ListCount * 100
     Next i
@@ -692,6 +683,7 @@ Private Sub AutoReport_DailyPlan(ByRef Wb As Workbook)
     Set vCFR = Nothing
 End Sub
 Private Sub AR_1_EssentialDataExtraction(Optional ByRef LastCol As Long = 0, Optional ByRef LastRow As Long = 0) ' AutoReport 초반 설정 / 필수 데이터 영역만 추출함
+    '月火水木金土日 요일입력 코드 月火水木金土日
     Dim i As Long, startRow As Long
     Dim DelCell As Range
     Dim CopiedData As New Collection ', TimeKeeper As New Collection
@@ -706,61 +698,59 @@ Private Sub AR_1_EssentialDataExtraction(Optional ByRef LastCol As Long = 0, Opt
     
     ' 필요없는 행열 삭제/숨기기
     ws.Rows(1).Delete: ws.Columns("B:D").Delete ' 잉여 행열 삭제
-    ws.Cells(1, 1).value = "투입" & vbLf & "시점"
+    ws.Cells(1, 1).Value = "투입" & vbLf & "시점"
     LastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column ' 데이터가 존재하는 마지막 열
 
     For i = LastCol To 2 Step -1
         Set DelCell = ws.Cells(2, i)
         ' 현재 열이 vCFR에 없거나, 숫자(날짜)면서 생산량이 0일 경우 삭제
-        If Not IsInCollection(DelCell.value, vCFR) Xor _
-            (isNumeric(DelCell.value) And DelCell.Offset(1, 0).value > 0) Then ws.Columns(i).Delete ' 숨기려면 .Hidden = True
+        If Not IsInCollection(DelCell.Value, vCFR) Xor _
+            (IsNumeric(DelCell.Value) And DelCell.Offset(1, 0).Value > 0) Then ws.Columns(i).Delete ' 숨기려면 .Hidden = True
     Next i
     ' 새로운 서식 적용을 위한 열 추가 및 수정작업
     Set DelCell = ws.Rows(2).Find(What:="W/O 계획수량", lookAt:=xlWhole)
     If DelCell Is Nothing Then Stop ' 오류나면 정지
-    DelCell.value = "계획" ' 원래의 열 제목이 너무 길어서 수정
-    DelCell.Offset(0, 1).value = "IN" ' 원래의 열 제목이 너무 길어서 수정
-    DelCell.Offset(0, 2).value = "OUT" ' 원래의 열 제목이 너무 길어서 수정
+    DelCell.Value = "계획" ' 원래의 열 제목이 너무 길어서 수정
+    DelCell.Offset(0, 1).Value = "IN" ' 원래의 열 제목이 너무 길어서 수정
+    DelCell.Offset(0, 2).Value = "OUT" ' 원래의 열 제목이 너무 길어서 수정
     startRow = DelCell.Offset(2, 0).Row ' StartRow 추출
     Set DelCell = DelCell.Offset(0, 3) ' 계획 셀에서 오른쪽으로 열이동 3번 하면 금일 날짜 나옴
     ws.Columns(DelCell.Column).Insert Shift:=xlShiftToRight, CopyOrigin:=xlFormatFromLeftOrAbove ' Connecter 2*2셀로 만듦
     ws.Columns(DelCell.Column).Insert Shift:=xlShiftToRight, CopyOrigin:=xlFormatFromLeftOrAbove
-    DelCell.Offset(0, -1).value = "Connecter"
+    DelCell.Offset(0, -1).Value = "Connecter"
     ws.Range(DelCell.Offset(-1, -2), DelCell.Offset(0, -1)).Merge
     
-    Do Until ws.Cells(1, DelCell.Offset(0, 3).Column + 1).value = ""
+    Do Until ws.Cells(1, DelCell.Offset(0, 3).Column + 1).Value = ""
         ws.Columns(DelCell.Offset(0, 3).Column + 1).Delete ' D-day 기준, +3일까지 살리고 싸그리 삭제
     Loop
     LastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column ' 데이터가 존재하는 마지막 열
-    ws.Cells(2, LastCol + 1).value = wLine & "-Line" ' 라인 데이터 기입
+    ws.Cells(2, LastCol + 1).Value = wLine & "-Line" ' 라인 데이터 기입
     ws.Range(ws.Cells(1, LastCol + 1), ws.Cells(2, LastCol + 2)).Merge
     
     LastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column ' 마지막날짜 열 찾기
     LastRow = ws.Cells(ws.Rows.Count, LastCol - 1).End(xlUp).Row ' 마지막 날짜의 마지막 행 찾기
     Title = DelCell.Column ' D-Day 셀의 열 값을 Title변수로 옮김.
     
-    With ws.Range(ws.Cells(1, 1), ws.Cells(2, LastCol)) ' 제목부분 interior
-        .WrapText = True
-        .Interior.Color = RGB(199, 253, 240)
-        .Font.Bold = True
-    End With
-    
-    Do Until ws.Cells(LastRow + 1, 2).value = "" ' 마지막 밑으로 값이 있으면 삭제
+    Do Until ws.Cells(LastRow + 1, 2).Value = "" ' 마지막 밑으로 값이 있으면 삭제
         ws.Rows(LastRow + 1).Delete
     Loop
     
     Set DelCell = ws.Rows(2).Find(What:="계획", lookAt:=xlWhole)
-    DelCell.Offset(1, 0).value = Application.WorksheetFunction.Sum(ws.Range(DelCell.Offset(2, 0), ws.Cells(LastRow, DelCell.Column)))
-    If DelCell.Offset(1, 0).value > 9999 Then DelCell.Offset(1, 0).value = Format(DelCell.Offset(1, 0).value / 1000, "0.0") & "k"
+    For i = 0 To 8
+        If i <> 3 And i <> 4 Then
+            DelCell.Offset(1, i).Formula = "=Sum(" & ws.Range(DelCell.Offset(2, i), ws.Cells(LastRow, DelCell.Offset(2, i).Column)).Address & ")"
+            If DelCell.Offset(1, i).Value > 9999 Then DelCell.Offset(1, i).Value = Format(DelCell.Offset(1, i).Value / 1000, "0.0") & "k"
+        End If
+    Next i
     
     For i = startRow To LastRow
-        ws.Cells(i, 20).value = Time_Filtering(ws.Cells(i, 1).value, ws.Cells(i + 1, 1).value)
-        ws.Cells(i, 21).value = ws.Cells(i, 20).value / ws.Cells(i, 4).value
+        ws.Cells(i, 20).Value = Time_Filtering(ws.Cells(i, 1).Value, ws.Cells(i + 1, 1).Value)
+        ws.Cells(i, 21).Value = ws.Cells(i, 20).Value / ws.Cells(i, 4).Value
     Next i
-    ws.Cells(1, 16).value = "Meta_Data"
+    ws.Cells(2, 16).Value = "Meta_Data"
     Dim arr As Variant: arr = Array("3001", "2101", "2102", "3304", "TPL", "UPPH")
     For i = LBound(arr) To UBound(arr)
-        ws.Cells(startRow - 1, 16 + i).value = CStr(arr(i))
+        ws.Cells(startRow - 1, 16 + i).Value = CStr(arr(i))
     Next i
     ws.Range(ws.Columns(20), ws.Columns(21)).NumberFormat = "[m]:ss"
     
@@ -873,7 +863,7 @@ Private Sub Interior_Set_DailyPlan(Optional ByRef FirstRow As Long = 3, Optional
     Dim ws As Worksheet: Set ws = Target_WorkSheet
     Dim SetEdge(1 To 6) As XlBordersIndex
     Dim colWidth As New Collection
-    Dim i As Long
+    Dim i As Long, LastCol As Long
     
     Set PR = ws.Cells(1, 1).CurrentRegion
     
@@ -883,6 +873,21 @@ Private Sub Interior_Set_DailyPlan(Optional ByRef FirstRow As Long = 3, Optional
     SetEdge(4) = xlEdgeBottom
     SetEdge(5) = xlInsideHorizontal
     SetEdge(6) = xlInsideVertical
+    
+    LastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column ' 데이터가 존재하는 마지막 열
+    With ws.Range(ws.Cells(1, 1), ws.Cells(2, LastCol)) ' 제목부분 interior
+        .WrapText = True
+        .Interior.Color = RGB(199, 253, 240)
+        .Font.Bold = True
+    End With
+    
+    If Yoil_DP Then
+        Dim Target As Range
+        Set Target = ws.Range("2:2").Find(What:="계획", LookIn:=xlValues, lookAt:=xlWhole).Offset(0, 5)
+        For i = 0 To 3
+            DecodeDate Target.Offset(0, i)
+        Next i
+    End If
     
     With PR ' PrintRange 인쇄영역의 인테리어 세팅
         .Font.Name = "LG스마트체2.0 Regular"
@@ -927,7 +932,7 @@ Private Sub Interior_Set_DailyPlan(Optional ByRef FirstRow As Long = 3, Optional
     End With
     
     For Each xCell In tempRange
-        If xCell.value = "" Then xCell.Interior.Color = RGB(BoW, BoW, BoW) ' Brightness
+        If xCell.Value = "" Then xCell.Interior.Color = RGB(BoW, BoW, BoW) ' Brightness
     Next xCell
     
 ' 열 너비 지정
@@ -956,7 +961,7 @@ End Sub
 Private Function GetDailyPlanWhen(DailyPlanDirectiory As String) As String
     ' Excel 애플리케이션을 새로운 인스턴스로 생성
     Dim xlApp As Excel.Application: Set xlApp = New Excel.Application: xlApp.Visible = False
-    Dim Wb As Workbook: Set Wb = xlApp.Workbooks.open(DailyPlanDirectiory) ' 워크북 열기
+    Dim Wb As Workbook: Set Wb = xlApp.Workbooks.Open(DailyPlanDirectiory) ' 워크북 열기
     Dim ws As Worksheet: Set ws = Wb.Worksheets(1) ' 워크시트 선택
 
     ' 값을 읽어오기
@@ -964,20 +969,20 @@ Private Function GetDailyPlanWhen(DailyPlanDirectiory As String) As String
     Dim cell As Range, Finder As Range
         
     For Each Finder In ws.Rows(2).Cells ' DP에서 날짜를 찾는 줄
-        If Finder.value Like "*월" And Finder.Offset(2, 0).value > 0 Then Set cell = Finder: Exit For
+        If Finder.Value Like "*월" And Finder.Offset(2, 0).Value > 0 Then Set cell = Finder: Exit For
         col(1) = col(1) + 1: If col(1) > 70 Then Exit For
     Next Finder
     If cell Is Nothing Then GetDailyPlanWhen = "It's Not a DailyPlan": GoTo NAD ' 열람한 문서가 DailyPlan이 아닐시 오류처리 단
-    Title = cell.value ' 생산 월
+    Title = cell.Value ' 생산 월
     col(1) = cell.MergeArea.Cells(1, 1).Column: col(2) = cell.MergeArea.Cells(1, cell.MergeArea.Columns.Count).Column ' 생산 일 Range 지정을 위한 열 값 추적
     For Each cell In ws.Range(ws.Cells(3, col(1)), ws.Cells(3, col(2)))
-        If isNumeric(cell.value) And cell.Offset(1, 0).value > 0 And cell.value < smallestValue Then smallestValue = cell.value
+        If IsNumeric(cell.Value) And cell.Offset(1, 0).Value > 0 And cell.Value < smallestValue Then smallestValue = cell.Value
     Next cell
     Title = Title & "-" & smallestValue & "일" ' Title = *월-*일
     GetDailyPlanWhen = Title ' 날짜형 제목값 인계
     Title = smallestValue ' 날짜값
     Set cell = ws.Rows("2:3").Find(What:="생산 라인", lookAt:=xlWhole, LookIn:=xlValues)
-    wLine = cell.Offset(2, 0).value
+    wLine = cell.Offset(2, 0).Value
 NAD:
     Wb.Close SaveChanges:=False: Set Wb = Nothing ' 워크북 닫기
     xlApp.Quit: Set xlApp = Nothing ' Excel 애플리케이션 종료
@@ -1034,13 +1039,41 @@ Private Function SetRangeForDraw(ByRef Criterion_Target As Range) As Range
     Set SetRangeForDraw = ws.Range(ws.Cells(FirstRow, LastCol), ws.Cells(LastRow, LastCol + 3))
     'Debug.Print "SetRangeForDraw : " & SetRangeForDraw.Address
 End Function
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-BB_DailyPlan_Viewer.bas End
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-InventoryCart.cls Start
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+Private Sub DecodeDate(ByRef Target As Range)
+    On Error GoTo Endproc
+    Dim ws As Worksheet: Set ws = Target.Worksheet
+    Dim vDD As Long, LastRow As Long
+    Dim WK As String, DT As Date
+    
+    LastRow = ws.Cells(ws.Rows.Count, Target.Column).End(xlUp).Row ' 날짜 셀의 마지막 행 추적
+    DT = Int(CDate(ws.Cells(LastRow, 1).Value)) ' 마지막 행의 첫 열이 날짜 데이터가 있는 셀임
+    vDD = CInt(Target.Value) ' 일단 고유 날짜값 저장
+    If Day(DT) <> vDD Then DT = DateSerial(Year(DT), Month(DT), vDD) ' 실제날짜값(DT)과 명시된날짜값(vDD)를 비교후 명시된 날짜값을 추종하도록 설계
+    WK = WeekdayKorean(DT) ' 요일 변환
+    Target.Value = DT ' 최종값 전달
+    Target.NumberFormat = "d aaa" ' 날짜와 요일이 기재되도록 포맷
+    With Target
+        .WrapText = False ' 줄바꿈 False
+        .ShrinkToFit = True ' 셀에 맞춤 True
+        .HorizontalAlignment = xlCenter ' 가로 중앙정렬
+        .VerticalAlignment = xlCenter ' 세로 중앙정렬
+        Select Case WK
+            Case Is = "토"
+                .Interior.Color = RGB(150, 200, 255)
+            Case Is = "일"
+                .Interior.Color = RGB(255, 150, 200)
+            Case Else
+                .Interior.Color = RGB(150, 255, 200)
+        End Select
+    End With
+Endproc:
+End Sub
+
+````
+
+### InventoryCart.cls
+````vba
 Option Explicit
 
 Private Makers As New Collection, parts As New Collection, Duplicated As New Collection
@@ -1054,13 +1087,10 @@ End Sub
 Private Sub Class_Terminate()
     
 End Sub
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-InventoryCart.cls End
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+````
 
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-AA_Test.bas Start
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+### AA_Test.bas
+````vba
 Private ws As Worksheet
 
 Public Sub Painter_Test()
@@ -1125,27 +1155,21 @@ Public Sub TTESTSET()
     SortColumnByFeeder FFF
 End Sub
 
-Sub t()
+Sub T()
 Debug.Print Z_Directory.Backup
 Debug.Print Z_Directory.BOM
 
 'Debug.Print GetWebText("https://naver.com")
 'Debug.Print GetWebText("https://github.com/loborover/AutoReport/tree/main")
 End Sub
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-AA_Test.bas End
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+````
 
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-LinkToDB.bas Start
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-LinkToDB.bas End
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+### LinkToDB.bas
+````vba
+````
 
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-AutoReportHandler.frm Start
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+### AutoReportHandler.frm
+````vba
 Private Type ChkBx
     Manual_Reporting(1 To 2) As Boolean
     Print_Now(1 To 3) As Boolean
@@ -1171,12 +1195,16 @@ Public Property Let Doc_BackColor(Target As ObjPivotAxis)
     Set pvRGB(1) = Target
 End Property
 
+Private Sub CB_Yoil_DP_Click()
+    BB_DailyPlan_Viewer.Yoil_DP = CB_Yoil_DP.Value
+End Sub
+
 Private Sub CbBx_Feeder_Change()
-    D_ListView_Feeder_item_Updater CbBx_Feeder.value
+    D_ListView_Feeder_item_Updater CbBx_Feeder.Value
 End Sub
 
 Private Sub CbBx_Target_Printer_Change()
-    Printer.DefaultPrinter = CbBx_Target_Printer.value
+    Printer.DefaultPrinter = CbBx_Target_Printer.Value
 End Sub
 
 Private Sub Userform_Initialize() '전처리
@@ -1185,30 +1213,30 @@ Private Sub Userform_Initialize() '전처리
     Dim i As Long, wLine As Long, wDate As Long ' 반복문용 변수
     Set ws = ThisWorkbook.Worksheets("Setting"): Set UI = Me
     
-    Me.Version_Label.Caption = "V." & ws.Cells.Find("Version", lookAt:=xlWhole, MatchCase:=True).Offset(0, 1).value
+    Me.Version_Label.Caption = "V." & ws.Cells.Find("Version", lookAt:=xlWhole, MatchCase:=True).Offset(0, 1).Value
     
     If Not Printer.Bool_IPNS Then Printer.PrinterNameSet ' 프린터 세팅되어 있는지 확인 후 프린터 목록 초기화
     For i = 1 To Printer.PrinterName.Count
         With Me.CbBx_Target_Printer
             .Additem Printer.PrinterName(i)
-            If (Printer.DefaultPrinter = Printer.PrinterName(i)) Then .value = Printer.PrinterName(i)
+            If (Printer.DefaultPrinter = Printer.PrinterName(i)) Then .Value = Printer.PrinterName(i)
         End With
     Next i
     
-    DP_BCBR_Slidebar.value = 218 ' Brightness 초기화
+    DP_BCBR_Slidebar.Value = 218 ' Brightness 초기화
     wLine = 35: wDate = 65
     
     ' CheckBox initializing
-    Me.CB_PNBOM.value = True
-    Me.CB_KO_ALL.value = True
-    Me.CB_MRDP.value = True
-    Me.CB_MRPL.value = True
+    Me.CB_PNBOM.Value = True
+    Me.CB_KO_ALL.Value = True
+    Me.CB_MRDP.Value = True
+    Me.CB_MRPL.Value = True
     CB_PNDP_Click
-    Me.CB_PNDP.value = False
+    Me.CB_PNDP.Value = False
     CB_PNPL_Click
-    Me.CB_PNPL.value = False
-    Me.CB_Lvl1_BOM.value = True
-    Me.CB_LvlS_BOM.value = True
+    Me.CB_PNPL.Value = False
+    Me.CB_Lvl1_BOM.Value = True
+    Me.CB_LvlS_BOM.Value = True
     CB_PL_Ddays_Click
 
     With Me.ListView_BOM
@@ -1259,24 +1287,24 @@ Private Sub Userform_Initialize() '전처리
 '        .ColumnHeaders.Add text:="PartList", Width:=50
     End With
         
-    With Me.DP_PN_Counter: .Min = 1: .Max = 999: .value = 1: Me.DP_PN_Copies_TB.text = .value: End With
-    With Me.PL_PN_Counter: .Min = 1: .Max = 999: .value = 1: Me.DP_PN_Copies_TB.text = .value: End With
-    With Me.PL_Ddays_Counter: .Min = 1: .Max = 999: .value = 2: Me.PL_Ddays_TB.text = .value: End With
+    With Me.DP_PN_Counter: .Min = 1: .Max = 999: .Value = 1: Me.DP_PN_Copies_TB.text = .Value: End With
+    With Me.PL_PN_Counter: .Min = 1: .Max = 999: .Value = 1: Me.DP_PN_Copies_TB.text = .Value: End With
+    With Me.PL_Ddays_Counter: .Min = 1: .Max = 999: .Value = 2: Me.PL_Ddays_TB.text = .Value: End With
     
     With Me.MultiPage_FeederChecker
         For i = 0 To .Pages.Count - 1
-            .value = i
+            .Value = i
             DoEvents
         Next i
-        .value = 1
+        .Value = 1
     End With
     
     With Me.MultiPage1
         For i = 0 To .Pages.Count - 1
-            .value = i
+            .Value = i
             DoEvents
         Next i
-        .value = 1
+        .Value = 1
     End With
     
     SetUp_FeederTrackers ' Feeder.bas 연결
@@ -1293,7 +1321,7 @@ Private Sub DP_BCBR_TB_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shi
 
         inputStr = Replace(DP_BCBR_TB.text, "%", "")
         If Trim(inputStr) = "" Then Exit Sub
-        If Not isNumeric(inputStr) Then Exit Sub
+        If Not IsNumeric(inputStr) Then Exit Sub
 
         numericVal = CDbl(inputStr)
         If numericVal < 0 Then numericVal = 0
@@ -1307,7 +1335,7 @@ Private Sub DP_BCBR_TB_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shi
         DP_BCBR_TB.text = Format(numericVal, "0.0") & "%"
         Application.EnableEvents = True
 
-        DP_BCBR_Slidebar.value = scaledVal
+        DP_BCBR_Slidebar.Value = scaledVal
         Call DP_BCBR_Slidebar_Change
 
         KeyCode = 0 ' 삑 소리 방지
@@ -1315,118 +1343,118 @@ Private Sub DP_BCBR_TB_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shi
 End Sub
 
 Private Sub DP_BCBR_Slidebar_Change()
-    Me.DP_BCBR_TB.text = Format((DP_BCBR_Slidebar.value / 255 * 100), "0.0") & "%"
-    DP_BCBR_Slidebar.SelLength = DP_BCBR_Slidebar.value
-    Brght = DP_BCBR_Slidebar.value
+    Me.DP_BCBR_TB.text = Format((DP_BCBR_Slidebar.Value / 255 * 100), "0.0") & "%"
+    DP_BCBR_Slidebar.SelLength = DP_BCBR_Slidebar.Value
+    Brght = DP_BCBR_Slidebar.Value
     DP_BCBR_TB.BackColor = RGB(Brght, Brght, Brght)
     Brght = 255 + (Brght * -1)
     DP_BCBR_TB.ForeColor = RGB(Brght, Brght, Brght)
 End Sub
 
 Public Property Get Brightness() As Single
-    Brightness = DP_BCBR_Slidebar.value
+    Brightness = DP_BCBR_Slidebar.Value
 End Property
 Private Sub CB_MR_All_Click()
-    If CB_MR_All.value Then
-        vCB.Manual_Reporting(1) = CB_MRDP.value
-        vCB.Manual_Reporting(2) = CB_MRPL.value
-        CB_MRDP.value = CB_MR_All.value
-        CB_MRPL.value = CB_MR_All.value
-        CB_MRDP.Enabled = Not CB_MR_All.value
-        CB_MRPL.Enabled = Not CB_MR_All.value
+    If CB_MR_All.Value Then
+        vCB.Manual_Reporting(1) = CB_MRDP.Value
+        vCB.Manual_Reporting(2) = CB_MRPL.Value
+        CB_MRDP.Value = CB_MR_All.Value
+        CB_MRPL.Value = CB_MR_All.Value
+        CB_MRDP.Enabled = Not CB_MR_All.Value
+        CB_MRPL.Enabled = Not CB_MR_All.Value
     Else
-        CB_MRDP.value = vCB.Manual_Reporting(1)
-        CB_MRPL.value = vCB.Manual_Reporting(2)
-        CB_MRDP.Enabled = Not CB_MR_All.value
-        CB_MRPL.Enabled = Not CB_MR_All.value
+        CB_MRDP.Value = vCB.Manual_Reporting(1)
+        CB_MRPL.Value = vCB.Manual_Reporting(2)
+        CB_MRDP.Enabled = Not CB_MR_All.Value
+        CB_MRPL.Enabled = Not CB_MR_All.Value
     End If
 End Sub
 Private Sub CB_KO_ALL_Click()
-    If CB_KO_ALL.value Then
-        vCB.Kill_Original(1) = CB_KO_BOM.value
-        vCB.Kill_Original(2) = CB_KO_DP.value
-        vCB.Kill_Original(3) = CB_KO_PL.value
-        CB_KO_BOM.value = CB_KO_ALL.value
-        CB_KO_DP.value = CB_KO_ALL.value
-        CB_KO_PL.value = CB_KO_ALL.value
-        CB_KO_BOM.Enabled = Not CB_KO_ALL.value
-        CB_KO_DP.Enabled = Not CB_KO_ALL.value
-        CB_KO_PL.Enabled = Not CB_KO_ALL.value
+    If CB_KO_ALL.Value Then
+        vCB.Kill_Original(1) = CB_KO_BOM.Value
+        vCB.Kill_Original(2) = CB_KO_DP.Value
+        vCB.Kill_Original(3) = CB_KO_PL.Value
+        CB_KO_BOM.Value = CB_KO_ALL.Value
+        CB_KO_DP.Value = CB_KO_ALL.Value
+        CB_KO_PL.Value = CB_KO_ALL.Value
+        CB_KO_BOM.Enabled = Not CB_KO_ALL.Value
+        CB_KO_DP.Enabled = Not CB_KO_ALL.Value
+        CB_KO_PL.Enabled = Not CB_KO_ALL.Value
     Else
-        CB_KO_BOM.value = vCB.Kill_Original(1)
-        CB_KO_DP.value = vCB.Kill_Original(2)
-        CB_KO_PL.value = vCB.Kill_Original(3)
-        CB_KO_BOM.Enabled = Not CB_KO_ALL.value
-        CB_KO_DP.Enabled = Not CB_KO_ALL.value
-        CB_KO_PL.Enabled = Not CB_KO_ALL.value
+        CB_KO_BOM.Value = vCB.Kill_Original(1)
+        CB_KO_DP.Value = vCB.Kill_Original(2)
+        CB_KO_PL.Value = vCB.Kill_Original(3)
+        CB_KO_BOM.Enabled = Not CB_KO_ALL.Value
+        CB_KO_DP.Enabled = Not CB_KO_ALL.Value
+        CB_KO_PL.Enabled = Not CB_KO_ALL.Value
     End If
 End Sub
 
 Private Sub CB_PNALL_Click()
-    If CB_PNALL.value Then
+    If CB_PNALL.Value Then
 '전처리 PrintNow 값 살려두기
-        vCB.Print_Now(1) = CB_PNBOM.value
-        vCB.Print_Now(2) = CB_PNDP.value
-        vCB.Print_Now(3) = CB_PNPL.value
+        vCB.Print_Now(1) = CB_PNBOM.Value
+        vCB.Print_Now(2) = CB_PNDP.Value
+        vCB.Print_Now(3) = CB_PNPL.Value
 ' 전체 True 설정
-        CB_PNBOM.value = CB_PNALL.value
-        CB_PNDP.value = CB_PNALL.value
-        CB_PNPL.value = CB_PNALL.value
+        CB_PNBOM.Value = CB_PNALL.Value
+        CB_PNDP.Value = CB_PNALL.Value
+        CB_PNPL.Value = CB_PNALL.Value
 ' 잠금설정
-        CB_PNBOM.Enabled = Not CB_PNALL.value
-        CB_PNDP.Enabled = Not CB_PNALL.value
-        CB_PNPL.Enabled = Not CB_PNALL.value
+        CB_PNBOM.Enabled = Not CB_PNALL.Value
+        CB_PNDP.Enabled = Not CB_PNALL.Value
+        CB_PNPL.Enabled = Not CB_PNALL.Value
     Else
 'PrintNow값 반환
-        CB_PNBOM.value = vCB.Print_Now(1)
-        CB_PNDP.value = vCB.Print_Now(2)
-        CB_PNPL.value = vCB.Print_Now(3)
+        CB_PNBOM.Value = vCB.Print_Now(1)
+        CB_PNDP.Value = vCB.Print_Now(2)
+        CB_PNPL.Value = vCB.Print_Now(3)
 ' 잠금설정
-        CB_PNBOM.Enabled = Not CB_PNALL.value
-        CB_PNDP.Enabled = Not CB_PNALL.value
-        CB_PNPL.Enabled = Not CB_PNALL.value
+        CB_PNBOM.Enabled = Not CB_PNALL.Value
+        CB_PNDP.Enabled = Not CB_PNALL.Value
+        CB_PNPL.Enabled = Not CB_PNALL.Value
     End If
 End Sub
 
 Private Sub CB_PNBOM_Click()
-    PrintNow.BOM = CB_PNBOM.value
+    PrintNow.BOM = CB_PNBOM.Value
 End Sub
 
 Private Sub CB_PNDP_Click()
-    PrintNow.DailyPlan = CB_PNDP.value
+    PrintNow.DailyPlan = CB_PNDP.Value
     
-    Me.DP_PN_Copies_TB.Enabled = Me.CB_PNDP.value
-    Me.DP_PN_Counter.Enabled = Me.CB_PNDP.value
+    Me.DP_PN_Copies_TB.Enabled = Me.CB_PNDP.Value
+    Me.DP_PN_Counter.Enabled = Me.CB_PNDP.Value
 End Sub
 Private Sub CB_PNPL_Click()
-    PrintNow.PartList = CB_PNPL.value
+    PrintNow.PartList = CB_PNPL.Value
     
-    Me.PL_PN_Copies_TB.Enabled = Me.CB_PNPL.value
-    Me.PL_PN_Counter.Enabled = Me.CB_PNPL.value
+    Me.PL_PN_Copies_TB.Enabled = Me.CB_PNPL.Value
+    Me.PL_PN_Counter.Enabled = Me.CB_PNPL.Value
 End Sub
 Private Sub CB_MRDP_Click()
-    BB_DailyPlan_Viewer.MRB_DP = CB_MRDP.value
+    BB_DailyPlan_Viewer.MRB_DP = CB_MRDP.Value
 End Sub
 Private Sub CB_MRPL_Click()
-    BC_PartListItem_Viewer.MRB_PL = CB_MRPL.value
+    BC_PartListItem_Viewer.MRB_PL = CB_MRPL.Value
 End Sub
 Private Sub CB_PL_Ddays_Click()
-    Me.PL_Ddays_Counter.Enabled = Me.CB_PL_Ddays.value
-    Me.PL_Ddays_TB.Enabled = Me.CB_PL_Ddays.value
+    Me.PL_Ddays_Counter.Enabled = Me.CB_PL_Ddays.Value
+    Me.PL_Ddays_TB.Enabled = Me.CB_PL_Ddays.Value
 End Sub
 
 Private Sub CB_KO_BOM_Click()
-    OriginalKiller.BOM = CB_KO_BOM.value
+    OriginalKiller.BOM = CB_KO_BOM.Value
 End Sub
 
 Private Sub CB_KO_DP_Click()
-    OriginalKiller.DailyPlan = CB_KO_DP.value
+    OriginalKiller.DailyPlan = CB_KO_DP.Value
 End Sub
 Private Sub CB_KO_PL_Click()
-    OriginalKiller.PartList = CB_KO_PL.value
+    OriginalKiller.PartList = CB_KO_PL.Value
 End Sub
 Private Sub CB_Lvl1_BOM_Click()
-    If CB_Lvl1_BOM.value Then
+    If CB_Lvl1_BOM.Value Then
         BOM_Level.Add "0"
         BOM_Level.Add ".1"
     Else
@@ -1436,7 +1464,7 @@ Private Sub CB_Lvl1_BOM_Click()
     End If
 End Sub
 Private Sub CB_Lvl2_BOM_Click()
-    If CB_Lvl2_BOM.value Then
+    If CB_Lvl2_BOM.Value Then
         BOM_Level.Add "..2"
     Else
         For ii = BOM_Level.Count To 1 Step -1
@@ -1445,7 +1473,7 @@ Private Sub CB_Lvl2_BOM_Click()
     End If
 End Sub
 Private Sub CB_Lvl3_BOM_Click()
-    If CB_Lvl3_BOM.value Then
+    If CB_Lvl3_BOM.Value Then
         BOM_Level.Add "...3"
     Else
         For ii = BOM_Level.Count To 1 Step -1
@@ -1454,7 +1482,7 @@ Private Sub CB_Lvl3_BOM_Click()
     End If
 End Sub
 Private Sub CB_LvlS_BOM_Click()
-    If CB_LvlS_BOM.value Then
+    If CB_LvlS_BOM.Value Then
         BOM_Level.Add "*S*"
     Else
         For ii = BOM_Level.Count To 1 Step -1
@@ -1463,22 +1491,22 @@ Private Sub CB_LvlS_BOM_Click()
     End If
 End Sub
 Private Sub CB_LvlAll_BOM_Click()
-    If CB_LvlAll_BOM.value Then
+    If CB_LvlAll_BOM.Value Then
 '전처리 PrintNow 값 살려두기
-        BOMLevelCheckBox(1) = CB_Lvl1_BOM.value
-        BOMLevelCheckBox(2) = CB_Lvl2_BOM.value
-        BOMLevelCheckBox(3) = CB_Lvl3_BOM.value
-        BOMLevelCheckBox(4) = CB_LvlS_BOM.value
+        BOMLevelCheckBox(1) = CB_Lvl1_BOM.Value
+        BOMLevelCheckBox(2) = CB_Lvl2_BOM.Value
+        BOMLevelCheckBox(3) = CB_Lvl3_BOM.Value
+        BOMLevelCheckBox(4) = CB_LvlS_BOM.Value
 ' 전체 True 설정
-        CB_Lvl1_BOM.value = CB_LvlAll_BOM.value
-        CB_Lvl2_BOM.value = CB_LvlAll_BOM.value
-        CB_Lvl3_BOM.value = CB_LvlAll_BOM.value
-        CB_LvlS_BOM.value = CB_LvlAll_BOM.value
+        CB_Lvl1_BOM.Value = CB_LvlAll_BOM.Value
+        CB_Lvl2_BOM.Value = CB_LvlAll_BOM.Value
+        CB_Lvl3_BOM.Value = CB_LvlAll_BOM.Value
+        CB_LvlS_BOM.Value = CB_LvlAll_BOM.Value
 ' 잠금설정
-        CB_Lvl1_BOM.Enabled = Not CB_LvlAll_BOM.value
-        CB_Lvl2_BOM.Enabled = Not CB_LvlAll_BOM.value
-        CB_Lvl3_BOM.Enabled = Not CB_LvlAll_BOM.value
-        CB_LvlS_BOM.Enabled = Not CB_LvlAll_BOM.value
+        CB_Lvl1_BOM.Enabled = Not CB_LvlAll_BOM.Value
+        CB_Lvl2_BOM.Enabled = Not CB_LvlAll_BOM.Value
+        CB_Lvl3_BOM.Enabled = Not CB_LvlAll_BOM.Value
+        CB_LvlS_BOM.Enabled = Not CB_LvlAll_BOM.Value
 ' BOM_Level 컬렉션 초기화
         For ii = BOM_Level.Count To 1 Step -1
             BOM_Level.Remove ii
@@ -1495,27 +1523,27 @@ Private Sub CB_LvlAll_BOM_Click()
         BOM_Level.Add "......6"
     Else
 'PrintNow값 반환
-        CB_Lvl1_BOM.value = BOMLevelCheckBox(1)
-        CB_Lvl2_BOM.value = BOMLevelCheckBox(2)
-        CB_Lvl3_BOM.value = BOMLevelCheckBox(3)
-        CB_LvlS_BOM.value = BOMLevelCheckBox(4)
+        CB_Lvl1_BOM.Value = BOMLevelCheckBox(1)
+        CB_Lvl2_BOM.Value = BOMLevelCheckBox(2)
+        CB_Lvl3_BOM.Value = BOMLevelCheckBox(3)
+        CB_LvlS_BOM.Value = BOMLevelCheckBox(4)
 ' 잠금설정
-        CB_Lvl1_BOM.Enabled = Not CB_LvlAll_BOM.value
-        CB_Lvl2_BOM.Enabled = Not CB_LvlAll_BOM.value
-        CB_Lvl3_BOM.Enabled = Not CB_LvlAll_BOM.value
-        CB_LvlS_BOM.Enabled = Not CB_LvlAll_BOM.value
+        CB_Lvl1_BOM.Enabled = Not CB_LvlAll_BOM.Value
+        CB_Lvl2_BOM.Enabled = Not CB_LvlAll_BOM.Value
+        CB_Lvl3_BOM.Enabled = Not CB_LvlAll_BOM.Value
+        CB_LvlS_BOM.Enabled = Not CB_LvlAll_BOM.Value
 ' BOM_Level 컬렉션 초기화
         For ii = BOM_Level.Count To 1 Step -1
             BOM_Level.Remove ii
         Next ii
 ' BOM_Level 컬렉션 재설정
-        If CB_Lvl1_BOM.value Then
+        If CB_Lvl1_BOM.Value Then
             BOM_Level.Add ".1"
             BOM_Level.Add "0"
         End If
-        If CB_Lvl2_BOM.value Then BOM_Level.Add "..2"
-        If CB_Lvl3_BOM.value Then BOM_Level.Add "...3"
-        If CB_LvlS_BOM.value Then BOM_Level.Add "*S*"
+        If CB_Lvl2_BOM.Value Then BOM_Level.Add "..2"
+        If CB_Lvl3_BOM.Value Then BOM_Level.Add "...3"
+        If CB_LvlS_BOM.Value Then BOM_Level.Add "*S*"
     End If
 End Sub
 Private Sub AB_ReadBOM_Click()
@@ -1619,13 +1647,13 @@ End Sub
 Private Sub DP_PN_Copies_TB_Change()
     If Me.DP_PN_Copies_TB.text = "" Or Val(Me.DP_PN_Copies_TB.text) = 0 Then
         Me.DP_PN_Copies_TB.text = 1
-        Me.DP_PN_Counter.value = 1
+        Me.DP_PN_Counter.Value = 1
     Else
-        Me.DP_PN_Counter.value = Val(Me.DP_PN_Copies_TB.text)
+        Me.DP_PN_Counter.Value = Val(Me.DP_PN_Copies_TB.text)
     End If
 End Sub
 Private Sub DP_PN_Counter_Change()
-    Me.DP_PN_Copies_TB.text = Me.DP_PN_Counter.value
+    Me.DP_PN_Copies_TB.text = Me.DP_PN_Counter.Value
 End Sub
 
 Private Sub PL_PN_Copies_TB_KeyPress(ByVal KeyAscii As MSForms.ReturnInteger)
@@ -1637,13 +1665,13 @@ End Sub
 Private Sub PL_PN_Copies_TB_Change()
     If Me.PL_PN_Copies_TB.text = "" Or Val(Me.PL_PN_Copies_TB.text) = 0 Then
         Me.PL_PN_Copies_TB.text = 1
-        Me.PL_PN_Counter.value = 1
+        Me.PL_PN_Counter.Value = 1
     Else
-        Me.PL_PN_Counter.value = Val(Me.PL_PN_Copies_TB.text)
+        Me.PL_PN_Counter.Value = Val(Me.PL_PN_Copies_TB.text)
     End If
 End Sub
 Private Sub PL_PN_Counter_Change()
-    Me.PL_PN_Copies_TB.text = Me.PL_PN_Counter.value
+    Me.PL_PN_Copies_TB.text = Me.PL_PN_Counter.Value
 End Sub
 
 Private Sub PL_Ddays_TB_KeyPress(ByVal KeyAscii As MSForms.ReturnInteger)
@@ -1655,15 +1683,15 @@ End Sub
 Private Sub PL_Ddays_TB_Change()
     If Me.PL_Ddays_TB.text = "" Or Val(Me.PL_Ddays_TB.text) = 0 Then
         Me.PL_Ddays_TB.text = 1
-        Me.PL_Ddays_Counter.value = 1
+        Me.PL_Ddays_Counter.Value = 1
     ElseIf Me.PL_Ddays_TB.text > Me.PL_Ddays_Counter.Max Then
         Me.PL_Ddays_TB.text = Me.PL_Ddays_Counter.Max
     Else
-        Me.PL_Ddays_Counter.value = Val(Me.PL_Ddays_TB.text)
+        Me.PL_Ddays_Counter.Value = Val(Me.PL_Ddays_TB.text)
     End If
 End Sub
 Private Sub PL_Ddays_Counter_Change()
-    Me.PL_Ddays_TB.text = Me.PL_Ddays_Counter.value
+    Me.PL_Ddays_TB.text = Me.PL_Ddays_Counter.Value
 End Sub
 Public Sub UpdateProgressBar(ProgressBar As MSComctlLib.ProgressBar, _
                                         ByRef Index As Single, _
@@ -1672,7 +1700,7 @@ Public Sub UpdateProgressBar(ProgressBar As MSComctlLib.ProgressBar, _
     With ProgressBar
         .Min = vMin
         .Max = vMax
-        .value = Index
+        .Value = Index
     End With
 End Sub
 
@@ -1681,15 +1709,12 @@ Public Property Get itemLevel() As Collection
 End Property
 
 Private Sub MultiPage_FeederChecker_Change()
-    If MultiPage_FeederChecker.value = 0 Then D_ListView_Feeder_Updater
+    If MultiPage_FeederChecker.Value = 0 Then D_ListView_Feeder_Updater
 End Sub
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-AutoReportHandler.frm End
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+````
 
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-StickerLabel.cls Start
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+### StickerLabel.cls
+````vba
 '스티커라벨의 그림 드로잉 기능을 위한 클래스
 Private DrawingWS As Worksheet
 '초기화 이벤트 메서드
@@ -1700,8 +1725,8 @@ Private DrawingWS As Worksheet
 'Private Sub Class_Terminate()
 '
 'End Sub
-Friend Property Set Worksheet(ByRef value As Worksheet)
-    Set DrawingWS = value
+Friend Property Set Worksheet(ByRef Value As Worksheet)
+    Set DrawingWS = Value
 End Property
 
 Public Function Left(ByRef Xaxis As Single, ByRef Yaxis As Single, _
@@ -2385,13 +2410,10 @@ Private Sub SpotChecker(Xaxis As Single, Yaxis As Single, _
     Next i
     DrawingWS.Shapes.Range(ShpName).Group
 End Sub
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-StickerLabel.cls End
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+````
 
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-Painter.cls Start
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+### Painter.cls
+````vba
 '워크시트에 그림 정보를 사용해야 할 때, 최종출력용 그림 기능을 모아둔 클래스
 
 Private DrawingWS As Worksheet
@@ -2407,8 +2429,8 @@ End Sub
 Private Sub Class_Terminate()
     Set clsStickerLabel = Nothing
 End Sub
-Public Property Set DrawingWorksheet(ByRef value As Worksheet)
-    Set DrawingWS = value
+Public Property Set DrawingWorksheet(ByRef Value As Worksheet)
+    Set DrawingWS = Value
     Set Me.StickerLabel.Worksheet = DrawingWS
 End Property
 Public Property Get DrawingWorksheet() As Worksheet
@@ -2692,7 +2714,7 @@ Public Function Stamp_it_Auto(ByRef Criterion_Range As Range, _
     Dim Check As Range, StartR As Range, EndR As Range ' check, Start, End Range
 
     For Each Check In Criterion_Range ' 영역 지정용 반복루틴
-        If Not IsEmpty(Check.value) Then
+        If Not IsEmpty(Check.Value) Then
             If FirstRow <= 0 Then FirstRow = Check.Row
             If LastRow < Check.Row Then LastRow = Check.Row: LastCol = Check.Column
             Select Case Stpt_Direction
@@ -2770,19 +2792,16 @@ Public Sub ShapesSelect()
         DrawingWS.Shapes(i).Select
     Next i
 End Sub
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-Painter.cls End
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+````
 
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-ObjPivotAxis.cls Start
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+### ObjPivotAxis.cls
+````vba
 Private vXaxis As Single, vYaxis As Single, vZaxis As Single
-Public Property Let X(value As Single): vXaxis = value: End Property
+Public Property Let X(Value As Single): vXaxis = Value: End Property
 Public Property Get X() As Single: X = vXaxis: End Property
-Public Property Let Y(value As Single): vYaxis = value: End Property
+Public Property Let Y(Value As Single): vYaxis = Value: End Property
 Public Property Get Y() As Single: Y = vYaxis: End Property
-Public Property Let Z(value As Single): vZaxis = value: End Property
+Public Property Let Z(Value As Single): vZaxis = Value: End Property
 Public Property Get Z() As Single:    Z = vZaxis: End Property
 Public Function Copy() As ObjPivotAxis
     Dim CopiedObj As New ObjPivotAxis
@@ -2793,13 +2812,10 @@ Public Function Copy() As ObjPivotAxis
     End With
     Set Copy = CopiedObj
 End Function
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-ObjPivotAxis.cls End
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+````
 
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-ProductModel2.cls Start
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+### ProductModel2.cls
+````vba
 Option Explicit
 
 Private vPrevious As ModelInfo
@@ -2831,7 +2847,7 @@ Public Property Get Another() As ModelInfo
     Set Another = vPrevious
 End Property
 Public Function Set_Another_Model(ByRef Target As Range) As ModelInfo
-    vPrevious.FullName = Target.value
+    vPrevious.FullName = Target.Value
     vPrevious.Set_Pivot Target
     Set Set_Another_Model = vPrevious
 End Function
@@ -2859,17 +2875,17 @@ Public Sub NextModel(ByRef NextTarget As Range)
     Set vPrevious = vCurrent.Copy  ' 현재 > 이전
     Set vCurrent = vNext.Copy  ' 다음 > 현재
     Set vNext = New ModelInfo
-    vNext.WorkOrder = NextTarget.Offset(0, -1).value
-    vNext.FullName = NextTarget.value
+    vNext.WorkOrder = NextTarget.Offset(0, -1).Value
+    vNext.FullName = NextTarget.Value
     vNext.Set_Pivot NextTarget
     
     vLOT = vLOT + 1 ' 모델이 누적될 때마다 전부 셈
     
 End Sub
 Public Sub SetModel(ByRef Current_Target As Range, ByRef Next_Target As Range)
-    vCurrent.FullName = Current_Target.value
+    vCurrent.FullName = Current_Target.Value
     vCurrent.Set_Pivot Current_Target
-    vNext.FullName = Next_Target.value
+    vNext.FullName = Next_Target.Value
     vNext.Set_Pivot Next_Target
 End Sub
 
@@ -2920,13 +2936,10 @@ End Sub
 Public Sub test()
     Me.Compare2Models Me.Crr, Me.Nxt, mif_Spec
 End Sub
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-ProductModel2.cls End
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+````
 
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-ModelInfo.cls Start
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+### ModelInfo.cls
+````vba
 Option Explicit
 
 Public Enum ModelinfoFeild
@@ -2966,14 +2979,14 @@ Private vPivot(0 To 1) As Long
 Public Property Get WorkOrder() As String
     WorkOrder = vWorkOrder
 End Property
-Public Property Let WorkOrder(value As String)
-    vWorkOrder = value
+Public Property Let WorkOrder(Value As String)
+    vWorkOrder = Value
 End Property
 Public Property Get FullName() As String
     FullName = vFullName
 End Property
-Public Property Let FullName(value As String)
-    If vFullName <> value Then ParseModelinfo value
+Public Property Let FullName(Value As String)
+    If vFullName <> Value Then ParseModelinfo Value
 End Property
 Public Property Get Suffix() As String
     Suffix = vSuffix
@@ -3041,13 +3054,10 @@ Public Function Copy() As ModelInfo ' Copy Function
     End With
     Set Copy = cLS
 End Function
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-ModelInfo.cls End
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+````
 
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-AA_Updater.bas Start
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+### AA_Updater.bas
+````vba
 #Const isDev = True
 Private Const ThisModuleName As String = "AA_Updater"
 
@@ -3112,14 +3122,14 @@ Sub ExportAllModulesDirectlyToTextAndMarkdown()
     With txtStream
         .Charset = "utf-8"
         .Type = 2
-        .open
+        .Open
     End With
 
     Set mdStream = CreateObject("ADODB.Stream")
     With mdStream
         .Charset = "utf-8"
         .Type = 2
-        .open
+        .Open
     End With
 
     ' 구성 요소 반복
@@ -3185,7 +3195,7 @@ Sub ForceUpdateMacro()
     
     ' Setting 확인
     Set ws = ThisWorkbook.Worksheets("Setting")
-    If ("Dev" = ws.Cells.Find(What:="Develop", lookAt:=xlWhole, MatchCase:=True).Offset(0, 1).value) Then
+    If ("Dev" = ws.Cells.Find(What:="Develop", lookAt:=xlWhole, MatchCase:=True).Offset(0, 1).Value) Then
         #If Not isDev Then
             MsgBox "개발 모드이므로 업데이트 진행 제한", vbInformation, "개발여부 확인"
         #End If
@@ -3200,7 +3210,7 @@ Sub ForceUpdateMacro()
     fileUrl = "http://mod.lge.com/hub/seongsu1.lee/excelmacroupdater/-/raw/main/AutoReport.xlsb"
     
     ' 현재 사용 중인 버전 (Setting Worksheet의 Version 행을 찾아 값 열의 값을 참조함)
-    localVersion = VersionCell.Offset(0, 1).value
+    localVersion = VersionCell.Offset(0, 1).Value
     
     ' 최신 버전 확인
     latestVersion = GetWebText(versionUrl)
@@ -3216,7 +3226,7 @@ Sub ForceUpdateMacro()
         If DownloadFile(fileUrl, savePath) Then
             ' 기존 파일 닫기 및 새 파일 실행
             ThisWorkbook.Close False
-            Workbooks.open savePath
+            Workbooks.Open savePath
         Else
             MsgBox "업데이트 다운로드에 실패했습니다.", vbExclamation
         End If
@@ -3230,7 +3240,7 @@ Function GetWebText(url As String) As String
     Set http = CreateObject("MSXML2.XMLHTTP")
     
     ' 요청 전송
-    http.open "GET", url, False
+    http.Open "GET", url, False
     http.Send
     
     ' 응답 확인
@@ -3249,14 +3259,14 @@ Function DownloadFile(url As String, savePath As String) As Boolean
     Set http = CreateObject("MSXML2.XMLHTTP")
     
     ' 파일 다운로드 요청
-    http.open "GET", url, False
+    http.Open "GET", url, False
     http.Send
     
     ' 다운로드 확인
     If http.Status = 200 Then
         Set stream = CreateObject("ADODB.Stream")
         stream.Type = 1
-        stream.open
+        stream.Open
         stream.Write http.responseBody
         stream.SaveToFile savePath, 2
         stream.Close
@@ -3328,20 +3338,14 @@ Private Function GetVBNameFromFile(ByVal filePath As String) As String
     Close #ff
     GetVBNameFromFile = vbName
 End Function
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-AA_Updater.bas End
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+````
 
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-Cleaner_Handler.frm Start
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-Cleaner_Handler.frm End
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+### Cleaner_Handler.frm
+````vba
+````
 
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-D_Maps.cls Start
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+### D_Maps.cls
+````vba
 Option Explicit
 
 Private Main_Groups As New Collection
@@ -3425,13 +3429,10 @@ Public Function Recent_Lot(Optional Index As Long = 0, Optional Target As MorS =
     End Select
 End Function
 
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-D_Maps.cls End
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+````
 
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-D_LOT.cls Start
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+### D_LOT.cls
+````vba
 Option Explicit
 
 Private vLot_info As New Collection
@@ -3498,7 +3499,7 @@ Private Sub ParseModelinfo()
     On Error GoTo ErrorHandler
     
     For Each vCell In Me.Lot_Range.Cells
-        ValueStr = Trim(CStr(vCell.value))
+        ValueStr = Trim(CStr(vCell.Value))
         If Len(ValueStr) > 0 Then
             Exists = False
             For i = 1 To UniqueList.Count
@@ -3521,13 +3522,10 @@ ErrorHandler:
     Debug.Print "Err.Modelinfo"
     Exit Sub
 End Sub
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-D_LOT.cls End
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+````
 
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-Cleaner.bas Start
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+### Cleaner.bas
+````vba
 Sub FolderKiller(ByVal folderDirectory As String)
     Dim fso As Object
     Set fso = CreateObject("Scripting.FileSystemObject")
@@ -3538,13 +3536,10 @@ Sub FolderKiller(ByVal folderDirectory As String)
         Exit Sub
     End If
 End Sub
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-Cleaner.bas End
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+````
 
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-BC_PartListItem_Viewer.bas Start
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+### BC_PartListItem_Viewer.bas
+````vba
 Option Explicit
 
 Private Enum CollectorTypes
@@ -3552,6 +3547,7 @@ Private Enum CollectorTypes
     Duplicate = -6
 End Enum
 
+Public 예외처리 As Boolean
 Public MRB_PL As Boolean ' Manual_Reporting_Bool_PartList
 
 Private BoW As Single ' Black or White
@@ -3611,7 +3607,7 @@ Public Sub Print_PartList(Optional Handle As Boolean)
     Dim ws As Worksheet
     
     BoW = UI.Brightness
-    If UI.CB_PL_Ddays.value Then DayCount = UI.PL_Ddays_TB.text Else DayCount = 4
+    If UI.CB_PL_Ddays.Value Then DayCount = UI.PL_Ddays_TB.text Else DayCount = 4
     Set Brush = New Painter
     
     PaperCopies = CInt(UI.PL_PN_Copies_TB.text)
@@ -3629,7 +3625,7 @@ Public Sub Print_PartList(Optional Handle As Boolean)
     For i = 1 To ListCount
 UI.UpdateProgressBar UI.PB_BOM, (i - 0.99) / ListCount * 100
         Set PLitem = PLLV.ListItems.Item(Chkditem(i))
-        Set PL_Processing_WB = Workbooks.open(PLitem.SubItems(2))
+        Set PL_Processing_WB = Workbooks.Open(PLitem.SubItems(2))
 UI.UpdateProgressBar UI.PB_BOM, (i - 0.91) / ListCount * 100
         wLine = PLitem.SubItems(1) ' Line 이름 인계
         Set Target_WorkSheet = PL_Processing_WB.Worksheets(1): Set ws = Target_WorkSheet: Set Brush.DrawingWorksheet = Target_WorkSheet ' 워크시트 타게팅
@@ -3638,7 +3634,7 @@ UI.UpdateProgressBar UI.PB_BOM, (i - 0.91) / ListCount * 100
 UI.UpdateProgressBar UI.PB_BOM, (i - 0.87) / ListCount * 100
         If PrintNow.PartList Then
             Printer.PrinterNameSet  ' 기본프린터 이름 설정, 유지되는지 확인
-            ws.PrintOut ActivePrinter:=DefaultPrinter, From:=1, to:=2, copies:=PaperCopies
+            ws.PrintOut ActivePrinter:=DefaultPrinter, From:=1, To:=2, copies:=PaperCopies
             PLitem.SubItems(3) = "Done" 'Print
         Else
             PLitem.SubItems(3) = "Pass" 'Print
@@ -3654,7 +3650,7 @@ UI.UpdateProgressBar UI.PB_BOM, (i - 0.45) / ListCount * 100
 UI.UpdateProgressBar UI.PB_BOM, (i - 0.35) / ListCount * 100
         If MRB_PL Then
             Dim tWB As Workbook, Target As Range
-            Set tWB = Workbooks.open(SavedPath & ".xlsx")  ' 메뉴얼 모드일 때 열기
+            Set tWB = Workbooks.Open(SavedPath & ".xlsx")  ' 메뉴얼 모드일 때 열기
             Set Target = tWB.Worksheets(1).Rows(1).Find("-Line", lookAt:=xlPart, LookIn:=xlValues).Offset(1, 1)
             tWB.Worksheets(1).Activate
             Target.Select
@@ -3711,7 +3707,7 @@ Private Sub AR_1_EssentialDataExtraction() ' AutoReport 초반 설정 / 필수 �
     For i = vStart To vEnd
         If CritCol(2) >= DayCount Or vEnd = i Then '<- N위치
             vStart = i: Exit For
-        ElseIf ws.Cells(i, CritCol(1)).value <> ws.Cells(i + 1, CritCol(1)).value Then
+        ElseIf ws.Cells(i, CritCol(1)).Value <> ws.Cells(i + 1, CritCol(1)).Value Then
             CritCol(2) = CritCol(2) + 1
         End If
     Next i
@@ -3720,13 +3716,13 @@ Private Sub AR_1_EssentialDataExtraction() ' AutoReport 초반 설정 / 필수 �
     
     CritCol(1) = ws.Rows(1).Find("잔량", lookAt:=xlWhole, LookIn:=xlValues).Column
     For i = CritCol(1) To 1 Step -1 ' 불필요한 열 삭제처리
-        If Not IsInCollection(ws.Cells(1, i).value, vCFR) Then ws.Columns(i).Delete
+        If Not IsInCollection(ws.Cells(1, i).Value, vCFR) Then ws.Columns(i).Delete
     Next i
     CritCol(1) = ws.Rows(1).Find("모델", lookAt:=xlWhole, LookIn:=xlValues).Column
     
     For i = vStart To vEnd ' 제목 외 데이터 행 시작부터 끝까지 데이터 처리
         Set vCell = ws.Cells(i, CritCol(1))
-        vCell.value = vCell.value & "." & vCell.Offset(0, 1).value ' 모델, Suffix 열 병합
+        vCell.Value = vCell.Value & "." & vCell.Offset(0, 1).Value ' 모델, Suffix 열 병합
     Next i
     ws.Columns(vCell.Offset(0, 1).Column).Delete ' 불필요한 열 삭제처리
     CritCol(1) = ws.Rows(1).Find("계획 수량", lookAt:=xlWhole, LookIn:=xlValues).Offset(0, 1).Column
@@ -3734,12 +3730,12 @@ Private Sub AR_1_EssentialDataExtraction() ' AutoReport 초반 설정 / 필수 �
     PartCombine ws.Range(ws.Cells(1, CritCol(1)), ws.Cells(1, CritCol(2))), vStart, vEnd ' 단일 파트명으로 병합처리
     DeleteDuplicateRowsInColumn (CritCol(1) - 4), vStart, vEnd, ws ' WorkOrder 중복 행 제거
     For Each vCell In ws.Range(ws.Cells(1, CritCol(1)), ws.Cells(1, CritCol(2))) ' 제목 열 수정
-        vCell.value = Replace(ExtractBracketValue(vCell.value), "_", vbLf)
+        vCell.Value = Replace(ExtractBracketValue(vCell.Value), "_", vbLf)
     Next vCell
     Replacing_Parts ws.Range(ws.Cells(vStart, CritCol(1)), ws.Cells(vEnd, CritCol(2)))
-    ws.Cells(1, 5).value = "수량" ' 제목열 정리
+    ws.Cells(1, 5).Value = "수량" ' 제목열 정리
     ws.Columns(6).Insert: ws.Columns(6).Insert
-    ws.Cells(1, 6).value = wLine & "-Line": ws.Cells(1, 6).Resize(1, 2).Merge
+    ws.Cells(1, 6).Value = wLine & "-Line": ws.Cells(1, 6).Resize(1, 2).Merge
     ws.Name = "PartList_Total"
     'Set CopiedArea = ws.Range(ws.Cells(1, 1), ws.Cells(vEnd, 7)) ' 카피드에리어 설정단, 동적 추적으로 바꿀 것.
     If PL_Processing_WB.Worksheets.Count > 1 Then PL_Processing_WB.Worksheets(2).Delete
@@ -3772,7 +3768,7 @@ Private Sub Interior_Set_PartList(Optional ws As Worksheet)
     
     For Each xCell In Target
         With xCell
-            If .value = "" Then .Interior.Color = RGB(BoW, BoW, BoW) ' Brightness
+            If .Value = "" Then .Interior.Color = RGB(BoW, BoW, BoW) ' Brightness
             .HorizontalAlignment = xlLeft
             .VerticalAlignment = xlCenter
         End With
@@ -3822,7 +3818,7 @@ End Sub
 Private Function GetPartListWhen(PartListDirectiory As String, Optional ByRef DDC As Long) As String
     ' Excel 애플리케이션을 새로운 인스턴스로 생성
     Dim xlApp As Excel.Application: Set xlApp = New Excel.Application: xlApp.Visible = False
-    Dim Wb As Workbook: Set Wb = xlApp.Workbooks.open(PartListDirectiory) ' 워크북 열기
+    Dim Wb As Workbook: Set Wb = xlApp.Workbooks.Open(PartListDirectiory) ' 워크북 열기
     Dim ws As Worksheet: Set ws = Wb.Worksheets(1) ' 워크시트 선택
     Dim cell As Range, SC As Long, EC As Long, i As Long
         
@@ -3831,13 +3827,13 @@ Private Function GetPartListWhen(PartListDirectiory As String, Optional ByRef DD
     DDC = -1 ' 마지막 값 선보정
     SC = cell.Row + 1: EC = ws.Cells(ws.Rows.Count, cell.Column).End(xlUp).Row
     For i = SC To EC
-        If ws.Cells(i, cell.Column).value <> ws.Cells(i + 1, cell.Column).value Then DDC = DDC + 1
+        If ws.Cells(i, cell.Column).Value <> ws.Cells(i + 1, cell.Column).Value Then DDC = DDC + 1
     Next i
     UI.PL_Ddays_Counter.Max = DDC
-    Title = cell.Offset(1, 0).value ' YYYYMMDD 포맷된 날짜값 인계
+    Title = cell.Offset(1, 0).Value ' YYYYMMDD 포맷된 날짜값 인계
     Title = mid(Title, 5, 2) & "월-" & mid(Title, 7, 2) & "일"
     GetPartListWhen = Title ' 날짜형 제목값 인계
-    wLine = ws.Rows(1).Find(What:="Line", lookAt:=xlWhole, LookIn:=xlValues).Offset(1, 0).value ' 라인 값 추출
+    wLine = ws.Rows(1).Find(What:="Line", lookAt:=xlWhole, LookIn:=xlValues).Offset(1, 0).Value ' 라인 값 추출
     SC = ws.Rows(1).Find(What:="잔량", lookAt:=xlWhole, LookIn:=xlValues).Offset(0, 1).Column + 1
     EC = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
     Set cell = ws.Range(ws.Cells(1, SC), ws.Cells(1, EC))
@@ -3860,7 +3856,7 @@ Private Function PartCollector(ByRef PartNamesArea As Range, _
     ' 부품명 수집 반복문
     On Error Resume Next
     For Each cell In PartNamesArea
-        BracketVal = ExtractBracketValue(cell.value)
+        BracketVal = ExtractBracketValue(cell.Value)
             For i = 1 To UniqueParts.Count
                 If BracketVal = UniqueParts(i) Then Duplicated.Add BracketVal, BracketVal ' 중복되는 부품명 수집
             Next i
@@ -3888,8 +3884,8 @@ Private Sub Replacing_Parts(ByRef RangeTarget As Range) ' RpP
    
     ' 대상 셀을 하나씩 순회
     For Each vCell In RangeTarget
-        If Len(vCell.value) > 0 Then ' 빈 셀 무시
-            Target = vCell.value ' 원본 텍스트 추출
+        If Len(vCell.Value) > 0 Then ' 빈 셀 무시
+            Target = vCell.Value ' 원본 텍스트 추출
            
             ' 제거 대상 문자열 치환
             For i = LBound(removeList) To UBound(removeList)
@@ -3936,26 +3932,29 @@ Private Sub Replacing_Parts(ByRef RangeTarget As Range) ' RpP
             Loop Until End_P >= Len(Target) ' 전체 문자열 끝까지 반복
             
             ' 예외처리
-            If ws.Cells(1, vCell.Column).value = "Burner" Then
-                Select Case Target
-                Case Is = "[기미] 4102/4202/4402/4502" ' Signature
-                    Target = "Oval, Best"
-                Case Is = "[기미] 4102/4202/4402/4502 [SABAF S.P.A.] 6904/7302" ' Best
-                    Target = "Oval, Best, Sabaf"
-                Case Is = "[기미] 4102/4202/4402/4502(2)" ' Better
-                    Target = "Oval, Better"
-                Case Else ' 에러처리
-                    Target = "Matching Error Plz Chk Sub RpP"
-                End Select
-            Else
-                ' 일반처리 / 최종 문자열 재구성
-                Target = ""
-                For i = 1 To vVender.Count
-                    Target = Target & " [" & vVender(i) & "] " & vParts(vVender(i))
-                Next i
-            End If
-
-            vCell.value = Trim(Target) ' 결과를 셀에 기록
+            'If 예외처리 Then
+                If ws.Cells(1, vCell.Column).Value = "Burner" Then
+                    Select Case Target
+                    Case Is = "[기미] 4102/4202/4402/4502" ' Signature
+                        Target = "[피킹] Oval/Best"
+                    Case Is = "[기미] 4102/4202/4402/4502 [SABAF S.P.A.] 6904/7302" ' Best
+                        Target = "[피킹] Oval/Best/Sabaf"
+                    Case Is = "[기미] 4102/4202/4402/4502(2)" ' Better
+                        Target = "[피킹] Oval/Better"
+                    Case Is = "[] 8606/8706 [기미] 7906/8506" ' Old Gas Model
+                        Target = "[Old] Better"
+                    Case Else ' 에러처리
+                        Target = "Matching Error Plz Chk Sub RpP"
+                    End Select
+                Else
+                    ' 일반처리 / 최종 문자열 재구성
+                    Target = ""
+                    For i = 1 To vVender.Count
+                        Target = Target & " [" & vVender(i) & "] " & vParts(vVender(i))
+                    Next i
+                End If
+            'End If
+            vCell.Value = Trim(Target) ' 결과를 셀에 기록
         End If
     Next vCell
 End Sub
@@ -3979,7 +3978,7 @@ Private Sub PartCombine(ByRef PartNamesArea As Range, ByVal rStart As Long, ByVa
     For i = 1 To Duplicated.Count
         Set UniqueParts = New Collection
         For Each cell In PartNamesArea
-            BracketVal = ExtractBracketValue(cell.value)
+            BracketVal = ExtractBracketValue(cell.Value)
             If BracketVal = Duplicated(i) Then UniqueParts.Add cell ' 중복된 부품 셀 선별
         Next cell
         For CBTr = rStart To rEnd ' 파트별 병합
@@ -4005,14 +4004,14 @@ Private Sub CCBC(ByRef Target As Collection, Optional ByVal TargetRow As Long = 
     
     If CER.Count < 1 Then Exit Sub
     For i = 1 To CER.Count ' 필요 정보 취합
-        If Trim(CER(i).value) <> "" Then ValueList = ValueList & CER(i).value & vbLf
-        If i > 1 Then CER(i).value = "" ' 취합 후 잉여셀의 값 삭제
+        If Trim(CER(i).Value) <> "" Then ValueList = ValueList & CER(i).Value & vbLf
+        If i > 1 Then CER(i).Value = "" ' 취합 후 잉여셀의 값 삭제
     Next i
     If Right$(ValueList, 1) = vbLf Then ValueList = Left$(ValueList, Len(ValueList) - 1)
     
     ' 중앙정렬 및 텍스트 삽입
     With CER(1)
-        .value = ValueList
+        .Value = ValueList
         .HorizontalAlignment = xlCenter
         .VerticalAlignment = xlCenter
     End With
@@ -4032,7 +4031,7 @@ Private Sub MarkingUP_items(ByRef Target As D_Maps)
                 Set CrrR = .Sub_Lot(i).Start_R.Offset(0, tCol - sCol + 5)
                 If Not .Count(SubG) = i Then
                     Set NxtR = .Sub_Lot(i + 1).Start_R.Offset(0, tCol - sCol + 5)
-                    If CrrR.value <> NxtR.value Then eRow = CrrR.Row
+                    If CrrR.Value <> NxtR.Value Then eRow = CrrR.Row
                 Else
                     eRow = CrrR.Row
                 End If
@@ -4073,31 +4072,25 @@ Private Sub MarkingUP_PL(ByRef Target As D_Maps)
         Next i
     End With
 End Sub
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-BC_PartListItem_Viewer.bas End
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+````
 
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-BCB_PLIV_Focus.bas Start
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+### BCB_PLIV_Focus.bas
+````vba
 Option Explicit
 
 
 
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-BCB_PLIV_Focus.bas End
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+````
 
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-BCCUF.frm Start
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+### BCCUF.frm
+````vba
 Private Const Color_Inversion_Criterion As Long = 204
 Private pvRGB(1 To 2) As New ObjPivotAxis
 Private Sub Userform_Initialize()
     
-    BCR_Slidebar.value = 210
-    BCG_Slidebar.value = 210
-    BCB_Slidebar.value = 210
+    BCR_Slidebar.Value = 210
+    BCG_Slidebar.Value = 210
+    BCB_Slidebar.Value = 210
 End Sub
 Public Property Get Documents_BackColor() As ObjPivotAxis
     Set Documents_BackColor = pvRGB(2)
@@ -4116,7 +4109,7 @@ Private Sub Bright_TB_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shif
 
         inputStr = Replace(Bright_TB.text, "%", "")
         If Trim(inputStr) = "" Then Exit Sub
-        If Not isNumeric(inputStr) Then Exit Sub
+        If Not IsNumeric(inputStr) Then Exit Sub
 
         numericVal = CDbl(inputStr)
         If numericVal < 0 Then numericVal = 0
@@ -4130,7 +4123,7 @@ Private Sub Bright_TB_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shif
         Bright_TB.text = Format(numericVal, "0.0") & "%"
         Application.EnableEvents = True
 
-        Bright_Slidebar.value = scaledVal
+        Bright_Slidebar.Value = scaledVal
         Call Bright_Slidebar_Change
 
         KeyCode = 0 ' 삑 소리 방지
@@ -4144,7 +4137,7 @@ Private Sub BCR_TB_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift A
 
         inputStr = Replace(BCR_TB.text, "%", "")
         If Trim(inputStr) = "" Then Exit Sub
-        If Not isNumeric(inputStr) Then Exit Sub
+        If Not IsNumeric(inputStr) Then Exit Sub
 
         numericVal = CDbl(inputStr)
         If numericVal < 0 Then numericVal = 0
@@ -4158,7 +4151,7 @@ Private Sub BCR_TB_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift A
         BCR_TB.text = Format(numericVal, "0.0") & "%"
         Application.EnableEvents = True
 
-        BCR_Slidebar.value = scaledVal
+        BCR_Slidebar.Value = scaledVal
         Call BCR_Slidebar_Change
 
         KeyCode = 0 ' 삑 소리 방지
@@ -4172,7 +4165,7 @@ Private Sub BCG_TB_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift A
 
         inputStr = Replace(BCG_TB.text, "%", "")
         If Trim(inputStr) = "" Then Exit Sub
-        If Not isNumeric(inputStr) Then Exit Sub
+        If Not IsNumeric(inputStr) Then Exit Sub
 
         numericVal = CDbl(inputStr)
         If numericVal < 0 Then numericVal = 0
@@ -4186,7 +4179,7 @@ Private Sub BCG_TB_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift A
         BCG_TB.text = Format(numericVal, "0.0") & "%"
         Application.EnableEvents = True
 
-        BCG_Slidebar.value = scaledVal
+        BCG_Slidebar.Value = scaledVal
         Call BCG_Slidebar_Change
 
         KeyCode = 0 ' 삑 소리 방지
@@ -4200,7 +4193,7 @@ Private Sub BCB_TB_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift A
 
         inputStr = Replace(BCB_TB.text, "%", "")
         If Trim(inputStr) = "" Then Exit Sub
-        If Not isNumeric(inputStr) Then Exit Sub
+        If Not IsNumeric(inputStr) Then Exit Sub
 
         numericVal = CDbl(inputStr)
         If numericVal < 0 Then numericVal = 0
@@ -4214,7 +4207,7 @@ Private Sub BCB_TB_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift A
         BCB_TB.text = Format(numericVal, "0.0") & "%"
         Application.EnableEvents = True
 
-        BCB_Slidebar.value = scaledVal
+        BCB_Slidebar.Value = scaledVal
         Call BCB_Slidebar_Change
 
         KeyCode = 0 ' 삑 소리 방지
@@ -4222,16 +4215,16 @@ Private Sub BCB_TB_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift A
 End Sub
 
 Private Sub Bright_Slidebar_Change()
-    Me.Bright_TB.text = Format((Bright_Slidebar.value / 255 * 100), "0.0") & "%"
-    Bright_Slidebar.SelLength = Bright_Slidebar.value
-    Brght = Bright_Slidebar.value
+    Me.Bright_TB.text = Format((Bright_Slidebar.Value / 255 * 100), "0.0") & "%"
+    Bright_Slidebar.SelLength = Bright_Slidebar.Value
+    Brght = Bright_Slidebar.Value
     Bright_TB.BackColor = RGB(Brght, Brght, Brght)
     Brght = 255 + (Brght * -1)
     Bright_TB.ForeColor = RGB(Brght, Brght, Brght)
     Update_Colors
 End Sub
 Private Sub BCR_Slidebar_Change()
-    pvRGB(1).X = BCR_Slidebar.value
+    pvRGB(1).X = BCR_Slidebar.Value
     BCR_TB.text = Format((pvRGB(1).X / 255 * 100), "0.0") & "%"
     BCR_TB.BackColor = RGB(pvRGB(1).X, 0, 0)
     BCR_Slidebar.SelLength = pvRGB(1).X
@@ -4243,7 +4236,7 @@ Private Sub BCR_Slidebar_Change()
     Update_Colors
 End Sub
 Private Sub BCG_Slidebar_Change()
-    pvRGB(1).Y = BCG_Slidebar.value
+    pvRGB(1).Y = BCG_Slidebar.Value
     BCG_TB.text = Format((pvRGB(1).Y / 255 * 100), "0.0") & "%"
     BCG_TB.BackColor = RGB(0, pvRGB(1).Y, 0)
     BCG_Slidebar.SelLength = pvRGB(1).Y
@@ -4255,7 +4248,7 @@ Private Sub BCG_Slidebar_Change()
     Update_Colors
 End Sub
 Private Sub BCB_Slidebar_Change()
-    pvRGB(1).Z = BCB_Slidebar.value
+    pvRGB(1).Z = BCB_Slidebar.Value
     BCB_TB.text = Format((pvRGB(1).Z / 255 * 100), "0.0") & "%"
     BCB_TB.BackColor = RGB(0, 0, pvRGB(1).Z)
     BCB_Slidebar.SelLength = pvRGB(1).Z
@@ -4272,13 +4265,10 @@ Private Sub Update_Colors()
     End With
     Set pvRGB(2) = pvRGB(1).Copy
 End Sub
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-BCCUF.frm End
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+````
 
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-BCA_PLIV_Feeder.bas Start
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+### BCA_PLIV_Feeder.bas
+````vba
 Option Explicit
 #Const COM = True
 Private ws As Worksheet
@@ -4310,7 +4300,7 @@ Public Sub SortColumnByFeeder(ByRef Feeder As Collection)
     
     For Each Chk In itemRange
         ' Feeder 컬렉션내의 항목인지 검사 후 목록 중 없을 경우 해당 열을 숨김처리 하는 코드
-        ws.Columns(Chk.Column).Hidden = Not IsInCollection(Chk.value, Feeder)
+        ws.Columns(Chk.Column).Hidden = Not IsInCollection(Chk.Value, Feeder)
     Next Chk
 End Sub
 
@@ -4343,22 +4333,22 @@ End Sub
 
 Public Sub A_Delete_Feeder()
     ' 선택된 값과 콤보 리스트 중 중복되는 인덱스를 찾아 해당 피더를 삭제하는 코드
-    If UI.CbBx_Feeder.ListCount = 0 Then UI.CbBx_Feeder.value = "": Exit Sub
+    If UI.CbBx_Feeder.ListCount = 0 Then UI.CbBx_Feeder.Value = "": Exit Sub
     Dim i As Long
-    Dim Target As String: Target = UI.CbBx_Feeder.value
+    Dim Target As String: Target = UI.CbBx_Feeder.Value
     Feeders.Remove Target
-    UI.CbBx_Feeder.value = ""
+    UI.CbBx_Feeder.Value = ""
     For i = 0 To UI.CbBx_Feeder.ListCount - 1
         If UI.CbBx_Feeder.List(i) = Target Then UI.CbBx_Feeder.RemoveItem i: Exit Sub
     Next i
 End Sub
 Public Sub A_New_Feeder()
     ' 콤보박스 리스트와 중복되지 않게끔 피더 이름을 추가하고 피더유닛을 생성함
-    If UI.CbBx_Feeder.value = "" Then Exit Sub
+    If UI.CbBx_Feeder.Value = "" Then Exit Sub
     Dim NewFeeder As New FeederUnit
-    If Not FOTFC(UI.CbBx_Feeder.value, UI.CbBx_Feeder) Then
-        UI.CbBx_Feeder.Additem UI.CbBx_Feeder.value
-        NewFeeder.Name = UI.CbBx_Feeder.value
+    If Not FOTFC(UI.CbBx_Feeder.Value, UI.CbBx_Feeder) Then
+        UI.CbBx_Feeder.Additem UI.CbBx_Feeder.Value
+        NewFeeder.Name = UI.CbBx_Feeder.Value
         Feeders.Add NewFeeder, NewFeeder.Name
     Else
         MsgBox "중복된 Feeder 추가", vbCritical
@@ -4436,13 +4426,10 @@ Private Function FOTFC(ByVal Target As String, ByRef From As MSForms.ComboBox) A
         If StrComp(From.List(i), Target, vbTextCompare) = 0 Then FOTFC = True: Exit Function
     Next i
 End Function
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-BCA_PLIV_Feeder.bas End
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+````
 
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-FeederUnit.cls Start
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+### FeederUnit.cls
+````vba
 Option Explicit
 
 Private pName As String
@@ -4456,8 +4443,8 @@ Public Property Get Name() As String
     Name = pName
 End Property
 
-Public Property Let Name(ByVal value As String)
-    pName = value
+Public Property Let Name(ByVal Value As String)
+    pName = Value
 End Property
 
 Public Property Get itemBox() As Collection
@@ -4475,13 +4462,10 @@ Public Function Copy() As FeederUnit
     End With
     Set Copy = CopiedObj
 End Function
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-FeederUnit.cls End
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+````
 
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-BD_MultiDocuments.bas Start
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+### BD_MultiDocuments.bas
+````vba
 Option Explicit
 
 Private isParsed As Boolean
@@ -4523,13 +4507,10 @@ End Sub
 Public Sub MixMatching(ByVal Target_item As String)
     
 End Sub
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-BD_MultiDocuments.bas End
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+````
 
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-TimeKeeper.bas Start
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+### TimeKeeper.bas
+````vba
 Option Explicit
 
 ' 메인: (1) 날짜열+시간열 병합 또는 (2) 단일열(혼합포맷) → Target 열(Date) 저장, 표시형식은 "hh:mm"
@@ -4546,7 +4527,7 @@ Public Sub MergeDateTime_Flexible(ByRef ws As Worksheet, _
 
     Dim LastRow As Long, r As Long
     Dim vD As Variant, vT As Variant
-    Dim dt As Date
+    Dim DT As Date
 
     If ws Is Nothing Then Exit Sub
 
@@ -4565,8 +4546,8 @@ Public Sub MergeDateTime_Flexible(ByRef ws As Worksheet, _
             vT = Empty
         End If
 
-        If TryParseDateTimeFlex(vD, vT, dt) Then
-            ws.Cells(r, targetCol).value = dt ' 값은 Date 직렬값
+        If TryParseDateTimeFlex(vD, vT, DT) Then
+            ws.Cells(r, targetCol).Value = DT ' 값은 Date 직렬값
         Else
             ws.Cells(r, targetCol).ClearContents
         End If
@@ -4574,7 +4555,7 @@ Public Sub MergeDateTime_Flexible(ByRef ws As Worksheet, _
 
     ' 표시 형식(값은 Date 그대로 유지)
     ws.Range(ws.Cells(startRow, targetCol), ws.Cells(LastRow, targetCol)).NumberFormat = Formatting
-    ws.Cells(startRow - 1, targetCol).value = TargetHeader
+    ws.Cells(startRow - 1, targetCol).Value = TargetHeader
 
 CleanExit:
     Application.EnableEvents = True
@@ -4618,7 +4599,7 @@ Private Function TryParseDateTimeFlex(ByVal vDate As Variant, ByVal vTime As Var
     If Len(s) = 0 Then Exit Function
 
     ' a) "YYYYMMDD" 단독
-    If Len(s) = 8 And isNumeric(s) Then
+    If Len(s) = 8 And IsNumeric(s) Then
         If TryParseYmd8_ToDate(s, baseDate) Then
             outDT = baseDate ' 시간 00:00
             TryParseDateTimeFlex = True
@@ -4650,7 +4631,7 @@ Private Function TryParseYmd8_ToDate(ByVal v As Variant, ByRef outDate As Date) 
     TryParseYmd8_ToDate = False
     If IsEmpty(v) Or IsError(v) Then Exit Function
 
-    If isNumeric(v) Then
+    If IsNumeric(v) Then
         n = CLng(v)
         If n <= 0 Then Exit Function
         Y = n \ 10000
@@ -4659,7 +4640,7 @@ Private Function TryParseYmd8_ToDate(ByVal v As Variant, ByRef outDate As Date) 
     Else
         s = Trim$(CStr(v))
         If Len(s) <> 8 Then Exit Function
-        If Not isNumeric(s) Then Exit Function
+        If Not IsNumeric(s) Then Exit Function
         Y = CLng(Left$(s, 4))
         m = CLng(mid$(s, 5, 2))
         d = CLng(Right$(s, 2))
@@ -4683,7 +4664,7 @@ Private Function TryParse_Ymd8_And_TimeText(ByVal s As String, ByRef outDT As Da
     If Len(sTrim) < 8 Then Exit Function
 
     ' 앞 8자리가 YYYYMMDD인가?
-    If Not isNumeric(Left$(sTrim, 8)) Then Exit Function
+    If Not IsNumeric(Left$(sTrim, 8)) Then Exit Function
     datePart = Left$(sTrim, 8)
     If Not TryParseYmd8_ToDate(datePart, baseDate) Then Exit Function
 
@@ -4738,7 +4719,7 @@ Private Function TryGetTimeFraction_Flex(ByVal v As Variant, ByRef outFrac As Do
         outFrac = TimeValue(sNorm)
         If Err.Number = 0 Then TryGetTimeFraction_Flex = True
         On Error GoTo 0
-    ElseIf Len(sNorm) = 6 And isNumeric(sNorm) Then
+    ElseIf Len(sNorm) = 6 And IsNumeric(sNorm) Then
         ' "hhmmss"
         hh = CLng(Left$(sNorm, 2))
         nn = CLng(mid$(sNorm, 3, 2))
@@ -4752,17 +4733,17 @@ End Function
 
 ' 한국어 오전/오후를 AM/PM으로 치환하고, 불필요한 중복 공백 정리
 Private Function NormalizeKoreanAmPm(ByVal s As String) As String
-    Dim t As String
-    t = s
+    Dim T As String
+    T = s
     ' 변형 케이스 최소화: 앞뒤 공백에 둔감하게
-    t = Replace(t, "오전", "AM")
-    t = Replace(t, "오 후", "PM") ' 혹시 있을 느슨한 표기
-    t = Replace(t, "오후", "PM")
+    T = Replace(T, "오전", "AM")
+    T = Replace(T, "오 후", "PM") ' 혹시 있을 느슨한 표기
+    T = Replace(T, "오후", "PM")
     ' 다중 공백 축소(간단치환)
-    Do While InStr(t, "  ") > 0
-        t = Replace(t, "  ", " ")
+    Do While InStr(T, "  ") > 0
+        T = Replace(T, "  ", " ")
     Loop
-    NormalizeKoreanAmPm = Trim$(t)
+    NormalizeKoreanAmPm = Trim$(T)
 End Function
 
 ' (선택) DateOnly 전용 파서: 숫자형 직렬/텍스트 YYYYMMDD/표준 날짜텍스트를 아우름
@@ -4780,7 +4761,7 @@ Private Function TryParse_DateOnly(ByVal v As Variant, ByRef outDate As Date) As
     End If
 
     s = Trim$(CStr(v))
-    If Len(s) = 8 And isNumeric(s) Then
+    If Len(s) = 8 And IsNumeric(s) Then
         If TryParseYmd8_ToDate(s, outDate) Then
             TryParse_DateOnly = True
             Exit Function
@@ -4898,17 +4879,14 @@ Private Function NetDurationSingleDay(ByVal segStart As Date, ByVal segEnd As Da
     NetDurationSingleDay = IIf(dur > 0, dur, 0#)
 End Function
 Public Function isDayDiff(ByRef T1 As Range, ByRef T2 As Range, Optional ByVal MinDays As Long = 1) As Boolean
-    If Not IsDate(T1.value) Or Not IsDate(T2.value) Then isDayDiff = False: Exit Function
-    If Abs(DateValue(CDate(T2.value)) - DateValue(CDate(T1.value))) >= MinDays Then isDayDiff = True
+    If Not IsDate(T1.Value) Or Not IsDate(T2.Value) Then isDayDiff = False: Exit Function
+    If Abs(DateValue(CDate(T2.Value)) - DateValue(CDate(T1.Value))) >= MinDays Then isDayDiff = True
 End Function
 
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-TimeKeeper.bas End
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+````
 
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-Utillity.bas Start
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+### Utillity.bas
+````vba
 Option Explicit
 
 #If Win64 Then
@@ -5114,7 +5092,7 @@ Public Function fCCNEC(ByVal TargetRange As Range) As Long
     foundValue = False
     
     For Each cell In TargetRange
-        If Not IsEmpty(cell.value) Then
+        If Not IsEmpty(cell.Value) Then
             If Not foundValue Then
                 foundValue = True ' 최초의 값 있는 셀을 찾음
             End If
@@ -5162,10 +5140,10 @@ Public Function ForLining(ByRef Target As Range, Optional Division As RorC = Row
 End Function
 
 ' Utillity CFAW_PDF
-Public Function CheckFileAlreadyWritten_PDF(ByRef Document_Name As String, dt As DocumentTypes) As String
+Public Function CheckFileAlreadyWritten_PDF(ByRef Document_Name As String, DT As DocumentTypes) As String
     Dim Document_Path As String, DTs As String
     
-    Select Case dt
+    Select Case DT
         Case -11 ' BOM
             DTs = "BOM"
             Document_Name = Replace(Document_Name, ".", "_") & ".pdf"
@@ -5196,14 +5174,14 @@ Public Sub SelfMerge(ByRef MergeTarget As Range)
     For r = 1 To MergeTarget.Rows.Count
         For c = 1 To MergeTarget.Columns.Count
             Set cell = MergeTarget.Cells(r, c)
-            If Trim(cell.value) <> "" Then ValueList = ValueList & cell.value & vbLf
+            If Trim(cell.Value) <> "" Then ValueList = ValueList & cell.Value & vbLf
         Next c
     Next r
     
     ' 병합 및 텍스트 삽입
     With MergeTarget
         .Merge
-        .value = ValueList
+        .Value = ValueList
         .HorizontalAlignment = xlCenter
         .VerticalAlignment = xlCenter
     End With
@@ -5247,7 +5225,7 @@ Public Sub DeleteDuplicateRowsInColumn(ByVal targetCol As Long, ByRef startRow A
     ' 아래에서 위로 순회하면서 중복 검사 및 삭제
     For i = EndRow To startRow Step -1
         ' 지정된 컬럼의 값을 가져와 공백 제거
-        cellVal = Trim$(tgtWs.Cells(i, targetCol).value)
+        cellVal = Trim$(tgtWs.Cells(i, targetCol).Value)
 
         ' 빈 문자열이 아닐 때만 검사
         If Len(cellVal) > 0 Then
@@ -5291,7 +5269,7 @@ End Function
 '---------------------------
 ' 3) 한국어 요일 반환
 '---------------------------
-Private Function WeekdayKorean(d As Date) As String
+Public Function WeekdayKorean(d As Date) As String
     Select Case Weekday(d, vbSunday)
         Case vbSunday:    WeekdayKorean = "일"
         Case vbMonday:    WeekdayKorean = "월"
@@ -5308,33 +5286,33 @@ End Function
 '   예) "DailyPlan 5월-28일_C11.xlsx"
 '---------------------------
 Private Function ParseMDToken(ByVal fullPath As String, Optional ByVal BaseYear As Long = 0) As MDToken
-    Dim t As MDToken, nm As String
-    Dim ms As String, ds As String, ln As String, dt As Date, Y As Long
+    Dim T As MDToken, nm As String
+    Dim ms As String, ds As String, ln As String, DT As Date, Y As Long
    
     nm = mid$(fullPath, InStrRev(fullPath, "\") + 1)
     nm = Replace$(nm, ".xlsx", "", , , vbTextCompare)
-    t.fullPath = fullPath
-    t.fileName = nm
+    T.fullPath = fullPath
+    T.fileName = nm
    
     ' 문서타입
     If InStr(1, nm, "DailyPlan", vbTextCompare) > 0 Then
-        t.DocType = dc_DailyPlan
+        T.DocType = dc_DailyPlan
     ElseIf InStr(1, nm, "PartList", vbTextCompare) > 0 Then
-        t.DocType = dc_PartList
+        T.DocType = dc_PartList
     Else
-        t.DocType = 0 ' 알 수 없음
+        T.DocType = 0 ' 알 수 없음
     End If
    
     ' 월/일   (예: "5월-28일" / "09월-05일")
     ms = RxFirst("([0-9]{1,2})(?=월)", nm)
     ds = RxFirst("([0-9]{1,2})(?=일)", nm)
    
-    If Len(ms) > 0 Then t.Month = CInt(ms)
-    If Len(ds) > 0 Then t.Day = CInt(ds)
+    If Len(ms) > 0 Then T.Month = CInt(ms)
+    If Len(ds) > 0 Then T.Day = CInt(ds)
    
     ' 라인   (예: "_C11" , "C11")
     ln = RxFirst("C([0-9]{1,3})", nm)
-    If Len(ln) > 0 Then t.LineAddr = "C" & ln
+    If Len(ln) > 0 Then T.LineAddr = "C" & ln
    
     ' 연도
     If BaseYear = 0 Then
@@ -5343,18 +5321,18 @@ Private Function ParseMDToken(ByVal fullPath As String, Optional ByVal BaseYear 
         Y = BaseYear
     End If
    
-    If t.Month >= 1 And t.Day >= 1 Then
+    If T.Month >= 1 And T.Day >= 1 Then
         On Error Resume Next
-        dt = DateSerial(Y, t.Month, t.Day)
+        DT = DateSerial(Y, T.Month, T.Day)
         On Error GoTo 0
-        If dt > 0 Then
-            t.DateValue = dt
-            t.WeekdayVb = Weekday(dt, vbSunday)
-            t.WeekdayK = WeekdayKorean(dt)
+        If DT > 0 Then
+            T.DateValue = DT
+            T.WeekdayVb = Weekday(DT, vbSunday)
+            T.WeekdayK = WeekdayKorean(DT)
         End If
     End If
    
-    ParseMDToken = t
+    ParseMDToken = T
 End Function
 
 '---------------------------------------------
@@ -5370,7 +5348,7 @@ Public Sub FillListView_ByFilter(ByRef files As Collection, ByRef lv As ListView
         Optional ByVal BaseYear As Long = 0)
    
     Dim i As Long
-    Dim t As MDToken
+    Dim T As MDToken
     Dim it As listItem
    
     With lv
@@ -5386,22 +5364,22 @@ Public Sub FillListView_ByFilter(ByRef files As Collection, ByRef lv As ListView
     End With
    
     For i = 1 To files.Count
-        t = ParseMDToken(CStr(files(i)), BaseYear)
-        If wantDocType <> 0 Then If t.DocType <> wantDocType Then GoTo CONTINUE_NEXT ' 타입 필터
-        If Len(wantLine) > 0 Then If StrComp(t.LineAddr, wantLine, vbTextCompare) <> 0 Then GoTo CONTINUE_NEXT ' 라인 필터
-        If wantWeekday <> 0 Then If t.WeekdayVb <> wantWeekday Then GoTo CONTINUE_NEXT ' 요일 필터
+        T = ParseMDToken(CStr(files(i)), BaseYear)
+        If wantDocType <> 0 Then If T.DocType <> wantDocType Then GoTo CONTINUE_NEXT ' 타입 필터
+        If Len(wantLine) > 0 Then If StrComp(T.LineAddr, wantLine, vbTextCompare) <> 0 Then GoTo CONTINUE_NEXT ' 라인 필터
+        If wantWeekday <> 0 Then If T.WeekdayVb <> wantWeekday Then GoTo CONTINUE_NEXT ' 요일 필터
        
         ' ListView 입력
-        If t.DateValue > 0 Then
-            Set it = lv.ListItems.Add(, , Format$(t.DateValue, "m월-d일"))
+        If T.DateValue > 0 Then
+            Set it = lv.ListItems.Add(, , Format$(T.DateValue, "m월-d일"))
         Else
             Set it = lv.ListItems.Add(, , "미상")
         End If
        
-        it.SubItems(1) = t.WeekdayK
-        it.SubItems(2) = IIf(Len(t.LineAddr) > 0, t.LineAddr, "-")
-        it.SubItems(3) = IIf(t.DocType = dc_DailyPlan, "DailyPlan", IIf(t.DocType = dc_PartList, "PartList", "-"))
-        it.SubItems(4) = t.fullPath
+        it.SubItems(1) = T.WeekdayK
+        it.SubItems(2) = IIf(Len(T.LineAddr) > 0, T.LineAddr, "-")
+        it.SubItems(3) = IIf(T.DocType = dc_DailyPlan, "DailyPlan", IIf(T.DocType = dc_PartList, "PartList", "-"))
+        it.SubItems(4) = T.fullPath
         it.Checked = True
        
 CONTINUE_NEXT:
@@ -5441,7 +5419,7 @@ End Function
 '--- 날짜/라인 키 빌드: 파일명 예) "DailyPlan 5월-28일_C11.xlsx"
 Private Function BuildKeyFromPath(ByVal fullPath As String, Optional ByVal BaseYear As Long = 0) As String
     Dim nm As String, m As String, d As String, ln As String
-    Dim Y As Long, dt As Date
+    Dim Y As Long, DT As Date
    
     nm = mid$(fullPath, InStrRev(fullPath, "\") + 1)
     nm = Replace$(nm, ".xlsx", "", , , vbTextCompare)
@@ -5457,15 +5435,15 @@ Private Function BuildKeyFromPath(ByVal fullPath As String, Optional ByVal BaseY
    
     If BaseYear = 0 Then Y = Year(Date) Else Y = BaseYear
     On Error Resume Next
-    dt = DateSerial(Y, CLng(m), CLng(d))
+    DT = DateSerial(Y, CLng(m), CLng(d))
     On Error GoTo 0
-    If dt = 0 Then
+    If DT = 0 Then
         BuildKeyFromPath = vbNullString
         Exit Function
     End If
    
     ' 키 정규화: yyyy-mm-dd|C##
-    BuildKeyFromPath = Format$(dt, "yyyy-mm-dd") & "|" & "C" & CStr(CLng(ln))
+    BuildKeyFromPath = Format$(DT, "yyyy-mm-dd") & "|" & "C" & CStr(CLng(ln))
 End Function
 
 '--- 교집합을 outLV에 채우기 (입력: 파일 경로 컬렉션 2개)
@@ -5587,22 +5565,16 @@ End Sub
 Private Function FileExists(ByVal f As String) As Boolean
     FileExists = (Len(Dir$(f, vbNormal)) > 0)
 End Function
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-Utillity.bas End
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+````
 
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-AB_ContorlApps.bas Start
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+### AB_ContorlApps.bas
+````vba
 
 
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-AB_ContorlApps.bas End
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+````
 
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-Z_Directory.bas Start
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+### Z_Directory.bas
+````vba
 Private Const DvBOM As String = "BOM"
 Private Const DvDP As String = "DailyPlan"
 Private Const DvPL As String = "PartList"
@@ -5617,7 +5589,7 @@ Public isDirSetUp As Boolean
 
 Public Sub SetUpDirectories()
     Set ws = ThisWorkbook.Worksheets("Setting")
-    SourceFileFolder_Directory = ws.Columns(1).Find(What:="Source", lookAt:=xlWhole).Offset(0, 1).value
+    SourceFileFolder_Directory = ws.Columns(1).Find(What:="Source", lookAt:=xlWhole).Offset(0, 1).Value
     isDirSetUp = True
 End Sub
 
@@ -5645,486 +5617,502 @@ End Property
 Public Property Get Source() As String
     Source = SourceFileFolder_Directory
 End Property
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-Z_Directory.bas End
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+````
 
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-Git_Con.frm Start
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-Git_Con.frm End
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+### Git_Con.frm
+````vba
+````
 
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-Git_Kit.bas Start
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+### Git_Kit.bas
+````vba
 Option Explicit
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-Git_Kit.bas End
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+````
 
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-itemUnit.cls Start
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+### itemUnit.cls
+````vba
+'==================================================================
+' itemUnit.cls
+'==================================================================
 Option Explicit
+
 '==========================================================
-' Class: itemUnit (간소화 버전)
-' - 아이템 메타정보(Nick/Vender/PartNumber/QTY)
-' - 월/일 기준 카운터: CountPerDay(Key As Variant)
-'   * Key = Date  -> 해당 날짜(MM-DD)에 대응하는 슬롯
-'   * Key = Long  -> 내부 인덱스(1~372 = 12*31) 직접 접근
+' Class: itemUnit
+' 목적:
+'   - 자재 메타정보(Nick/Vender/PartNumber/QTY)
+'   - 날짜별 투입 수량 Count(인덱서 형태)
+'   - ID_Hash 기준으로 병합(MergeCountsFrom)
+'
+' 설계 핵심:
+'   - vDateKey(0) = -1 : placeholder (유효 데이터 아님)
+'   - 유효 날짜 Key는 1..UBound(vDateKey)
 '==========================================================
 
-'----------------------------------------
-' [기본 필드: 메타정보]
-'----------------------------------------
 Private vID As String
-Private vNick As String
-Private vVender As String
-Private vPartNumber As String
+Private vNick As String, vVender As String, vPartNumber As String
 Private vQTY As Long
 
-'----------------------------------------
-' [월일 카운터]
-' - 12개월 * 31일 = 372칸 고정
-' - Index = (Month(d) - 1) * 31 + Day(d)
-'----------------------------------------
-Private mCounts(1 To 372) As Long
+' 날짜별 카운터
+Private vDateKey() As Long
+Private vDateCounts() As Long
+Private mDatesInitialized As Boolean
 
-'==========================================================
-' 1) 메타정보: ID 생성 및 프로퍼티
-'==========================================================
+Private Sub Class_Initialize()
+    mDatesInitialized = False
+End Sub
+
+'------------------------------
+' 메타정보 프로퍼티
+'------------------------------
 Public Property Get ID_Hash() As String
-    ID_Hash = vID          ' 읽기 전용
+    ID_Hash = vID
 End Property
 
 Public Property Get NickName() As String
     NickName = vNick
 End Property
-
 Public Property Let NickName(ByVal Target As String)
-    vNick = Target
-    MakeID
+    vNick = Target: MakeID
 End Property
 
 Public Property Get Vender() As String
     Vender = vVender
 End Property
-
 Public Property Let Vender(ByVal Target As String)
-    vVender = Target
-    MakeID
+    vVender = Target: MakeID
 End Property
 
 Public Property Get PartNumber() As String
     PartNumber = vPartNumber
 End Property
-
 Public Property Let PartNumber(ByVal Target As String)
-    vPartNumber = Target
-    MakeID
+    vPartNumber = Target: MakeID
 End Property
 
 Public Property Get QTY() As Long
     QTY = vQTY
 End Property
-
 Public Property Let QTY(ByVal Target As Long)
     vQTY = Target
 End Property
 
-' ID = Nick_Vender_PartNumber (세 필드가 모두 있을 때만)
 Private Sub MakeID()
     If Len(vNick) > 0 And Len(vVender) > 0 And Len(vPartNumber) > 0 Then
         vID = vVender & "_" & vNick & "_" & vPartNumber
     End If
 End Sub
 
-'==========================================================
-' 2) 수명/상태 관리
-'==========================================================
-Public Sub Clear()
+'------------------------------
+' Count 인덱서
+'   - Count()              : 전체 합계 (읽기 전용)
+'   - Count(Date)          : 해당 날짜 값 읽기
+'   - Count(Date) = value  : 해당 날짜 값 쓰기/생성
+'------------------------------
+Public Property Get Count(Optional ByVal Month_Day As Variant = vbNullString) As Long
+    Dim dKey As Long, idx As Long
+    EnsureDateArraysInitialized
+
+    If Month_Day = vbNullString Then
+        Count = TotalCount
+        Exit Property
+    End If
+
+    dKey = NormalizeDateKey(Month_Day)
+    idx = IndexOfDateKey(dKey)
+
+    If idx >= 0 Then
+        Count = vDateCounts(idx)
+    Else
+        Count = 0
+    End If
+End Property
+
+Public Property Let Count(ByVal Month_Day As Variant, ByVal Value As Long)
+    Dim dKey As Long, idx As Long
+    EnsureDateArraysInitialized
+
+    dKey = NormalizeDateKey(Month_Day)
+    idx = IndexOfDateKey(dKey)
+
+    If idx >= 0 Then
+        vDateCounts(idx) = Value
+    Else
+        idx = AddDateKey(dKey)
+        vDateCounts(idx) = Value
+    End If
+End Property
+
+'------------------------------
+' Merge: 상대 itemUnit의 날짜별 Count를 내 Count에 합산
+'------------------------------
+Public Sub MergeCountsFrom(ByVal OtherItem As itemUnit)
     Dim i As Long
-    For i = LBound(mCounts) To UBound(mCounts)
-        mCounts(i) = 0
+    Dim dDate As Date, dCount As Long
+
+    For i = 1 To OtherItem.DateKeyCount
+        dDate = OtherItem.DateKey(i)
+        dCount = OtherItem.Count(dDate)
+        If dCount <> 0 Then
+            Me.Count(dDate) = Me.Count(dDate) + dCount
+        End If
     Next i
 End Sub
 
-' 필요하면 형식 유지용
-Public Sub Init()
-    Clear
-End Sub
-
-'==========================================================
-' 3) 내부 유틸리티 (인덱스 변환/검사)
-'==========================================================
-' Date -> 월일 인덱스(1~372) 변환
-Private Function MDIndexFromDate(ByVal d As Date) As Long
-    Dim m As Long, dy As Long, idx As Long
-
-    m = Month(d)
-    dy = Day(d)
-
-    If m < 1 Or m > 12 Or dy < 1 Or dy > 31 Then
-        Err.Raise 13, TypeName(Me) & ".MDIndexFromDate", "유효하지 않은 날짜입니다."
-    End If
-
-    idx = (m - 1) * 31 + dy          ' 1 ~ 372
-    MDIndexFromDate = idx
-End Function
-
-Private Sub CheckIndex(ByVal idx As Long)
-    If idx < LBound(mCounts) Or idx > UBound(mCounts) Then
-        Err.Raise 9, TypeName(Me) & ".CheckIndex", "인덱스 범위를 벗어났습니다.(1~372)"
-    End If
-End Sub
-
-'==========================================================
-' 4) 핵심 인덱서: CountPerDay
-'    - Key As Variant: Date 또는 Long(1~372)
-'==========================================================
-Public Property Get CountPerDay(ByVal Key As Variant) As Long
-    Dim idx As Long
-
-    If VarType(Key) = vbDate Then
-        idx = MDIndexFromDate(CDate(Key))
-    ElseIf isNumeric(Key) Then
-        idx = CLng(Key)
+'------------------------------
+' 날짜 Key 열거 (1..DateKeyCount)
+'------------------------------
+Public Property Get DateKeyCount() As Long
+    If Not mDatesInitialized Then
+        DateKeyCount = 0
+    ElseIf UBound(vDateKey) = 0 Then
+        DateKeyCount = 0
     Else
-        Err.Raise 13, TypeName(Me) & ".CountPerDay.Get", _
-                    "Key는 Date 또는 Long(1~372) 이어야 합니다."
+        DateKeyCount = UBound(vDateKey)   ' 유효 키는 1..UBound
     End If
-
-    CheckIndex idx
-    CountPerDay = mCounts(idx)
 End Property
 
-Public Property Let CountPerDay(ByVal Key As Variant, ByVal value As Long)
-    Dim idx As Long
-
-    If VarType(Key) = vbDate Then
-        idx = MDIndexFromDate(CDate(Key))
-    ElseIf isNumeric(Key) Then
-        idx = CLng(Key)
-    Else
-        Err.Raise 13, TypeName(Me) & ".CountPerDay.Let", _
-                    "Key는 Date 또는 Long(1~372) 이어야 합니다."
+Public Property Get DateKey(ByVal Index1 As Long) As Date
+    If mDatesInitialized Then
+        If Index1 >= 1 And Index1 <= UBound(vDateKey) Then
+            DateKey = CDate(vDateKey(Index1))
+        End If
     End If
-
-    CheckIndex idx
-    mCounts(idx) = value
 End Property
 
-Public Property Get SumCount() As Long
-    Dim i As Long, Result As Long
-    For i = LBound(mCounts) To UBound(mCounts)
-        Result = Result + mCounts(i)
+'------------------------------
+' 내부 헬퍼
+'------------------------------
+Private Function TotalCount() As Long
+    Dim i As Long
+    If Not mDatesInitialized Then Exit Function
+    For i = 1 To UBound(vDateCounts)
+        TotalCount = TotalCount + vDateCounts(i)
     Next i
-    SumCount = Result
-End Property
-
-Public Function Copy() As itemUnit
-    Dim Copied As New itemUnit, i As Long
-    With Copied
-        .NickName = vNick
-        .PartNumber = vPartNumber
-        .Vender = vVender
-        For i = 1 To 372
-            .CountPerDay(i) = mCounts(i)
-        Next i
-    End With
-    Set Copy = Copied
 End Function
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-itemUnit.cls End
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-CA_itemCounter.bas Start
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+Private Sub EnsureDateArraysInitialized()
+    If Not mDatesInitialized Then
+        ReDim vDateKey(0 To 0)
+        ReDim vDateCounts(0 To 0)
+        vDateKey(0) = -1
+        vDateCounts(0) = 0
+        mDatesInitialized = True
+    End If
+End Sub
+
+Private Function NormalizeDateKey(ByVal Month_Day As Variant) As Long
+    NormalizeDateKey = CLng(Int(CDate(Month_Day)))
+End Function
+
+Private Function IndexOfDateKey(ByVal dKey As Long) As Long
+    Dim i As Long
+    If Not mDatesInitialized Then
+        IndexOfDateKey = -1
+        Exit Function
+    End If
+
+    For i = 1 To UBound(vDateKey)
+        If vDateKey(i) = dKey Then
+            IndexOfDateKey = i
+            Exit Function
+        End If
+    Next i
+
+    IndexOfDateKey = -1
+End Function
+
+Private Function AddDateKey(ByVal dKey As Long) As Long
+    Dim newIndex As Long
+    If Not mDatesInitialized Then EnsureDateArraysInitialized
+
+    newIndex = UBound(vDateKey) + 1
+    ReDim Preserve vDateKey(0 To newIndex)
+    ReDim Preserve vDateCounts(0 To newIndex)
+
+    vDateKey(newIndex) = dKey
+    vDateCounts(newIndex) = 0
+    AddDateKey = newIndex
+End Function
+````
+
+### CA_itemCounter.bas
+````vba
+'==================================================================
+' CA_itemCounter.bas
+'==================================================================
 Option Explicit
+#Const Devmod = True
 
-'==== 모듈 전역 변수 (기존 유지) ===============================================
-Private xlApp As Excel.Application, xlAppSub As Excel.Application
-Private cNickname As Long, cVender As Long, cPartNumber As Long, cSC As Long, cDD As Long
-Private cLC As Long, cLS As Long, cLE As Long
-Private cDC As Long, cDS As Long, cDE As Long
-Private cTC As Long, cTS As Long, cTE As Long
-Private cFC As Long, cFS As Long, cFE As Long
-Private rStart As Long, rEnd As Long, rTitle As Long
-Private tWB As Workbook, tWS As Worksheet, rWB As Workbook, rWS As Worksheet
-Public Sub Test_CAIC()
-    Dim Temp As New Collection, i As Long
-    Set Temp = ReclassifingVNQ("[ABCD] 1234/5678(2)/9012(4)/3456(3) [EFGH] 9876(3)/5431", "Controller")
-    For i = 1 To Temp.Count
-        Dim iUTemp As New itemUnit
-        Set iUTemp = Temp(i)
-        Debug.Print "ID_Hash : " & iUTemp.ID_Hash
-        Debug.Print "QTY : " & iUTemp.QTY
-    Next i
-End Sub
-Public Sub testA()
-    PL2IC "D:\Downloads\공급문서\AutoReport\PartList\PartList 10월-31일_C11.xlsx"
-    
-    Debug.Print "Target WorkBook : " & tWB.Name
-    Debug.Print "Target WorkSheet : " & tWS.Name
-    Debug.Print "Reference WorkBook : " & rWB.Name
-    Debug.Print "Reference WorkSheet : " & rWS.Name
-    'PL2DP
-End Sub
-Public Sub testPLiReader()
-    Get_Reference "D:\Downloads\공급문서\AutoReport\PartList\PartList 11월-14일_C11.xlsx"
-    Dim Temp As New Collection, Target As New itemUnit, i As Long
-    Set Temp = PLitemReader(8, 10, 2, 52)
-    For i = 1 To Temp.Count
-        Set Target = Temp(i)
-        Debug.Print Target.ID_Hash & " : " & Target.QTY & " = " & Target.CountPerDay(CDate("2025-11-14"))
-    Next i
-End Sub
-Public Sub ReActive()
-    Dim asdf As Workbook
-    Set asdf = GetObject(ThisWorkbook.FullName)
-    asdf.Application.Visible = True
-End Sub
+'==============================================================
+' 모듈 전역(Workbook/Worksheet 바인딩 결과)
+'==============================================================
+Private xlApp As Excel.Application
+Private tWB As Workbook, tWS As Worksheet
+Private rWB As Workbook, rWS As Worksheet
 
-'==== 퍼블릭 API ================================================================
-Public Sub PL2DP(ByVal DailyPlan_Directory As String, ByVal PartList_Directory As String)
-    Set_Target DailyPlan_Directory
-    Get_Reference PartList_Directory
-    ' TODO: 구현 예정
-End Sub
-
+'==============================================================
+' [Public API]
+'   - PL2IC : PartList -> itemCounter 생성 파이프라인
+'==============================================================
 Public Sub PL2IC(ByVal PartList_Directory As String)
-    Set_Target ThisWorkbook.FullName, "itemCounter"
+    '----------------------------------------------------------
+    ' 목적:
+    '   1) PartList(Reference)를 열고 표를 스캔
+    '   2) 셀 텍스트를 itemUnit으로 분해 (Re_Categorizing)
+    '   3) ID_Hash 중복을 제거하고 날짜별 Count를 합산 (PL_Compressor)
+    '   4) (추후) tWS(itemCounter)에 쓰기 (Writing_itemCounter_from_PL)
+    '----------------------------------------------------------
+
+    Dim rR As Range
+    Dim rTitle As Long, rS As Long, rE As Long, cS As Long, cE As Long
+    Dim itemsRaw As Collection
+    Dim itemsMerged As Collection
+
+    ' 1) Reference 바인딩
     Get_Reference PartList_Directory
-    
-    Dim cNickname As Long, cVender As Long, cPartNumber As Long, cSC As Long, cDD(0 To 4) As Long
-    Dim cLC As Long, cLS As Long, cLE As Long ' Columns Line Cart, Line Set, Line Each
-    Dim cDC As Long, cDS As Long, cDE As Long ' Columns Depot Cart, Depot Set, Depot Each
-    Dim cTC As Long, cTS As Long, cTE As Long ' Columns Total Cart, Total Set, Total Each
-    Dim cFC As Long, cFS As Long, cFE As Long ' Columns Fire Cart, Fire Set, Fire Each
-    Dim rStart(0 To 1) As Long, rEnd(0 To 1) As Long, rTitle(0 To 1) As Long ' Rows Start, End, Title // 0:Reference, 1:Target
-    Dim cStart(0 To 1) As Long, cEnd(0 To 1) As Long ' Columns Start, End // 0:Reference, 1:Target
-    Dim rR As Range, tR As Range, i As Long
-    Dim tiu As New itemUnit, Each_items As New Collection
-    
     Set rR = rWS.Rows(1).Find("-Line", lookAt:=xlPart, LookIn:=xlValues)
-    Set tR = tWS.Cells.Find("Setting", lookAt:=xlWhole, LookIn:=xlValues)
-    ' Columns Number
-    cNickname = tR.Column
-    cVender = tR.Column + 1
-    cPartNumber = tR.Column + 2
-    cSC = tR.Column + 3
-    For i = 0 To 4
-        cDD(i) = cSC + i + 1
-    Next i
-    cLC = cDD(4) + 1
-    cLS = cDD(4) + 2
-    cLE = cDD(4) + 3
-    cDC = cDD(4) + 4
-    cDS = cDD(4) + 5
-    cDE = cDD(4) + 6
-    cTC = cDD(4) + 7
-    cTS = cDD(4) + 8
-    cTE = cDD(4) + 9
-    cFC = cDD(4) + 10
-    cFS = cDD(4) + 11
-    cFE = cDD(4) + 12
-    ' Rows Number
-    rStart(1) = tR.Row + 3
-    rEnd(1) = tWS.Cells(tWS.Rows.Count, cNickname).End(xlUp).Row
-    cStart(1) = tR.Column
-    cEnd(1) = tWS.Cells(rStart(1), tWS.Columns.Count).End(xlToLeft).Column
-    rTitle(0) = rR.Row
-    rStart(0) = rTitle(0) + 1
-    rEnd(0) = rWS.Cells(rWS.Rows.Count, 1).End(xlUp).Row
-    cStart(0) = rR.Column + 2
-    cEnd(0) = rWS.Cells(1, rWS.Columns.Count).End(xlToLeft).Column
-    
-    Set Each_items = PLitemReader(cStart(0), cEnd(0), rStart(0), rEnd(0)) ' 읽기
-    ' 쓰기
-    TempKiller Each_items ' 날리기
-    
+    If rR Is Nothing Then Exit Sub
+
+    ' 2) 스캔 범위 계산
+    rTitle = rR.Row
+    rS = rTitle + 1
+    rE = rWS.Cells(rWS.Rows.Count, 1).End(xlUp).Row
+    cS = rR.Column + 2
+    cE = rWS.Cells(1, rWS.Columns.Count).End(xlToLeft).Column
+
+    ' 3) 읽기(셀->itemUnit 분해 결과)
+    Set itemsRaw = PL_iU_Reader(rS, cS, rE, cE)
+
+    ' 4) 압축/병합(ID_Hash 기준 + 날짜별 Count 합산)
+    Set itemsMerged = PL_Compressor(itemsRaw)
+
+#If Not Devmod Then
+    ' 5) (실사용) 타겟 바인딩 + 쓰기
+    Set_Target ThisWorkbook.FullName, "itemCounter"
+    Writing_itemCounter_from_PL itemsMerged
+#Else
+    ' 개발 테스트: test 시트에 덤프
+    Writing_itemCounter_from_PL itemsMerged
+#End If
+
+    ' 6) 정리
+    TempKiller itemsRaw
+    TempKiller itemsMerged
 End Sub
-Private Function PLitemReader(cS As Long, cE As Long, rS As Long, rE As Long) As Collection
-    Dim Result As New Collection, Temp As Collection
-    Dim Tpitem As itemUnit, Rpitem As itemUnit
-    Dim i As Long, n As Long, r As Long, c As Long
-    Dim CountCol As Long, DayCol As Long, RowCount As Long
-    Dim RawValue As String, PartsNickName As String
-    Dim dKey As Date
-    Dim Duplicated As Boolean
 
-    ' 날짜/수량 열 찾기
-    DayCol = rWS.Rows(1).Find("투입" & vbLf & "시점", lookAt:=xlPart, LookIn:=xlValues).Column
-    CountCol = rWS.Rows(1).Find("수량", lookAt:=xlPart, LookIn:=xlValues).Column
+'==============================================================
+' [Reader]
+'   - PartList 표를 스캔하여 "셀별 분해결과(Collection(itemUnit))"를 모음
+'
+' 반환 구조:
+'   Result(i) = Collection(itemUnit)   ' 셀 하나의 분해 결과
+'==============================================================
+Private Function PL_iU_Reader(ByVal rS As Long, ByVal cS As Long, ByVal rE As Long, ByVal cE As Long) As Collection
+    Dim Result As New Collection
 
-    For c = cS To cE          ' 열 순회
-        PartsNickName = CStr(rWS.Cells(1, c).value) ' 파트 닉네임
+    Dim cDates As Long, cCounts As Long, rNickNames As Long
+    Dim sNickName As String, sTarget As String
+    Dim r As Long, c As Long
 
-        For r = rS To rE      ' 행 순회
-            RawValue = Trim$(CStr(rWS.Cells(r, c).value))
-            If Len(RawValue) = 0 Then GoTo ContinueRow   ' 빈 셀은 스킵
+    rNickNames = 1
+    cDates = rWS.Rows(rNickNames).Find("투입" & vbLf & "시점", lookAt:=xlPart, LookIn:=xlValues).Column
+    cCounts = rWS.Rows(rNickNames).Find("수량", lookAt:=xlPart, LookIn:=xlValues).Column
 
-            ' 날짜/수량 읽기
-            If IsDate(rWS.Cells(r, DayCol).value) Then
-                dKey = CDate(rWS.Cells(r, DayCol).value)
-            Else
-                GoTo ContinueRow   ' 날짜 없으면 스킵(원하시면 에러 처리로 변경 가능)
+    For c = cS To cE
+        sNickName = CStr(rWS.Cells(rNickNames, c).Value)
+
+        For r = rS To rE
+            sTarget = CStr(rWS.Cells(r, c).Value)
+
+            If LenB(sTarget) <> 0 Then
+                ' 셀 하나 -> Collection(itemUnit)
+                Result.Add Re_Categorizing( _
+                            sTarget, _
+                            sNickName, _
+                            rWS.Cells(r, cDates).Value, _
+                            rWS.Cells(r, cCounts).Value)
             End If
-
-            If isNumeric(rWS.Cells(r, CountCol).value) Then
-                RowCount = CLng(rWS.Cells(r, CountCol).value)
-            Else
-                RowCount = 0
-            End If
-            If RowCount = 0 Then GoTo ContinueRow
-
-            ' 셀값 → itemUnit 컬렉션
-            Set Temp = ReclassifingVNQ(RawValue, PartsNickName)
-
-            For i = 1 To Temp.Count
-                Set Tpitem = Temp(i)
-
-                '-----------------------------
-                ' 1) Result에서 같은 ID 찾기
-                '-----------------------------
-                Set Rpitem = Nothing
-                Duplicated = False
-
-                For n = 1 To Result.Count
-                    Set Rpitem = Result(n)
-                    If Rpitem.ID_Hash = Tpitem.ID_Hash Then
-                        Duplicated = True
-                        Exit For
-                    End If
-                Next n
-
-                '-----------------------------
-                ' 2) 없으면 새로 추가
-                '-----------------------------
-                If Not Duplicated Then
-                    ' 그대로 참조해도 되고, 안전하게 복사본을 쓰고 싶으면 Tpitem.Copy
-                    Set Rpitem = Tpitem.Copy
-                    Result.Add Rpitem
-                End If
-
-                '-----------------------------
-                ' 3) 월일 기준 카운트 누적
-                '   CountPerDay(dKey)는 내부에서 월/일만 보고 저장
-                '   RowCount(행의 수량) * Tpitem.QTY(파트당 필요 수량)
-                '-----------------------------
-                Rpitem.CountPerDay(dKey) = Rpitem.CountPerDay(dKey) + (RowCount * Tpitem.QTY)
-            Next i
-
-ContinueRow:
         Next r
     Next c
 
-    Set PLitemReader = Result
+    Set PL_iU_Reader = Result
 End Function
-Private Function ReclassifingVNQ(ByVal Sample As String, Optional ByVal NickName As String = "Unknown") As Collection ' Reclassifing Vender, partNumber, QTY by Cell Value
-    Dim Result As New Collection, Target As itemUnit
+
+'==============================================================
+' [Categorizer]
+'   - 셀 문자열을 해석하여 itemUnit 여러 개로 분해
+'==============================================================
+Private Function Re_Categorizing( _
+    ByVal Sample As String, _
+    Optional ByVal NickName As String = "Unknown", _
+    Optional ByVal InputDate As Date, _
+    Optional ByVal LotCounts As Long = 1) As Collection
+
+    On Error GoTo LogicSkip
+
+    Dim Result As New Collection
+    Dim Target As itemUnit
     Dim sVender As String, sPartNumber As String, sQTY As String
+
     Dim Venders As Variant, PartNumbers As Variant
     Dim i As Long, p As Long
-    
-    Sample = Trim(CStr(Sample))
-    Sample = Replace(Sample, " [", "$[") ' 공백 없애기
-    Venders = Split(Sample, "$") ' Vender별로 분류
+    Dim pos As Long
+
+    Sample = Trim$(CStr(Sample))
+    Sample = Replace(Sample, " [", "$[")
+    Venders = Split(Sample, "$")
+
     For i = LBound(Venders) To UBound(Venders)
         sVender = ExtractBracketValue(Venders(i))
-        PartNumbers = Split(Trim(Replace(Venders(i), "[" & sVender & "]", "")), "/") ' 1개의 Vender 내의 부품넘버별로 분류
+        PartNumbers = Split(Trim$(Replace(Venders(i), "[" & sVender & "]", "")), "/")
+
         For p = LBound(PartNumbers) To UBound(PartNumbers)
-            sPartNumber = InStr(PartNumbers(p), "(")
-            If CLng(sPartNumber) = 0 Then
+            pos = InStr(PartNumbers(p), "(")
+
+            If pos = 0 Then
                 sPartNumber = PartNumbers(p)
-                sQTY = 1
+                sQTY = "1"
             Else
-                sPartNumber = Left$(PartNumbers(p), CLng(sPartNumber) - 1)
-                sQTY = ExtractSmallBracketValue(PartNumbers(p))
+                sPartNumber = Left$(PartNumbers(p), pos - 1)
+                sQTY = CStr(ExtractSmallBracketValue(PartNumbers(p)))
             End If
+
             Set Target = New itemUnit
             Target.NickName = NickName
             Target.Vender = sVender
             Target.PartNumber = sPartNumber
             Target.QTY = CLng(sQTY)
+
+            ' 셀의 LotCounts(수량) * 개별 파트 QTY 를 해당 날짜에 기록
+            Target.Count(InputDate) = LotCounts * CLng(sQTY)
+
             Result.Add Target
         Next p
-    Erase PartNumbers
+
+        Erase PartNumbers
     Next i
+
     Erase Venders
-    
-    Set ReclassifingVNQ = Result
+    Set Re_Categorizing = Result
+    Exit Function
+
+LogicSkip:
+    ' 파싱 실패 셀은 스킵(필요하면 Debug.Print Sample 등 로깅)
 End Function
-'==== 타겟(자기 자신) 바인드 ====================================================
+
+'==============================================================
+' [Compressor / Merger]  ★ 핵심 완성본 ★
+'
+' 입력:
+'   Cells(i) = Collection(itemUnit)  ' 셀 단위 분해 결과
+'
+' 출력:
+'   Result(j) = itemUnit
+'   - ID_Hash가 같으면 Result의 대표 itemUnit에 날짜별 Count를 Merge
+'   - ID_Hash가 다르면 신규 추가
+'==============================================================
+Private Function PL_Compressor(ByRef Cells As Collection) As Collection
+    Dim Result As New Collection
+
+    Dim cellPack As Collection
+    Dim iuRef As itemUnit
+    Dim iuDst As itemUnit
+
+    Dim i As Long, n As Long, r As Long
+    Dim found As Boolean
+
+    ' 셀 단위 Collection을 순회
+    For i = 1 To Cells.Count
+        Set cellPack = Cells(i)                 ' Collection(itemUnit)
+
+        ' 셀 안의 itemUnit들을 순회
+        For n = 1 To cellPack.Count
+            Set iuRef = cellPack(n)
+
+            ' Result에서 동일 ID_Hash 찾기
+            found = False
+            For r = 1 To Result.Count
+                Set iuDst = Result(r)
+
+                If iuDst.ID_Hash = iuRef.ID_Hash Then
+                    ' 동일 Hash -> 날짜별 Count 합산
+                    iuDst.MergeCountsFrom iuRef
+                    found = True
+                    Exit For
+                End If
+            Next r
+
+            ' 없으면 신규 추가
+            If Not found Then
+                Result.Add iuRef
+            End If
+        Next n
+    Next i
+
+    Set PL_Compressor = Result
+End Function
+
+'==============================================================
+' [Writer]
+'   - 최종(중복 제거+Merge 완료) itemUnit 리스트를 워크시트에 나열
+'   - 현재는 Devmod일 때 test 시트에 덤프
+'
+' 주의:
+'   - 실제 itemCounter 시트의 레이아웃이 확정되면
+'     (열 위치/정렬/날짜 컬럼 구성) 기준으로 이 함수만 완성하면 됨.
+'==============================================================
+Private Sub Writing_itemCounter_from_PL(ByRef Target As Collection)
+#If Devmod Then
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.Worksheets("test")
+
+    Dim r As Long, d As Long
+    Dim iu As itemUnit
+    Dim baseCol As Long: baseCol = 36
+
+    ' (선택) 기존 출력 영역 정리
+    ws.Range(ws.Cells(1, baseCol), ws.Cells(ws.Rows.Count, baseCol + 50)).ClearContents
+
+    ' 헤더
+    ws.Cells(1, baseCol).Value = "No"
+    ws.Cells(1, baseCol + 1).Value = "NickName"
+    ws.Cells(1, baseCol + 2).Value = "Vender"
+    ws.Cells(1, baseCol + 3).Value = "PartNumber"
+    ws.Cells(1, baseCol + 4).Value = "Total"
+
+    ' 데이터
+    For r = 1 To Target.Count
+        Set iu = Target(r)
+
+        ws.Cells(r + 1, baseCol).Value = r
+        ws.Cells(r + 1, baseCol + 1).Value = iu.NickName
+        ws.Cells(r + 1, baseCol + 2).Value = iu.Vender
+        ws.Cells(r + 1, baseCol + 3).Value = iu.PartNumber
+        ws.Cells(r + 1, baseCol + 4).Value = iu.Count   ' 전체합
+
+        ' 날짜별 Count (날짜 키 개수만큼 우측으로 출력)
+        For d = 1 To iu.DateKeyCount
+            ws.Cells(1, baseCol + 4 + d).Value = Format$(iu.DateKey(d), "mm-dd")
+            ws.Cells(r + 1, baseCol + 4 + d).Value = iu.Count(iu.DateKey(d))
+        Next d
+    Next r
+#End If
+End Sub
+
+'==============================================================
+' [Binding Helpers]  (당신 코드 유지 / 위치만 하단 정리)
+'==============================================================
 Private Sub Set_Target(ByVal TargetDir As String, Optional ByVal Target_Worksheet_index As Variant = 1)
     If LenB(TargetDir) = 0 Then Exit Sub
-
-    If Not BindWorkbook( _
-            TargetDir:=TargetDir, _
-            WantVisible:=False, _
-            AppOut:=xlApp, _
-            WbOut:=tWB) Then
-        Debug.Print "Failed to bind target workbook: " & TargetDir
-        Exit Sub
-    End If
-
-    If Not BindWorksheet(Wb:=tWB, WSRef:=Target_Worksheet_index, WsOut:=tWS) Then
-        Debug.Print "Failed to bind target worksheet: " & CStr(Target_Worksheet_index)
-        Exit Sub
-    End If
+    If Not BindWorkbook(TargetDir, False, xlApp, tWB) Then Exit Sub
+    If Not BindWorksheet(tWB, Target_Worksheet_index, tWS) Then Exit Sub
 End Sub
 
-'==== 레퍼런스(상대 파일) 바인드 ================================================
 Private Sub Get_Reference(ByVal TargetDir As String, Optional ByVal Target_Worksheet_index As Variant = 1)
     If LenB(TargetDir) = 0 Then Exit Sub
-
-    If Not BindWorkbook( _
-            TargetDir:=TargetDir, _
-            WantVisible:=False, _
-            AppOut:=xlApp, _
-            WbOut:=rWB) Then
-        Debug.Print "Failed to bind reference workbook: " & TargetDir
-        Exit Sub
-    End If
-
-    If Not BindWorksheet(Wb:=rWB, WSRef:=Target_Worksheet_index, WsOut:=rWS) Then
-        Debug.Print "Failed to bind reference worksheet: " & CStr(Target_Worksheet_index)
-        Exit Sub
-    End If
+    If Not BindWorkbook(TargetDir, False, xlApp, rWB) Then Exit Sub
+    If Not BindWorksheet(rWB, Target_Worksheet_index, rWS) Then Exit Sub
 End Sub
 
-'==== 유틸 (아이템 편집/표시 등은 추후 구현) ====================================
-Private Sub itemAdder()
-End Sub
-
-Private Sub itemKiller()
-End Sub
-
-Private Sub itemEditor()
-End Sub
-
-Private Sub DayFollower()
-End Sub
-
-Private Sub RowSaver()
-End Sub
-
-Private Sub ViewerRefresh()
-    
-End Sub
-
-'===============================================================================
-'= 공용 헬퍼: Workbook/Worksheet 바인딩 (중복 제거의 핵심)
-'===============================================================================
-' [동작 순서]
-' 1) GetObject(TargetDir) 시도: 이미 열려 있으면 해당 인스턴스의 Workbook 반환, 열려 있지 않으면 열기
-' 2) 실패 시: 실행 중 Excel 인스턴스에 붙어서 FullName/Name 비교로 찾기
-' 3) 그래도 실패 시: 새 인스턴스를 띄워서 Open (실패하면 Quit)
-'
-' 반환값: 성공 True / 실패 False
 Private Function BindWorkbook( _
     ByVal TargetDir As String, _
     ByVal WantVisible As Boolean, _
@@ -6140,15 +6128,13 @@ Private Function BindWorkbook( _
     End If
 
     On Error GoTo EH_GetObject
-    ' 1) 최우선: 열려 있든 아니든 GetObject로 직접 바인딩(또는 개방)
-    Set WbOut = GetObject(TargetDir)              ' Workbook
-    Set AppOut = WbOut.Application                ' Excel.Application
+    Set WbOut = GetObject(TargetDir)
+    Set AppOut = WbOut.Application
     If StrComp(WbOut.FullName, ThisWorkbook.FullName, vbTextCompare) <> 0 Then AppOut.Visible = WantVisible
     BindWorkbook = True
     Exit Function
 
 EH_GetObject:
-    ' 2) 실행 중 Excel 인스턴스에서 검색
     Dim runningApp As Excel.Application
     Dim Wb As Workbook
 
@@ -6158,8 +6144,7 @@ EH_GetObject:
 
     If Not runningApp Is Nothing Then
         For Each Wb In runningApp.Workbooks
-            If StrComp(Wb.FullName, TargetDir, vbTextCompare) = 0 _
-               Or StrComp(Wb.Name, fileName, vbTextCompare) = 0 Then
+            If StrComp(Wb.FullName, TargetDir, vbTextCompare) = 0 Or StrComp(Wb.Name, fileName, vbTextCompare) = 0 Then
                 Set WbOut = Wb
                 Set AppOut = runningApp
                 If StrComp(WbOut.FullName, ThisWorkbook.FullName, vbTextCompare) <> 0 Then AppOut.Visible = WantVisible
@@ -6169,19 +6154,17 @@ EH_GetObject:
         Next
     End If
 
-    ' 3) 새 인스턴스 생성 후 열기
     Dim newApp As Excel.Application
     Set newApp = New Excel.Application
     newApp.Visible = WantVisible
 
     On Error GoTo EH_OpenNew
-    Set WbOut = newApp.Workbooks.open(fileName:=TargetDir, ReadOnly:=True, Notify:=False)
+    Set WbOut = newApp.Workbooks.Open(fileName:=TargetDir, ReadOnly:=True, Notify:=False)
     Set AppOut = newApp
     BindWorkbook = True
     Exit Function
 
 EH_OpenNew:
-    ' 열기 실패하면 새 인스턴스 정리
     On Error Resume Next
     newApp.Quit
     Set newApp = Nothing
@@ -6191,22 +6174,15 @@ EH_OpenNew:
     BindWorkbook = False
 End Function
 
-' Worksheet 인덱스(숫자) / 이름(문자열) 모두 지원
-Private Function BindWorksheet( _
-    ByVal Wb As Workbook, _
-    ByVal WSRef As Variant, _
-    ByRef WsOut As Worksheet) As Boolean
-
+Private Function BindWorksheet(ByVal Wb As Workbook, ByVal WSRef As Variant, ByRef WsOut As Worksheet) As Boolean
     On Error GoTo EH
-    If isNumeric(WSRef) Then
+    If IsNumeric(WSRef) Then
         Set WsOut = Wb.Worksheets(CLng(WSRef))
     Else
         Set WsOut = Wb.Worksheets(CStr(WSRef))
     End If
-
     BindWorksheet = True
     Exit Function
-
 EH:
     BindWorksheet = False
 End Function
@@ -6217,16 +6193,15 @@ Private Sub TempKiller(Optional ByRef Temp As Variant)
         Set tWS = Nothing
         Set tWB = Nothing
     End If
-    
+
     If Not rWB Is Nothing Then
         If StrComp(rWB.FullName, ThisWorkbook.FullName, vbTextCompare) <> 0 Then rWB.Close False
         Set rWS = Nothing
         Set rWB = Nothing
     End If
-    
+
     Set Temp = Nothing
 End Sub
 
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-CA_itemCounter.bas End
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+````
+

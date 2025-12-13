@@ -22,8 +22,8 @@ End Sub
 Private Sub Class_Terminate()
     Set clsStickerLabel = Nothing
 End Sub
-Public Property Set DrawingWorksheet(ByRef value As Worksheet)
-    Set DrawingWS = value
+Public Property Set DrawingWorksheet(ByRef Value As Worksheet)
+    Set DrawingWS = Value
     Set Me.StickerLabel.Worksheet = DrawingWS
 End Property
 Public Property Get DrawingWorksheet() As Worksheet
@@ -307,7 +307,7 @@ Public Function Stamp_it_Auto(ByRef Criterion_Range As Range, _
     Dim Check As Range, StartR As Range, EndR As Range ' check, Start, End Range
 
     For Each Check In Criterion_Range ' 영역 지정용 반복루틴
-        If Not IsEmpty(Check.value) Then
+        If Not IsEmpty(Check.Value) Then
             If FirstRow <= 0 Then FirstRow = Check.Row
             If LastRow < Check.Row Then LastRow = Check.Row: LastCol = Check.Column
             Select Case Stpt_Direction
