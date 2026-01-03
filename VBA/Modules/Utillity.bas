@@ -11,7 +11,7 @@ Option Explicit
         ByVal wParam As Long, ByVal lParam As Long) As Long
 #End If
 
-Public UI As AutoReportHandler
+Public ARH As AutoReportHandler
 
 '---------------------------
 ' 1) 파싱 결과를 담는 UDT
@@ -196,15 +196,15 @@ End Function
 
 ' CountCountinuousNonEmptyCells / 비어있지 않은 셀의 개수를 반환하는 함수 / CountNonEmptyCells
 Public Function fCCNEC(ByVal TargetRange As Range) As Long
-    Dim cell As Range
+    Dim Cell As Range
     Dim Count As Long
     Dim foundValue As Boolean
 
     Count = 0
     foundValue = False
     
-    For Each cell In TargetRange
-        If Not IsEmpty(cell.Value) Then
+    For Each Cell In TargetRange
+        If Not IsEmpty(Cell.Value) Then
             If Not foundValue Then
                 foundValue = True ' 최초의 값 있는 셀을 찾음
             End If
@@ -212,7 +212,7 @@ Public Function fCCNEC(ByVal TargetRange As Range) As Long
         ElseIf foundValue Then
             Exit For ' 첫 값 이후 공백을 만나면 종료
         End If
-    Next cell
+    Next Cell
     
     fCCNEC = Count
 End Function
@@ -244,9 +244,9 @@ Public Function ForLining(ByRef Target As Range, Optional Division As RorC = Row
     
     Select Case Division
     Case Row
-        Set ForLining = ws.Range(Target.Row & ":" & Target.Row)
+        Set ForLining = ws.Rows(Target.Row)
     Case Column
-        Set ForLining = ws.Range(Target.Column & ":" & Target.Column)
+        Set ForLining = ws.Columns(Target.Column)
     End Select
     
 End Function
@@ -278,15 +278,15 @@ Public Function CheckFileAlreadyWritten_PDF(ByRef Document_Name As String, DT As
 End Function
 Public Sub SelfMerge(ByRef MergeTarget As Range)
     Dim r As Long, c As Long
-    Dim cell As Range
+    Dim Cell As Range
     Dim ValueList As String
     'Dim ws As Worksheet: Set ws = MergeTarget.Parent
     
     If MergeTarget Is Nothing Then Exit Sub
     For r = 1 To MergeTarget.Rows.Count
         For c = 1 To MergeTarget.Columns.Count
-            Set cell = MergeTarget.Cells(r, c)
-            If Trim(cell.Value) <> "" Then ValueList = ValueList & cell.Value & vbLf
+            Set Cell = MergeTarget.Cells(r, c)
+            If Trim(Cell.Value) <> "" Then ValueList = ValueList & Cell.Value & vbLf
         Next c
     Next r
     
@@ -677,3 +677,9 @@ End Sub
 Private Function FileExists(ByVal f As String) As Boolean
     FileExists = (Len(Dir$(f, vbNormal)) > 0)
 End Function
+Public Function RemoveLineBreaks(Target As Variant) As String
+ Target = Replace(CStr(Target), vbCrLf, " ")
+ Target = Replace(Target, vbLf, " ")
+ RemoveLineBreaks = Replace(Target, vbCr, " ")
+End Function
+

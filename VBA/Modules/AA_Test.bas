@@ -64,9 +64,19 @@ Public Sub TTESTSET()
 End Sub
 
 Sub T()
-Debug.Print Z_Directory.Backup
-Debug.Print Z_Directory.BOM
+    Dim ws As Worksheet: Set ws = ThisWorkbook.Worksheets("test")
+    With ws.Cells(2, 33).Borders(xlEdgeTop)
+        .LineStyle = xlContinuous
+        .Weight = xlThin
+    End With
+End Sub
 
-'Debug.Print GetWebText("https://naver.com")
-'Debug.Print GetWebText("https://github.com/loborover/AutoReport/tree/main")
+Sub icTester()
+    CA_itemCounter.PL2IC "D:\Downloads\공급문서\AutoReport\PartList\PartList 12월-19일_C11.xlsx"
+    
+    ReActive
+End Sub
+
+Sub ReActive()
+    Application.Visible = True
 End Sub

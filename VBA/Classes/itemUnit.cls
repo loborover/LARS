@@ -15,7 +15,7 @@ Option Explicit
 '==========================================================
 ' Class: itemUnit
 ' 목적:
-'   - 자재 메타정보(Nick/Vender/PartNumber/QTY)
+'   - 자재 메타정보(Nick/Vendor/PartNumber/QTY)
 '   - 날짜별 투입 수량 Count(인덱서 형태)
 '   - ID_Hash 기준으로 병합(MergeCountsFrom)
 '
@@ -25,7 +25,7 @@ Option Explicit
 '==========================================================
 
 Private vID As String
-Private vNick As String, vVender As String, vPartNumber As String
+Private vNick As String, vVendor As String, vPartNumber As String
 Private vQTY As Long
 
 ' 날짜별 카운터
@@ -51,11 +51,11 @@ Public Property Let NickName(ByVal Target As String)
     vNick = Target: MakeID
 End Property
 
-Public Property Get Vender() As String
-    Vender = vVender
+Public Property Get Vendor() As String
+    Vendor = vVendor
 End Property
-Public Property Let Vender(ByVal Target As String)
-    vVender = Target: MakeID
+Public Property Let Vendor(ByVal Target As String)
+    vVendor = Target: MakeID
 End Property
 
 Public Property Get PartNumber() As String
@@ -73,8 +73,8 @@ Public Property Let QTY(ByVal Target As Long)
 End Property
 
 Private Sub MakeID()
-    If Len(vNick) > 0 And Len(vVender) > 0 And Len(vPartNumber) > 0 Then
-        vID = vVender & "_" & vNick & "_" & vPartNumber
+    If Len(vNick) > 0 And Len(vVendor) > 0 And Len(vPartNumber) > 0 Then
+        vID = vVendor & "_" & vNick & "_" & vPartNumber
     End If
 End Sub
 
@@ -126,7 +126,7 @@ Public Sub MergeCountsFrom(ByVal OtherItem As itemUnit)
     Dim dDate As Date, dCount As Long
 
     For i = 1 To OtherItem.DateKeyCount
-        dDate = OtherItem.DateKey(i)
+        dDate = OtherItem.dateKey(i)
         dCount = OtherItem.Count(dDate)
         If dCount <> 0 Then
             Me.Count(dDate) = Me.Count(dDate) + dCount
@@ -147,10 +147,10 @@ Public Property Get DateKeyCount() As Long
     End If
 End Property
 
-Public Property Get DateKey(ByVal Index1 As Long) As Date
+Public Property Get dateKey(ByVal Index1 As Long) As Date
     If mDatesInitialized Then
         If Index1 >= 1 And Index1 <= UBound(vDateKey) Then
-            DateKey = CDate(vDateKey(Index1))
+            dateKey = CDate(vDateKey(Index1))
         End If
     End If
 End Property

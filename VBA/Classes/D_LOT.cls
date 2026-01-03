@@ -59,30 +59,30 @@ Public Function Copy() As D_LOT
     End With
     Set Copy = CopiedData
 End Function
-Public Function info(Optional Index As Long = 1) As ModelInfo
-    If vLot_info(Index) Is Nothing Then Exit Function
-    Set info = vLot_info(Index)
+Public Function info(Optional index As Long = 1) As ModelInfo
+    If vLot_info(index) Is Nothing Then Exit Function
+    Set info = vLot_info(index)
 End Function
 
 Private Sub ParseModelinfo()
     Dim vCell As Range, i As Long
     Dim TargetModelinfo As New ModelInfo
     Dim UniqueList As New Collection
-    Dim ValueStr As String, Exists As Boolean
+    Dim ValueStr As String, exists As Boolean
     
     On Error GoTo ErrorHandler
     
     For Each vCell In Me.Lot_Range.Cells
         ValueStr = Trim(CStr(vCell.Value))
         If Len(ValueStr) > 0 Then
-            Exists = False
+            exists = False
             For i = 1 To UniqueList.Count
                 If UniqueList(i) = ValueStr Then
-                    Exists = True
+                    exists = True
                     Exit For
                 End If
             Next i
-            If Not Exists Then UniqueList.Add ValueStr
+            If Not exists Then UniqueList.Add ValueStr
         End If
     Next
         

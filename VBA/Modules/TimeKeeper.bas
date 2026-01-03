@@ -144,7 +144,7 @@ End Function
 ' 예: "20250831 오전 08:00:00", "20250831 8:00", "20250831 PM 8:00"
 Private Function TryParse_Ymd8_And_TimeText(ByVal s As String, ByRef outDT As Date) As Boolean
     Dim sTrim As String, Y As Long, m As Long, d As Long
-    Dim datePart As String, timePart As String, posSp As Long
+    Dim DatePart As String, timePart As String, posSp As Long
     Dim baseDate As Date, tfrac As Double
 
     TryParse_Ymd8_And_TimeText = False
@@ -153,8 +153,8 @@ Private Function TryParse_Ymd8_And_TimeText(ByVal s As String, ByRef outDT As Da
 
     ' 앞 8자리가 YYYYMMDD인가?
     If Not IsNumeric(Left$(sTrim, 8)) Then Exit Function
-    datePart = Left$(sTrim, 8)
-    If Not TryParseYmd8_ToDate(datePart, baseDate) Then Exit Function
+    DatePart = Left$(sTrim, 8)
+    If Not TryParseYmd8_ToDate(DatePart, baseDate) Then Exit Function
 
     ' 뒤쪽에서 시간부분 추출(있을 수도, 없을 수도)
     timePart = mid$(sTrim, 9) ' 9번째 이후

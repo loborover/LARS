@@ -60,7 +60,7 @@ Public Sub Print_DailyPlan(Optional Handle As Boolean)
 
     For i = 1 To ListCount ' 체크박스 활성화된 아이템 선별
         Set DPitem = DPLV.ListItems.Item(i)
-        If DPitem.Checked Then Chkditem.Add DPitem.Index 'SubItems(1)
+        If DPitem.Checked Then Chkditem.Add DPitem.index 'SubItems(1)
     Next i
     
     If Chkditem.Count < 1 Then MsgBox "선택된 문서 없음": Exit Sub
@@ -114,12 +114,11 @@ Private Sub AutoReport_DailyPlan(ByRef Wb As Workbook)
     AR_1_EssentialDataExtraction LastCol, LastRow  ' 필수데이터 추출
     Interior_Set_DailyPlan , LastRow, PrintArea ' Range 서식 설정
     AutoPageSetup Target_WorkSheet, PS_DailyPlan(PrintArea)  ' PrintPageSetup
-    MarkingUp AR_2_ModelGrouping4 ' 모델 그루핑
+    MarkingUp AR_2_ModelGrouping ' 모델 그루핑
     
     Set vCFR = Nothing
 End Sub
 Private Sub AR_1_EssentialDataExtraction(Optional ByRef LastCol As Long = 0, Optional ByRef LastRow As Long = 0) ' AutoReport 초반 설정 / 필수 데이터 영역만 추출함
-    '月火水木金土日 요일입력 코드 月火水木金土日
     Dim i As Long, startRow As Long
     Dim DelCell As Range
     Dim CopiedData As New Collection ', TimeKeeper As New Collection
@@ -199,7 +198,7 @@ Private Sub AR_1_EssentialDataExtraction(Optional ByRef LastCol As Long = 0, Opt
     
 End Sub
 ' Grouping for each LOT Models
-Public Function AR_2_ModelGrouping4(Optional ByRef startRow As Long = 4, Optional ByRef StartCol As Long = 3, Optional ByRef TargetWorkSheet As Worksheet, Optional MainOrSub As MorS = -1) As D_Maps
+Public Function AR_2_ModelGrouping(Optional ByRef startRow As Long = 4, Optional ByRef StartCol As Long = 3, Optional ByRef TargetWorkSheet As Worksheet, Optional MainOrSub As MorS = -1) As D_Maps
     Dim tWS As Worksheet: If TargetWorkSheet Is Nothing Then Set tWS = Target_WorkSheet Else Set tWS = TargetWorkSheet
     Dim Marker As New D_Maps
     Dim Checker As New ProductModel2
@@ -210,6 +209,7 @@ Public Function AR_2_ModelGrouping4(Optional ByRef startRow As Long = 4, Optiona
     Dim CriterionField As ModelinfoFeild
 
     Checker.SetModel tWS.Cells(CurrRow, StartCol), tWS.Cells(CurrRow + 1, StartCol)
+    
     If MainOrSub = -1 Or MainOrSub = SubG Then
         Do While CurrRow <= LastRow + 1
             If StartRow_Prcss = 0 Then StartRow_Prcss = CurrRow
@@ -225,6 +225,7 @@ Public Function AR_2_ModelGrouping4(Optional ByRef startRow As Long = 4, Optiona
             CurrRow = CurrRow + 1
         Loop
     End If
+    
     If MainOrSub = -1 Or MainOrSub = MainG Then
         ' Main Group
         Dim vCurr As ModelInfo, vNext As ModelInfo
@@ -255,17 +256,16 @@ Public Function AR_2_ModelGrouping4(Optional ByRef startRow As Long = 4, Optiona
             CurrRow = CurrRow + 1
         Loop
     End If
-    Set AR_2_ModelGrouping4 = Marker
+    
+    Set AR_2_ModelGrouping = Marker
+    
 End Function
 Private Sub MarkingUp(ByRef Target As D_Maps)
     Dim i As Long
     Set Brush.DrawingWorksheet = Target_WorkSheet
     
-    For i = 1 To Target.Count(SubG) ' SubGroups 윗라인 라이닝
-        With ForLining(Target.Sub_Lot(i).Start_R, Row).Borders(xlEdgeTop)
-            .LineStyle = xlContinuous
-            .Weight = xlThin
-        End With
+    For i = 1 To Target.Count(SubG) ' MakeBlock 위아래 xlThin, 중간 xlHairline
+        MakeBlock Target.Sub_Lot(i).Start_R, Target.Sub_Lot(i).End_R
     Next i
     
     With Target
@@ -317,14 +317,6 @@ Private Sub Interior_Set_DailyPlan(Optional ByRef FirstRow As Long = 3, Optional
         .Font.Bold = True
     End With
     
-    If Yoil_DP Then
-        Dim Target As Range
-        Set Target = ws.Range("2:2").Find(What:="계획", LookIn:=xlValues, lookAt:=xlWhole).Offset(0, 5)
-        For i = 0 To 3
-            DecodeDate Target.Offset(0, i)
-        Next i
-    End If
-    
     With PR ' PrintRange 인쇄영역의 인테리어 세팅
         .Font.Name = "LG스마트체2.0 Regular"
         .Font.Size = 12
@@ -339,6 +331,15 @@ Private Sub Interior_Set_DailyPlan(Optional ByRef FirstRow As Long = 3, Optional
         
         .Rows.rowHeight = 15.75 ' 행 높이 지정
     End With
+    
+    If Yoil_DP Then
+        Dim Target As Range
+        Set Target = ws.Range("2:2").Find(What:="계획", LookIn:=xlValues, lookAt:=xlWhole).Offset(0, 5)
+        For i = 0 To 3
+            DecodeDate Target.Offset(0, i)
+            If Not i = 0 Then DatePartLining Target.Offset(0, i - 1)
+        Next i
+    End If
     
     'Connecter Col 7, 8 / Finish Line Col 13, 14
     'Need a Sub for Search Connecter and Finish Line automatical
@@ -361,11 +362,6 @@ Private Sub Interior_Set_DailyPlan(Optional ByRef FirstRow As Long = 3, Optional
     
     ACol = ws.Range("1:2").Find(What:="Line", LookIn:=xlValues, lookAt:=xlPart).Column
     Set tempRange = ws.Range(ws.Cells(FirstRow + 1, 1), ws.Cells(LastRow, ACol + 1))
-    
-    With tempRange.Borders(xlInsideHorizontal)
-        .LineStyle = xlDot
-        .Weight = xlHairline
-    End With
     
     For Each xCell In tempRange
         If xCell.Value = "" Then xCell.Interior.Color = RGB(BoW, BoW, BoW) ' Brightness
@@ -402,23 +398,23 @@ Private Function GetDailyPlanWhen(DailyPlanDirectiory As String) As String
 
     ' 값을 읽어오기
     Dim col(1 To 2) As Long, smallestValue As Long: smallestValue = 31
-    Dim cell As Range, Finder As Range
+    Dim Cell As Range, Finder As Range
         
     For Each Finder In ws.Rows(2).Cells ' DP에서 날짜를 찾는 줄
-        If Finder.Value Like "*월" And Finder.Offset(2, 0).Value > 0 Then Set cell = Finder: Exit For
+        If Finder.Value Like "*월" And Finder.Offset(2, 0).Value > 0 Then Set Cell = Finder: Exit For
         col(1) = col(1) + 1: If col(1) > 70 Then Exit For
     Next Finder
-    If cell Is Nothing Then GetDailyPlanWhen = "It's Not a DailyPlan": GoTo NAD ' 열람한 문서가 DailyPlan이 아닐시 오류처리 단
-    Title = cell.Value ' 생산 월
-    col(1) = cell.MergeArea.Cells(1, 1).Column: col(2) = cell.MergeArea.Cells(1, cell.MergeArea.Columns.Count).Column ' 생산 일 Range 지정을 위한 열 값 추적
-    For Each cell In ws.Range(ws.Cells(3, col(1)), ws.Cells(3, col(2)))
-        If IsNumeric(cell.Value) And cell.Offset(1, 0).Value > 0 And cell.Value < smallestValue Then smallestValue = cell.Value
-    Next cell
+    If Cell Is Nothing Then GetDailyPlanWhen = "It's Not a DailyPlan": GoTo NAD ' 열람한 문서가 DailyPlan이 아닐시 오류처리 단
+    Title = Cell.Value ' 생산 월
+    col(1) = Cell.MergeArea.Cells(1, 1).Column: col(2) = Cell.MergeArea.Cells(1, Cell.MergeArea.Columns.Count).Column ' 생산 일 Range 지정을 위한 열 값 추적
+    For Each Cell In ws.Range(ws.Cells(3, col(1)), ws.Cells(3, col(2)))
+        If IsNumeric(Cell.Value) And Cell.Offset(1, 0).Value > 0 And Cell.Value < smallestValue Then smallestValue = Cell.Value
+    Next Cell
     Title = Title & "-" & smallestValue & "일" ' Title = *월-*일
     GetDailyPlanWhen = Title ' 날짜형 제목값 인계
     Title = smallestValue ' 날짜값
-    Set cell = ws.Rows("2:3").Find(What:="생산 라인", lookAt:=xlWhole, LookIn:=xlValues)
-    wLine = cell.Offset(2, 0).Value
+    Set Cell = ws.Rows("2:3").Find(What:="생산 라인", lookAt:=xlWhole, LookIn:=xlValues)
+    wLine = Cell.Offset(2, 0).Value
 NAD:
     Wb.Close SaveChanges:=False: Set Wb = Nothing ' 워크북 닫기
     xlApp.Quit: Set xlApp = Nothing ' Excel 애플리케이션 종료
@@ -459,9 +455,8 @@ Public Sub Re_Grouping()
     Set Target_WorkSheet = Selection.Worksheet
     Set Brush.DrawingWorksheet = Target_WorkSheet
     Brush.DeleteShapes
-    Dim CriterionCell As Range: Set CriterionCell = Target_WorkSheet.Rows("1:10").Find("계획", lookAt:=xlWhole, MatchCase:=True)
-    Dim CritRow As Long, CritCol As Long: CritRow = CriterionCell.Row + 2: CritCol = CriterionCell.Column - 1
-    MarkingUp AR_2_ModelGrouping4(CritRow, CritCol, Target_WorkSheet)
+    Dim CriterionCell As Range: Set CriterionCell = Target_WorkSheet.Cells.Find("부품번호", lookAt:=xlWhole, MatchCase:=True)
+    MarkingUp AR_2_ModelGrouping(CriterionCell.Row + 3, CriterionCell.Column, Target_WorkSheet)
 End Sub
 
 Private Function SetRangeForDraw(ByRef Criterion_Target As Range) As Range
@@ -488,7 +483,7 @@ Private Sub DecodeDate(ByRef Target As Range)
     If Day(DT) <> vDD Then DT = DateSerial(Year(DT), Month(DT), vDD) ' 실제날짜값(DT)과 명시된날짜값(vDD)를 비교후 명시된 날짜값을 추종하도록 설계
     WK = WeekdayKorean(DT) ' 요일 변환
     Target.Value = DT ' 최종값 전달
-    Target.NumberFormat = "d aaa" ' 날짜와 요일이 기재되도록 포맷
+    Target.NumberFormat = "d.aaa" ' 날짜와 요일이 기재되도록 포맷
     With Target
         .WrapText = False ' 줄바꿈 False
         .ShrinkToFit = True ' 셀에 맞춤 True
@@ -506,3 +501,50 @@ Private Sub DecodeDate(ByRef Target As Range)
 Endproc:
 End Sub
 
+Private Sub DatePartLining(ByRef Target As Range)
+    Dim ws As Worksheet: Set ws = Target.Worksheet
+    Dim vThis As Variant, vNext As Variant
+    Dim ThisDate As Date, NextDate As Date
+    Dim w1 As Long, w2 As Long
+
+    vThis = Target.Value
+    vNext = Target.Offset(0, 1).Value
+
+    ' 날짜 아니면 즉시 종료(조용히 무시)
+    If Not IsDate(vThis) Then Exit Sub
+    If Not IsDate(vNext) Then Exit Sub
+
+    ' 날짜만 정규화(시간 제거)
+    ThisDate = DateValue(CDate(vThis))
+    NextDate = DateValue(CDate(vNext))
+
+    w1 = DatePart("ww", ThisDate, vbMonday, vbFirstFourDays)
+    w2 = DatePart("ww", NextDate, vbMonday, vbFirstFourDays)
+
+    If w1 <> w2 Then
+        ' “각 날짜셀 사이”면 Target 오른쪽 테두리가 가장 정확
+        With ws.Columns(Target.Column).Borders(xlEdgeRight)
+            .LineStyle = xlDouble
+            .Weight = xlThick
+        End With
+    End If
+End Sub
+
+Private Sub MakeBlock(ByRef StartR As Range, ByRef EndR As Range)
+    Dim TargetR As Range
+    Set TargetR = StartR.Worksheet.Rows(StartR.Row & ":" & EndR.Row)
+    With TargetR
+        With .Borders(xlInsideHorizontal)
+            .LineStyle = xlContinuous
+            .Weight = xlHairline
+        End With
+        With .Borders(xlEdgeTop)
+            .LineStyle = xlContinuous
+            .Weight = xlThin
+        End With
+        With .Borders(xlEdgeBottom)
+            .LineStyle = xlContinuous
+            .Weight = xlThin
+        End With
+    End With
+End Sub

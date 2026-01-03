@@ -114,19 +114,19 @@ Private Function Re_Categorizing( _
 
     Dim Result As New Collection
     Dim Target As itemUnit
-    Dim sVender As String, sPartNumber As String, sQTY As String
+    Dim sVendor As String, sPartNumber As String, sQTY As String
 
-    Dim Venders As Variant, PartNumbers As Variant
+    Dim Vendors As Variant, PartNumbers As Variant
     Dim i As Long, p As Long
     Dim pos As Long
 
     Sample = Trim$(CStr(Sample))
     Sample = Replace(Sample, " [", "$[")
-    Venders = Split(Sample, "$")
+    Vendors = Split(Sample, "$")
 
-    For i = LBound(Venders) To UBound(Venders)
-        sVender = ExtractBracketValue(Venders(i))
-        PartNumbers = Split(Trim$(Replace(Venders(i), "[" & sVender & "]", "")), "/")
+    For i = LBound(Vendors) To UBound(Vendors)
+        sVendor = ExtractBracketValue(Vendors(i))
+        PartNumbers = Split(Trim$(Replace(Vendors(i), "[" & sVendor & "]", "")), "/")
 
         For p = LBound(PartNumbers) To UBound(PartNumbers)
             pos = InStr(PartNumbers(p), "(")
@@ -140,9 +140,9 @@ Private Function Re_Categorizing( _
             End If
 
             Set Target = New itemUnit
-            Target.NickName = NickName
-            Target.Vender = sVender
-            Target.PartNumber = sPartNumber
+            Target.NickName = RemoveLineBreaks(NickName)
+            Target.Vendor = RemoveLineBreaks(sVendor)
+            Target.PartNumber = RemoveLineBreaks(sPartNumber)
             Target.QTY = CLng(sQTY)
 
             ' 셀의 LotCounts(수량) * 개별 파트 QTY 를 해당 날짜에 기록
@@ -154,7 +154,7 @@ Private Function Re_Categorizing( _
         Erase PartNumbers
     Next i
 
-    Erase Venders
+    Erase Vendors
     Set Re_Categorizing = Result
     Exit Function
 
@@ -224,21 +224,62 @@ End Function
 '     (열 위치/정렬/날짜 컬럼 구성) 기준으로 이 함수만 완성하면 됨.
 '==============================================================
 Private Sub Writing_itemCounter_from_PL(ByRef Target As Collection)
-#If Devmod Then
-    Dim ws As Worksheet
-    Set ws = ThisWorkbook.Worksheets("test")
-
-    Dim r As Long, d As Long
     Dim iu As itemUnit
+    Dim r As Long, d As Long
+    Dim ws As Worksheet: Set ws = ThisWorkbook.Worksheets("test")
     Dim baseCol As Long: baseCol = 36
-
+#If Devmod Then
+    
+    Dim i As Long
+    Dim Ref(0 To 3) As Date
+    Ref(0) = "2025-12-19"
+    Ref(1) = "2025-12-22"
+    Ref(2) = "2025-12-23"
+    Ref(3) = "2025-12-24"
+    With ws
+        For i = 0 To 9
+            .Columns(baseCol).Delete
+        Next i
+        
+        For i = 1 To Target.Count
+            r = i + 1
+            Set iu = Target(i)
+            .Cells(1, baseCol).Value = "No"
+            .Cells(1, baseCol + 1).Value = "NickName"
+            .Cells(1, baseCol + 2).Value = "Vendor"
+            .Cells(1, baseCol + 3).Value = "PartNumber"
+            .Cells(1, baseCol + 4).Value = Ref(0)
+            .Cells(1, baseCol + 5).Value = Ref(1)
+            .Cells(1, baseCol + 6).Value = Ref(2)
+            .Cells(1, baseCol + 7).Value = Ref(3)
+            .Cells(1, baseCol + 8).Value = "Total"
+            .Cells(1, baseCol + 9).Value = "Cycle Stock" ' 활성재고(Cycle Stock), 투입재고(Ready Stock) 안전재고(Safety Stock), 가용재고(Available Inventory), 할당 재고(Allocated Inventory)  현물재고(On-Hand Inventory)
+            
+            .Cells(r, baseCol).Value = i
+            .Cells(r, baseCol + 1).Value = iu.NickName
+            .Cells(r, baseCol + 2).Value = iu.Vendor
+            .Cells(r, baseCol + 3).Value = iu.PartNumber
+            .Cells(r, baseCol + 4).Value = iu.Count(Ref(0))
+            .Cells(r, baseCol + 5).Value = iu.Count(Ref(1))
+            .Cells(r, baseCol + 6).Value = iu.Count(Ref(2))
+            .Cells(r, baseCol + 7).Value = iu.Count(Ref(3))
+            .Cells(r, baseCol + 8).Value = iu.Count
+            .Cells(r, baseCol + 9).Value = (iu.Count(Ref(0)) > 0) Or (iu.Count(Ref(1)) > 0)
+            
+        Next i
+        
+        For i = 0 To 9
+            .Columns(baseCol + i).AutoFit
+        Next i
+    End With
+#Else
     ' (선택) 기존 출력 영역 정리
     ws.Range(ws.Cells(1, baseCol), ws.Cells(ws.Rows.Count, baseCol + 50)).ClearContents
 
     ' 헤더
     ws.Cells(1, baseCol).Value = "No"
     ws.Cells(1, baseCol + 1).Value = "NickName"
-    ws.Cells(1, baseCol + 2).Value = "Vender"
+    ws.Cells(1, baseCol + 2).Value = "Vendor"
     ws.Cells(1, baseCol + 3).Value = "PartNumber"
     ws.Cells(1, baseCol + 4).Value = "Total"
 
@@ -248,14 +289,14 @@ Private Sub Writing_itemCounter_from_PL(ByRef Target As Collection)
 
         ws.Cells(r + 1, baseCol).Value = r
         ws.Cells(r + 1, baseCol + 1).Value = iu.NickName
-        ws.Cells(r + 1, baseCol + 2).Value = iu.Vender
+        ws.Cells(r + 1, baseCol + 2).Value = iu.Vendor
         ws.Cells(r + 1, baseCol + 3).Value = iu.PartNumber
         ws.Cells(r + 1, baseCol + 4).Value = iu.Count   ' 전체합
 
         ' 날짜별 Count (날짜 키 개수만큼 우측으로 출력)
         For d = 1 To iu.DateKeyCount
-            ws.Cells(1, baseCol + 4 + d).Value = Format$(iu.DateKey(d), "mm-dd")
-            ws.Cells(r + 1, baseCol + 4 + d).Value = iu.Count(iu.DateKey(d))
+            ws.Cells(1, baseCol + 4 + d).Value = Format$(iu.dateKey(d), "mm-dd")
+            ws.Cells(r + 1, baseCol + 4 + d).Value = iu.Count(iu.dateKey(d))
         Next d
     Next r
 #End If
@@ -350,7 +391,7 @@ EH:
     BindWorksheet = False
 End Function
 
-Private Sub TempKiller(Optional ByRef Temp As Variant)
+Private Sub TempKiller(Optional ByRef temp As Variant)
     If Not tWB Is Nothing Then
         If StrComp(tWB.FullName, ThisWorkbook.FullName, vbTextCompare) <> 0 Then tWB.Close False
         Set tWS = Nothing
@@ -363,6 +404,6 @@ Private Sub TempKiller(Optional ByRef Temp As Variant)
         Set rWB = Nothing
     End If
 
-    Set Temp = Nothing
+    Set temp = Nothing
 End Sub
 

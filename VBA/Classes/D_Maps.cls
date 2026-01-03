@@ -25,11 +25,11 @@ Private Sub Class_Terminate()
     Set Sub_Groups = Nothing
     Set T_Lot = Nothing
 End Sub
-Public Function Main_Lot(Optional Index As Variant = 1) As D_LOT
-    Set Main_Lot = Main_Groups.Item(Index)
+Public Function Main_Lot(Optional index As Variant = 1) As D_LOT
+    Set Main_Lot = Main_Groups.Item(index)
 End Function
-Public Function Sub_Lot(Optional Index As Variant = 1) As D_LOT
-    Set Sub_Lot = Sub_Groups.Item(Index)
+Public Function Sub_Lot(Optional index As Variant = 1) As D_LOT
+    Set Sub_Lot = Sub_Groups.Item(index)
 End Function
 
 Public Sub Set_Lot(ByRef Start_Range As Range, ByRef End_Range As Range, _
@@ -49,12 +49,12 @@ Public Sub Set_Lot(ByRef Start_Range As Range, ByRef End_Range As Range, _
         Sub_Groups.Add T_Lot '.Copy
     End Select
 End Sub
-Public Sub Remove(Index As Variant, Optional Target As MorS = MainG)
+Public Sub Remove(index As Variant, Optional Target As MorS = MainG)
     Select Case Target
     Case MainG
-        Main_Groups.Remove Index
+        Main_Groups.Remove index
     Case SubG
-        Sub_Groups.Remove Index
+        Sub_Groups.Remove index
     End Select
 End Sub
 Public Sub RemoveAll(Optional Target As MorS = MainG)
@@ -78,14 +78,14 @@ Public Function Count(Target As MorS) As Long
         Count = Sub_Groups.Count
     End Select
 End Function
-Public Function Recent_Lot(Optional Index As Long = 0, Optional Target As MorS = MainG) As D_LOT
+Public Function Recent_Lot(Optional index As Long = 0, Optional Target As MorS = MainG) As D_LOT
     Dim Final As Long
     Select Case Target
     Case MainG
-        Final = Main_Groups.Count + Index
+        Final = Main_Groups.Count + index
         Set Recent_Lot = Main_Groups(Final)
     Case SubG
-        Final = Sub_Groups.Count + Index
+        Final = Sub_Groups.Count + index
         Set Recent_Lot = Sub_Groups(Final)
     End Select
 End Function

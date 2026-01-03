@@ -6,9 +6,9 @@ Private Feeders As New Collection  ' FeederUnit들을 담기 위한 컬렉션
 Private LV_F As New ListView, LV_Fi As New ListView, LV_PLfF As New ListView
 
 Public Sub SetUp_FeederTrackers()
-    Set LV_F = UI.ListView_Feeders
-    Set LV_Fi = UI.ListView_Feeder_item
-    Set LV_PLfF = UI.ListView_PLfF_item
+    Set LV_F = ARH.ListView_Feeders
+    Set LV_Fi = ARH.ListView_Feeder_item
+    Set LV_PLfF = ARH.ListView_PLfF_item
 End Sub
 Public Property Set FeedersWS(ByRef TargetWorkSheet As Worksheet)
     Set ws = TargetWorkSheet
@@ -63,22 +63,22 @@ End Sub
 
 Public Sub A_Delete_Feeder()
     ' 선택된 값과 콤보 리스트 중 중복되는 인덱스를 찾아 해당 피더를 삭제하는 코드
-    If UI.CbBx_Feeder.ListCount = 0 Then UI.CbBx_Feeder.Value = "": Exit Sub
+    If ARH.CbBx_Feeder.ListCount = 0 Then ARH.CbBx_Feeder.Value = "": Exit Sub
     Dim i As Long
-    Dim Target As String: Target = UI.CbBx_Feeder.Value
+    Dim Target As String: Target = ARH.CbBx_Feeder.Value
     Feeders.Remove Target
-    UI.CbBx_Feeder.Value = ""
-    For i = 0 To UI.CbBx_Feeder.ListCount - 1
-        If UI.CbBx_Feeder.List(i) = Target Then UI.CbBx_Feeder.RemoveItem i: Exit Sub
+    ARH.CbBx_Feeder.Value = ""
+    For i = 0 To ARH.CbBx_Feeder.ListCount - 1
+        If ARH.CbBx_Feeder.List(i) = Target Then ARH.CbBx_Feeder.RemoveItem i: Exit Sub
     Next i
 End Sub
 Public Sub A_New_Feeder()
     ' 콤보박스 리스트와 중복되지 않게끔 피더 이름을 추가하고 피더유닛을 생성함
-    If UI.CbBx_Feeder.Value = "" Then Exit Sub
+    If ARH.CbBx_Feeder.Value = "" Then Exit Sub
     Dim NewFeeder As New FeederUnit
-    If Not FOTFC(UI.CbBx_Feeder.Value, UI.CbBx_Feeder) Then
-        UI.CbBx_Feeder.Additem UI.CbBx_Feeder.Value
-        NewFeeder.Name = UI.CbBx_Feeder.Value
+    If Not FOTFC(ARH.CbBx_Feeder.Value, ARH.CbBx_Feeder) Then
+        ARH.CbBx_Feeder.Additem ARH.CbBx_Feeder.Value
+        NewFeeder.Name = ARH.CbBx_Feeder.Value
         Feeders.Add NewFeeder, NewFeeder.Name
     Else
         MsgBox "중복된 Feeder 추가", vbCritical
@@ -105,7 +105,7 @@ Public Sub C_Additem_List()
     Dim ToLV As ListView: Set ToLV = LV_Fi
     If FmLV.ListItems.Count = 0 Then Exit Sub
     Dim i As Long, Target As String: Target = FmLV.SelectedItem.text
-    With UI.CbBx_Feeder
+    With ARH.CbBx_Feeder
         
     End With
     For i = 1 To ToLV.ListItems.Count

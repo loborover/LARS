@@ -54,7 +54,7 @@ Private Sub Userform_Initialize() '전처리
     
     If Not isDirSetUp Then SetUpDirectories
     Dim i As Long, wLine As Long, wDate As Long ' 반복문용 변수
-    Set ws = ThisWorkbook.Worksheets("Setting"): Set UI = Me
+    Set ws = ThisWorkbook.Worksheets("Setting"): Set ARH = Me
     
     Me.Version_Label.Caption = "V." & ws.Cells.Find("Version", lookAt:=xlWhole, MatchCase:=True).Offset(0, 1).Value
     
@@ -81,6 +81,8 @@ Private Sub Userform_Initialize() '전처리
     Me.CB_Lvl1_BOM.Value = True
     Me.CB_LvlS_BOM.Value = True
     CB_PL_Ddays_Click
+    CB_Yoil_DP.Value = True
+    
 
     With Me.ListView_BOM
         .Left = 168: .Top = 12: .Width = 378: .Height = 192
@@ -154,7 +156,7 @@ Private Sub Userform_Initialize() '전처리
         
 End Sub
 Private Sub Userform_Terminate() '후처리
-    Set BOMdir = Nothing: Set BOM_Level = Nothing: Set UI = Nothing
+    Set BOMdir = Nothing: Set BOM_Level = Nothing: Set ARH = Nothing
 End Sub
 Private Sub DP_BCBR_TB_KeyDown(ByVal KeyCode As MSForms.ReturnInteger, ByVal Shift As Integer)
     If KeyCode = vbKeyReturn Then ' 엔터 키 입력 시
@@ -475,9 +477,9 @@ Private Function Delete_Each_Documents_For_Key(ByRef TargetListView As ListView)
 End Function
 
 Private Sub AB_Export2Zip_Click()
-    Dim Temp As String
-    Temp = ThisWorkbook.Path & "\ExcelExportedCodes"
-    Cleaner.FolderKiller Temp
+    Dim temp As String
+    temp = ThisWorkbook.Path & "\ExcelExportedCodes"
+    Cleaner.FolderKiller temp
     Call AA_Updater.ExportAllVbaComponents
     Call AA_Updater.ExportAllModulesDirectlyToTextAndMarkdown
 End Sub
@@ -537,13 +539,13 @@ Private Sub PL_Ddays_Counter_Change()
     Me.PL_Ddays_TB.text = Me.PL_Ddays_Counter.Value
 End Sub
 Public Sub UpdateProgressBar(ProgressBar As MSComctlLib.ProgressBar, _
-                                        ByRef Index As Single, _
+                                        ByRef index As Single, _
                                         Optional vMin As Single = 0, _
                                         Optional vMax As Single = 100)
     With ProgressBar
         .Min = vMin
         .Max = vMax
-        .Value = Index
+        .Value = index
     End With
 End Sub
 

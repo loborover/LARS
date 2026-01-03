@@ -186,7 +186,7 @@ Public Sub Print_BOM(Optional Handle As Boolean)
     
     For i = 1 To ListCount ' 체크박스 활성화된 아이템 선별
         Set BOMitem = BOMLV.ListItems.Item(i)
-        If BOMitem.Checked Then Chkditem.Add BOMitem.Index 'SubItems(1)
+        If BOMitem.Checked Then Chkditem.Add BOMitem.index 'SubItems(1)
     Next i
     
     If Chkditem.Count < 1 Then MsgBox "선택된 문서 없음": Exit Sub
