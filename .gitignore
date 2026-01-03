@@ -1,9 +1,4 @@
 bin/
 obj/
 .vs/
-.vscode/
-.drawio
-*.exe
-*.dll
-*.cache
-*.pdb
+*.user
