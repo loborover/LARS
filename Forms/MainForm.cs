@@ -7,6 +7,8 @@ public partial class MainForm : Form
     private Button btnBomViewer;
     private Button btnPartList;
     private Button btnDailyPlan;
+    private Button btnItemCounter;
+    private Button btnStickerLabel;
 
     public MainForm()
     {
@@ -36,13 +38,19 @@ public partial class MainForm : Form
         btnBomViewer = CreateMenuButton("BOM Viewer", 0);
         btnPartList = CreateMenuButton("Part List", 50);
         btnDailyPlan = CreateMenuButton("Daily Plan", 100);
+        btnItemCounter = CreateMenuButton("Item Counter", 150);
+        btnStickerLabel = CreateMenuButton("Sticker Label", 200);
 
         // 이벤트 연결
         btnBomViewer.Click += (s, e) => ShowContent(new BomViewerControl());
         btnPartList.Click += (s, e) => ShowContent(new PartListControl());
         btnDailyPlan.Click += (s, e) => ShowContent(new DailyPlanControl());
+        btnItemCounter.Click += (s, e) => ShowContent(new ItemCounterControl());
+        btnStickerLabel.Click += (s, e) => ShowContent(new LabelPreviewControl());
 
         // 컨트롤 추가
+        sidebarPanel.Controls.Add(btnStickerLabel);
+        sidebarPanel.Controls.Add(btnItemCounter);
         sidebarPanel.Controls.Add(btnDailyPlan);
         sidebarPanel.Controls.Add(btnPartList);
         sidebarPanel.Controls.Add(btnBomViewer);
