@@ -61,13 +61,13 @@ public class BOMProcessor
 
                     var item = new BomItem
                     {
-                        Level = HasCol("Lvl") ? row.Cell(colMap["Lvl"]).GetValue<string>() : "",
-                        PartNo = HasCol("Part No") ? row.Cell(colMap["Part No"]).GetValue<string>() : "",
-                        Description = HasCol("Description") ? row.Cell(colMap["Description"]).GetValue<string>() : "",
+                        Level = HasCol("Lvl") ? row.Cell(colMap["Lvl"]).GetValue<string>().Trim() : "",
+                        PartNo = HasCol("Part No") ? row.Cell(colMap["Part No"]).GetValue<string>().Trim() : "",
+                        Description = HasCol("Description") ? row.Cell(colMap["Description"]).GetValue<string>().Trim() : "",
                         Quantity = HasCol("Qty") ? GetDouble(row.Cell(colMap["Qty"])) : 0,
-                        Uom = HasCol("UOM") ? row.Cell(colMap["UOM"]).GetValue<string>() : "",
-                        Maker = HasCol("Maker") ? row.Cell(colMap["Maker"]).GetValue<string>() : "",
-                        SupplyType = HasCol("Supply Type") ? row.Cell(colMap["Supply Type"]).GetValue<string>() : ""
+                        Uom = HasCol("UOM") ? row.Cell(colMap["UOM"]).GetValue<string>().Trim() : "",
+                        Maker = HasCol("Maker") ? row.Cell(colMap["Maker"]).GetValue<string>().Trim() : "",
+                        SupplyType = HasCol("Supply Type") ? row.Cell(colMap["Supply Type"]).GetValue<string>().Trim() : ""
                     };
                     items.Add(item);
                 }
@@ -88,13 +88,19 @@ public class BOMProcessor
         return 0;
     }
 
-    public void ProcessSingle(string filePath, string? outputPath = null)
+    public void ProcessSingle(string filePath, string? outputPath = null, IEnumerable<BomItem>? filterItems = null)
     {
         try
         {
             using (var workbook = new XLWorkbook(filePath))
             {
                 var ws = workbook.Worksheets.Worksheet(1);
+                
+                // 1. Filter Rows based on View (If provided)
+                if (filterItems != null)
+                {
+                    ApplyItemFilter(ws, filterItems);
+                }
 
                 FilterColumns(ws);
                 InsertTitleRows(ws, 3);
@@ -109,6 +115,52 @@ public class BOMProcessor
         catch (Exception ex)
         {
             throw new Exception($"Failed to process BOM: {ex.Message}", ex);
+        }
+    }
+
+    private void ApplyItemFilter(IXLWorksheet ws, IEnumerable<BomItem> items)
+    {
+        // Debug: Check items count
+        var itemList = items.ToList();
+        if (itemList.Count == 0) 
+        {
+            // If filter list is empty, it means we should delete everything? 
+            // Or did something go wrong? 
+            // Let's assume strict filtering.
+        }
+
+        // Build a content-based hash for robust matching
+        // Using PartNo + Level + Description as unique key
+        // Added Trim() for safety
+        var validKeys = new HashSet<string>(itemList.Select(x => 
+            $"{x.Level.Trim()}|{x.PartNo.Trim()}|{x.Description.Trim()}"
+        ));
+
+        var headerRow = ws.Row(1);
+        var colMap = new Dictionary<string, int>();
+        foreach (var cell in headerRow.CellsUsed())
+        {
+            colMap[cell.GetValue<string>()] = cell.Address.ColumnNumber;
+        }
+
+        if (!colMap.ContainsKey("Part No")) return; 
+        
+        var lastRow = ws.LastRowUsed().RowNumber();
+        
+        // Delete from bottom to top
+        for (int i = lastRow; i >= 2; i--)
+        {
+            var row = ws.Row(i);
+            string lvl = colMap.ContainsKey("Lvl") ? row.Cell(colMap["Lvl"]).GetValue<string>().Trim() : "";
+            string part = colMap.ContainsKey("Part No") ? row.Cell(colMap["Part No"]).GetValue<string>().Trim() : "";
+            string desc = colMap.ContainsKey("Description") ? row.Cell(colMap["Description"]).GetValue<string>().Trim() : "";
+            
+            string key = $"{lvl}|{part}|{desc}";
+
+            if (!validKeys.Contains(key))
+            {
+                row.Delete();
+            }
         }
     }
 

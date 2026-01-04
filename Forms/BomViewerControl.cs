@@ -1,135 +1,292 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Collections.Generic;
 using System.Data;
+using System.Drawing;
+using System.Windows.Forms;
+using System.Threading.Tasks;
+using System.Collections.Concurrent;
+using LARS.ENGINE;
 using LARS.ENGINE.Documents.BOM;
 using LARS.Models;
-using LARS.Utils;
+using LARS.UI.Controls;
 
 namespace LARS.Forms;
 
-public partial class BomViewerControl : UserControl
+public partial class BomViewerControl : BaseViewerControl
 {
-    private DataGridView dataGridView;
-    private Button btnLoad;
-    private Button btnExport;
-    private Panel topPanel;
-    
-    // Store loaded items or file path
-    private List<BomItem> _loadedItems;
-    private string _currentFilePath;
+    // Logic
     private readonly BOMProcessor _processor;
+    private List<string> _detectedFiles = new();
+    private string? _currentPreviewFile;
+    private Dictionary<string, List<string>> _columnFilters = new();
+    private List<BomItem> _previewItems = new();
+    private BindingSource _bindingSource = new();
 
     public BomViewerControl()
     {
-        InitializeComponent();
+        // No InitializeComponent needed (handled by Base)
         _processor = new BOMProcessor();
-        _loadedItems = new List<BomItem>();
+        
+        this.Load += (s, e) => ScanImportFolder();
+
+        // Wire up Base Events
+        BtnRefresh.Click += (s, e) => ScanImportFolder();
+        BtnDelete.Click += BtnDelete_Click;
+        BtnProcess.Click += BtnProcess_Click;
+        BtnSettings.Click += (s, e) => new ViewerSettingsForm(ViewerType.BOM).ShowDialog();
+
+        // Specific Grid Logic
+        LstRawFiles.SelectedIndexChanged += LstRawFiles_SelectedIndexChanged;
+        PreviewGrid.ColumnHeaderMouseClick += DataGridView_ColumnHeaderMouseClick;
+        PreviewGrid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+        
+        // Row Numbers
+        PreviewGrid.RowPostPaint += (s, e) => {
+             var grid = s as DataGridView;
+             var idx = (e.RowIndex + 1).ToString();
+             var fmt = new StringFormat{Alignment=StringAlignment.Center, LineAlignment=StringAlignment.Center};
+             var bounds = new Rectangle(e.RowBounds.Left, e.RowBounds.Top, grid?.RowHeadersWidth ?? 50, e.RowBounds.Height);
+             e.Graphics.DrawString(idx, this.Font, SystemBrushes.ControlText, bounds, fmt);
+        };
     }
 
-    private void InitializeComponent()
+    // --- Logic ---
+    private void ScanImportFolder()
     {
-        this.Dock = DockStyle.Fill;
+        LstRawFiles.Items.Clear();
+        _detectedFiles.Clear();
+        _previewItems.Clear();
+        _bindingSource.DataSource = null;
+        MetaPropertyGrid.SelectedObject = null;
 
-        // 상단 패널 (버튼 영역)
-        topPanel = new Panel
+        string path = LARS.Configuration.ConfigManager.GetImportPath();
+        if (!Directory.Exists(path)) Directory.CreateDirectory(path);
+
+        var allFiles = Directory.GetFiles(path, "*.xlsx").Concat(Directory.GetFiles(path, "*.xls"));
+
+        foreach (var file in allFiles)
         {
-            Dock = DockStyle.Top,
-            Height = 60,
-            BackColor = Color.WhiteSmoke
-        };
-
-        // 로드 버튼
-        btnLoad = new Button
-        {
-            Text = "BOM 로드 (Load BOM)",
-            Location = new Point(20, 15),
-            Size = new Size(150, 30),
-            BackColor = Color.FromArgb(0, 122, 204),
-            ForeColor = Color.White,
-            FlatStyle = FlatStyle.Flat
-        };
-        btnLoad.Click += BtnLoad_Click;
-
-        // 내보내기 버튼
-        btnExport = new Button
-        {
-            Text = "엑셀 저장 (Export)",
-            Location = new Point(180, 15),
-            Size = new Size(150, 30),
-            BackColor = Color.SeaGreen,
-            ForeColor = Color.White,
-            FlatStyle = FlatStyle.Flat
-        };
-        btnExport.Click += BtnExport_Click;
-
-        topPanel.Controls.Add(btnLoad);
-        topPanel.Controls.Add(btnExport);
-
-        // 그리드 뷰
-        dataGridView = new DataGridView
-        {
-            Dock = DockStyle.Fill,
-            BackgroundColor = Color.White,
-            BorderStyle = BorderStyle.None,
-            ReadOnly = true,
-            AllowUserToAddRows = false,
-            SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-            AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
-        };
-
-        this.Controls.Add(dataGridView);
-        this.Controls.Add(topPanel);
-    }
-
-    private void BtnLoad_Click(object? sender, EventArgs e)
-    {
-        using (OpenFileDialog ofd = new OpenFileDialog())
-        {
-            ofd.Filter = "Excel Files|*.xlsx;*.xls";
-            ofd.Title = "Select BOM File";
-            
-            // For testing convenience, if TestSet exists, point there?
-            // if (Directory.Exists(@"d:\Workshop\LARS\TestSet")) ofd.InitialDirectory = @"d:\Workshop\LARS\TestSet";
-
-            if (ofd.ShowDialog() == DialogResult.OK)
+            if (FileClassifier.Classify(file) == SupportedFileType.BOM)
             {
-                try
-                {
-                    _currentFilePath = ofd.FileName;
-                    _loadedItems = _processor.LoadBOM(_currentFilePath);
-                    
-                    dataGridView.DataSource = _loadedItems;
-                    MessageBox.Show($"BOM Loaded: {_loadedItems.Count} items.", "Success");
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Error loading BOM: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+                _detectedFiles.Add(file);
+                LstRawFiles.Items.Add(Path.GetFileName(file));
+            }
+        }
+        LblListTitle.Text = $"Files ({_detectedFiles.Count})";
+    }
+
+    private void LstRawFiles_SelectedIndexChanged(object? sender, EventArgs e)
+    {
+        if (LstRawFiles.SelectedIndex == -1) return;
+
+        string fileName = LstRawFiles.Items[LstRawFiles.SelectedIndex].ToString()!;
+        string fullPath = _detectedFiles.FirstOrDefault(f => Path.GetFileName(f) == fileName) ?? "";
+
+        if (File.Exists(fullPath))
+        {
+            // Update Metadata
+            var fi = new FileInfo(fullPath);
+            MetaPropertyGrid.SelectedObject = new FileMetadata
+            {
+                Name = fi.Name,
+                SizeKB = fi.Length / 1024,
+                Created = fi.CreationTime,
+                Modified = fi.LastWriteTime,
+                Directory = fi.DirectoryName
+            };
+
+            // Update Preview if changed
+            if (_currentPreviewFile != fullPath)
+            {
+                LoadPreview(fullPath);
             }
         }
     }
 
-    private void BtnExport_Click(object? sender, EventArgs e)
+    private void LoadPreview(string path)
     {
-        if (string.IsNullOrEmpty(_currentFilePath) || !File.Exists(_currentFilePath))
+        try
         {
-            MessageBox.Show("Please load a BOM file first.", "Warning");
-            return;
+            Cursor = Cursors.WaitCursor;
+            _currentPreviewFile = path;
+            _previewItems = _processor.LoadBOM(path);
+            _columnFilters.Clear();
+
+            _bindingSource.DataSource = _previewItems;
+            PreviewGrid.DataSource = _bindingSource;
+            
+            ApplyDefaultLevelFilter();
+            PreviewGrid.AutoResizeColumns();
+        }
+        catch(Exception ex)
+        {
+            MessageBox.Show($"Preview Error: {ex.Message}");
+        }
+        finally
+        {
+            Cursor = Cursors.Default;
+        }
+    }
+
+    private void BtnProcess_Click(object? sender, EventArgs e)
+    {
+        var checkedItems = LstRawFiles.CheckedItems;
+        if (checkedItems.Count == 0)
+        {
+             if (LstRawFiles.SelectedIndex != -1 && MessageBox.Show("No items checked. Process currently previewed item?", "Confirm", MessageBoxButtons.YesNo) == DialogResult.Yes)
+             {
+                 ProcessSingleFile(_currentPreviewFile!);
+                 return;
+             }
+             MessageBox.Show("Please check files to process.", "Warning");
+             return;
         }
 
-        using (SaveFileDialog sfd = new SaveFileDialog())
+        if (checkedItems.Count == 1)
         {
-            sfd.Filter = "Excel Files|*.xlsx";
-            sfd.FileName = Path.GetFileNameWithoutExtension(_currentFilePath) + "_Processed.xlsx";
-            
-            if (sfd.ShowDialog() == DialogResult.OK)
+            string fileName = checkedItems[0]!.ToString()!;
+            string fullPath = _detectedFiles.First(f => Path.GetFileName(f) == fileName);
+            ProcessSingleFile(fullPath);
+        }
+        else
+        {
+            ProcessMultipleFiles(checkedItems.Cast<string>().ToList());
+        }
+    }
+
+    private void ProcessSingleFile(string path)
+    {
+        try
+        {
+            Cursor = Cursors.WaitCursor;
+            IEnumerable<BomItem>? filters = null;
+
+            if (path == _currentPreviewFile)
             {
-                try
+                filters = _bindingSource.List.Cast<BomItem>();
+            }
+            else
+            {
+                var items = _processor.LoadBOM(path);
+                filters = items.Where(x => x.Level == "0" || x.Level == ".1" || x.Level.Contains("S"));
+            }
+
+            string exportDir = LARS.Configuration.ConfigManager.GetExportPath(LARS.Configuration.ConfigManager.Instance.BomExportDir);
+            string outName = Path.GetFileNameWithoutExtension(path) + "_Processed.xlsx";
+            string outPath = Path.Combine(exportDir, outName);
+
+            _processor.ProcessSingle(path, outPath, filters);
+            MessageBox.Show($"Processed: {outName}", "Success");
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error: {ex.Message}");
+        }
+        finally { Cursor = Cursors.Default; }
+    }
+
+    private void ProcessMultipleFiles(List<string> fileNames)
+    {
+        var exportDir = LARS.Configuration.ConfigManager.GetExportPath(LARS.Configuration.ConfigManager.Instance.BomExportDir);
+        var filesToProcess = _detectedFiles.Where(f => fileNames.Contains(Path.GetFileName(f))).ToList();
+        
+        var results = new ConcurrentBag<string>();
+        
+        Cursor = Cursors.WaitCursor;
+        Parallel.ForEach(filesToProcess, (path) => 
+        {
+            try
+            {
+                var items = _processor.LoadBOM(path);
+                var validItems = items.Where(x => x.Level == "0" || x.Level == ".1" || x.Level.Contains("S"));
+                
+                string outName = Path.GetFileNameWithoutExtension(path) + "_Processed.xlsx";
+                string outPath = Path.Combine(exportDir, outName);
+                
+                _processor.ProcessSingle(path, outPath, validItems);
+                results.Add($"[OK] {Path.GetFileName(path)}");
+            }
+            catch (Exception ex)
+            {
+                results.Add($"[FAIL] {Path.GetFileName(path)}: {ex.Message}");
+            }
+        });
+        Cursor = Cursors.Default;
+
+        MessageBox.Show($"Batch Processing Complete.\n\n{string.Join("\n", results)}", "Report");
+    }
+    
+    private void BtnDelete_Click(object? sender, EventArgs e)
+    {
+        var checkedItems = LstRawFiles.CheckedItems;
+        if (checkedItems.Count == 0) return;
+
+        if (MessageBox.Show($"Delete {checkedItems.Count} files?", "Confirm", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
+        {
+            foreach (var item in checkedItems)
+            {
+                string fullPath = _detectedFiles.FirstOrDefault(f => Path.GetFileName(f) == item.ToString()) ?? "";
+                if (File.Exists(fullPath)) try { File.Delete(fullPath); } catch {}
+            }
+            ScanImportFolder();
+        }
+    }
+
+    private void ApplyDefaultLevelFilter()
+    {
+         if (_previewItems == null) return;
+         var allLevels = _previewItems.Select(x => x.Level).Distinct().ToList();
+         var defaultSelected = allLevels.Where(l => l == "0" || l == ".1" || l.Contains("S")).ToList();
+         if (defaultSelected.Count > 0)
+         {
+             _columnFilters["Level"] = defaultSelected;
+             ApplyGlobalFilter();
+         }
+    }
+
+    private void ApplyGlobalFilter()
+    {
+        var filtered = _previewItems.AsEnumerable();
+        foreach (var filter in _columnFilters)
+        {
+            filtered = filtered.Where(item => 
+            {
+                 var prop = typeof(BomItem).GetProperty(filter.Key);
+                 var val = prop?.GetValue(item)?.ToString() ?? "";
+                 return filter.Value.Contains(val);
+            });
+        }
+        _bindingSource.DataSource = filtered.ToList();
+        PreviewGrid.DataSource = _bindingSource;
+    }
+
+    private void DataGridView_ColumnHeaderMouseClick(object? sender, DataGridViewCellMouseEventArgs e)
+    {
+        if (e.Button == MouseButtons.Right && e.RowIndex == -1)
+        {
+            var column = PreviewGrid.Columns[e.ColumnIndex];
+            string propName = column.DataPropertyName;
+            var distinctValues = _previewItems.Select(x => 
+            {
+                var p = typeof(BomItem).GetProperty(propName);
+                return p?.GetValue(x)?.ToString() ?? "";
+            }).Distinct().OrderBy(x=>x).ToList();
+            
+            List<string> currentFilter = _columnFilters.ContainsKey(propName) ? _columnFilters[propName] : new List<string>(distinctValues);
+
+            using (var popup = new FilterPopupForm(distinctValues, currentFilter))
+            {
+                var headerRect = PreviewGrid.GetCellDisplayRectangle(e.ColumnIndex, -1, true);
+                var screenPoint = PreviewGrid.PointToScreen(new Point(headerRect.Right - popup.Width, headerRect.Bottom));
+                popup.Location = screenPoint;
+                if (popup.ShowDialog() == DialogResult.OK)
                 {
-                    _processor.ProcessSingle(_currentFilePath, sfd.FileName);
-                    MessageBox.Show("BOM processed and saved successfully!", "Success");
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Error saving BOM: {ex.Message}", "Error");
+                     _columnFilters[propName] = popup.SelectedValues;
+                     ApplyGlobalFilter();
+                     if (distinctValues.Count != popup.SelectedValues.Count) column.HeaderCell.Style.BackColor = Color.LightSkyBlue;
+                     else column.HeaderCell.Style.BackColor = Color.Empty;
                 }
             }
         }

@@ -1,121 +1,198 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Collections.Generic;
 using System.Data;
+using System.Windows.Forms;
+using System.Threading.Tasks;
+using System.Collections.Concurrent;
+using LARS.ENGINE;
 using LARS.ENGINE.Documents.DailyPlan;
 using LARS.Models;
-using LARS.Utils;
+using LARS.UI.Controls;
 
 namespace LARS.Forms;
 
-public partial class DailyPlanControl : UserControl
+public partial class DailyPlanControl : BaseViewerControl
 {
-    private DataGridView dataGridView;
-    private Button btnRefresh;
-    private Button btnProcess;
-    private Panel topPanel;
     private readonly DailyPlanProcessor _processor;
+    private List<string> _detectedFiles = new();
+
+    private DailyPlanCanvas _canvas;
+    
+    // Add Print Button reference (assuming it exists in BaseViewer or we add it dynamically)
+    private Button _btnPrint;
 
     public DailyPlanControl()
     {
-        InitializeComponent();
-        _processor = new DailyPlanProcessor(DirectoryHelper.SourcePath);
+        _processor = new DailyPlanProcessor(); 
+        
+        // Setup Canvas (replace or place next to MetaPropertyGrid/PreviewGrid)
+        // Adjust layout: SplitContainer (List vs Right Panel). Right Panel: Split (Preview vs Meta).
+        // For simplicity, we add Canvas to the DataPreviewPanel (where PreviewGrid usually is).
+        
+        _canvas = new DailyPlanCanvas { Dock = DockStyle.Fill };
+        PreviewGrid.Parent.Controls.Add(_canvas);
+        PreviewGrid.Visible = false; // Hide grid, prefer Canvas
+        _canvas.BringToFront();
+
+        // Add Print Button dynamically if not present in Designer
+        _btnPrint = new Button { Text = "Print / PDF", Size = new Size(100, 30), Anchor = AnchorStyles.Top | AnchorStyles.Right };
+        _btnPrint.Location = new Point(BtnProcess.Location.X - 110, BtnProcess.Location.Y);
+        BtnProcess.Parent.Controls.Add(_btnPrint);
+        _btnPrint.Click += BtnPrint_Click;
+
+        this.Load += (s, e) => ScanImportFolder();
+        
+        BtnRefresh.Click += (s, e) => ScanImportFolder();
+        BtnDelete.Click += BtnDelete_Click;
+        BtnProcess.Click += BtnProcess_Click;
+        BtnSettings.Click += (s, e) => new ViewerSettingsForm(ViewerType.DailyPlan).ShowDialog();
+
+        LstRawFiles.SelectedIndexChanged += LstRawFiles_SelectedIndexChanged;
     }
 
-    private void InitializeComponent()
+    private void ScanImportFolder()
     {
-        this.Dock = DockStyle.Fill;
-        this.Load += DailyPlanControl_Load;
+        LstRawFiles.Items.Clear();
+        _detectedFiles.Clear();
+        MetaPropertyGrid.SelectedObject = null;
+        // PreviewGrid.DataSource = null; 
+        
+        _canvas.LoadPlan(new ProcessedDailyPlan()); // Clear canvas
 
-        topPanel = new Panel
+        string path = LARS.Configuration.ConfigManager.GetImportPath();
+        if (!Directory.Exists(path)) Directory.CreateDirectory(path);
+
+        var allFiles = Directory.GetFiles(path, "*.xlsx").Concat(Directory.GetFiles(path, "*.xls"));
+
+        foreach (var file in allFiles)
         {
-            Dock = DockStyle.Top,
-            Height = 60,
-            BackColor = Color.WhiteSmoke
-        };
-
-        btnRefresh = new Button
-        {
-            Text = "새로고침 (Refresh)",
-            Location = new Point(20, 15),
-            Size = new Size(150, 30),
-            BackColor = Color.Purple,
-            ForeColor = Color.White,
-            FlatStyle = FlatStyle.Flat
-        };
-        btnRefresh.Click += (s, e) => LoadDailyPlans();
-
-        btnProcess = new Button
-        {
-            Text = "선택 항목 처리 (Process)",
-            Location = new Point(180, 15),
-            Size = new Size(180, 30),
-            BackColor = Color.DarkBlue,
-            ForeColor = Color.White,
-            FlatStyle = FlatStyle.Flat
-        };
-        btnProcess.Click += BtnProcess_Click;
-
-        topPanel.Controls.Add(btnRefresh);
-        topPanel.Controls.Add(btnProcess);
-
-        dataGridView = new DataGridView
-        {
-            Dock = DockStyle.Fill,
-            BackgroundColor = Color.White,
-            BorderStyle = BorderStyle.None,
-            ReadOnly = true,
-            AllowUserToAddRows = false,
-            SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-            AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
-        };
-
-        this.Controls.Add(dataGridView);
-        this.Controls.Add(topPanel);
-    }
-
-    private void DailyPlanControl_Load(object? sender, EventArgs e)
-    {
-        LoadDailyPlans();
-    }
-
-    private void LoadDailyPlans()
-    {
-        try
-        {
-            var list = _processor.LoadDailyPlans();
-            dataGridView.DataSource = list;
-
-            if(dataGridView.Columns["FilePath"] != null)
-                dataGridView.Columns["FilePath"].Visible = false;
+            if (FileClassifier.Classify(file) == SupportedFileType.DailyPlan)
+            {
+                _detectedFiles.Add(file);
+                LstRawFiles.Items.Add(Path.GetFileName(file));
+            }
         }
-        catch (Exception ex)
+        LblListTitle.Text = $"Files ({_detectedFiles.Count})";
+    }
+
+    private void LstRawFiles_SelectedIndexChanged(object? sender, EventArgs e)
+    {
+        if (LstRawFiles.SelectedIndex == -1) return;
+        string fileName = LstRawFiles.Items[LstRawFiles.SelectedIndex].ToString()!;
+        string fullPath = _detectedFiles.FirstOrDefault(f => Path.GetFileName(f) == fileName) ?? "";
+
+        if (File.Exists(fullPath))
         {
-            MessageBox.Show($"로드 에러: {ex.Message}", "에러");
+             var fi = new FileInfo(fullPath);
+             MetaPropertyGrid.SelectedObject = new FileMetadata
+             {
+                Name = fi.Name,
+                SizeKB = fi.Length / 1024,
+                Created = fi.CreationTime,
+                Modified = fi.LastWriteTime,
+                Directory = fi.DirectoryName
+             };
+             
+             // GDI+ Preview Load
+             try 
+             {
+                 var plan = _processor.GetProcessedPlan(fullPath);
+                 _canvas.LoadPlan(plan);
+                 _currentPlan = plan; // Store for printing
+             }
+             catch (Exception ex)
+             {
+                 MessageBox.Show($"Preview Error: {ex.Message}");
+             }
+        }
+    }
+    
+    private ProcessedDailyPlan _currentPlan;
+
+    private void BtnPrint_Click(object? sender, EventArgs e)
+    {
+        if (_currentPlan == null) 
+        {
+            MessageBox.Show("Please select a file to print.");
+            return;
+        }
+        
+        try 
+        {
+            var exporter = new DailyPlanPdfExporter(_currentPlan);
+            exporter.Print($"DailyPlan_{_currentPlan.DateTitle}");
+        }
+        catch(Exception ex)
+        {
+            MessageBox.Show($"Print Error: {ex.Message}");
         }
     }
 
     private void BtnProcess_Click(object? sender, EventArgs e)
     {
-        if (dataGridView.SelectedRows.Count == 0)
+        var checkedItems = LstRawFiles.CheckedItems;
+        if (checkedItems.Count == 0)
         {
-            MessageBox.Show("처리할 항목을 선택해주세요.", "알림");
-            return;
+             if (LstRawFiles.SelectedIndex != -1 && MessageBox.Show("Process currently selected item?", "Confirm", MessageBoxButtons.YesNo) == DialogResult.Yes)
+             {
+                 string fileName = LstRawFiles.Items[LstRawFiles.SelectedIndex].ToString()!;
+                 ProcessSingleFile(_detectedFiles.First(f => Path.GetFileName(f) == fileName));
+                 return;
+             }
+             return;
         }
 
-        try
+        if (checkedItems.Count == 1)
         {
-            int successCount = 0;
-            foreach (DataGridViewRow row in dataGridView.SelectedRows)
-            {
-                if (row.DataBoundItem is DailyPlanItem item)
-                {
-                    _processor.ProcessSingle(item.FilePath);
-                    successCount++;
-                }
-            }
-            MessageBox.Show($"{successCount}개 파일 처리 완료!", "성공");
+             string fileName = checkedItems[0]!.ToString()!;
+             ProcessSingleFile(_detectedFiles.First(f => Path.GetFileName(f) == fileName));
         }
-        catch (Exception ex)
+        else
         {
-            MessageBox.Show($"처리 중 에러 발생: {ex.Message}", "에러");
+            ProcessMultipleFiles(checkedItems.Cast<string>().ToList());
+        }
+    }
+
+    private void ProcessSingleFile(string path)
+    {
+        try {
+            string exportDir = LARS.Configuration.ConfigManager.GetExportPath(LARS.Configuration.ConfigManager.Instance.DailyPlanExportDir);
+            if (!Directory.Exists(exportDir)) Directory.CreateDirectory(exportDir);
+            
+            // Pass Directory, let Processor decide filename
+            _processor.ProcessSingle(path, exportDir); 
+            MessageBox.Show($"Processed successfully. Saved to: {exportDir}", "Success");
+        } catch(Exception ex) { MessageBox.Show(ex.Message); }
+    }
+
+    private void ProcessMultipleFiles(List<string> fileNames)
+    {
+        var exportDir = LARS.Configuration.ConfigManager.GetExportPath(LARS.Configuration.ConfigManager.Instance.DailyPlanExportDir);
+        var files = _detectedFiles.Where(f => fileNames.Contains(Path.GetFileName(f))).ToList();
+        var results = new ConcurrentBag<string>();
+        Parallel.ForEach(files, (path) => {
+             try {
+                _processor.ProcessSingle(path, exportDir);
+                results.Add("[OK] " + Path.GetFileName(path));
+             } catch(Exception ex) { results.Add("[FAIL] " + Path.GetFileName(path) + ": " + ex.Message); }
+        });
+        MessageBox.Show(string.Join("\n", results), "Batch Report");
+    }
+
+    private void BtnDelete_Click(object? sender, EventArgs e)
+    {
+        var checkedItems = LstRawFiles.CheckedItems;
+        if (checkedItems.Count == 0) return;
+        if (MessageBox.Show($"Delete {checkedItems.Count} files?", "Confirm", MessageBoxButtons.YesNo) == DialogResult.Yes)
+        {
+            foreach (var item in checkedItems)
+            {
+                string fullPath = _detectedFiles.FirstOrDefault(f => Path.GetFileName(f) == item.ToString()) ?? "";
+                if(File.Exists(fullPath)) try{ File.Delete(fullPath); } catch{}
+            }
+            ScanImportFolder();
         }
     }
 }

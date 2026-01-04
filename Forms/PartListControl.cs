@@ -1,108 +1,76 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Collections.Generic;
 using System.Data;
+using System.Windows.Forms;
+using LARS.ENGINE;
 using LARS.Models;
-using LARS.Utils;
+using LARS.UI.Controls;
 
 namespace LARS.Forms;
 
-public partial class PartListControl : UserControl
+public partial class PartListControl : BaseViewerControl
 {
-    private DataGridView dataGridView;
-    private Button btnRefresh;
-    private Panel topPanel;
+    private List<string> _detectedFiles = new();
 
     public PartListControl()
     {
-        InitializeComponent();
+        this.Load += (s, e) => ScanImportFolder();
+
+        BtnRefresh.Click += (s,e) => ScanImportFolder();
+        BtnDelete.Click += BtnDelete_Click;
+        BtnProcess.Click += (s,e) => MessageBox.Show("Not Implemented", "Info");
+        BtnSettings.Click += (s, e) => { new ViewerSettingsForm(ViewerType.PartList).ShowDialog(); };
+        
+        LstRawFiles.SelectedIndexChanged += LstRawFiles_SelectedIndexChanged;
     }
 
-    private void InitializeComponent()
+    private void ScanImportFolder()
     {
-        this.Dock = DockStyle.Fill;
-        this.Load += PartListControl_Load;
+        LstRawFiles.Items.Clear();
+        _detectedFiles.Clear();
+        MetaPropertyGrid.SelectedObject = null;
+        PreviewGrid.DataSource = null;
 
-        topPanel = new Panel
+        string path = LARS.Configuration.ConfigManager.GetImportPath();
+        if (!Directory.Exists(path)) Directory.CreateDirectory(path);
+        var allFiles = Directory.GetFiles(path, "*.xlsx").Concat(Directory.GetFiles(path, "*.xls"));
+
+        foreach (var file in allFiles)
         {
-            Dock = DockStyle.Top,
-            Height = 60,
-            BackColor = Color.WhiteSmoke
-        };
-
-        btnRefresh = new Button
-        {
-            Text = "새로고침 (Refresh)",
-            Location = new Point(20, 15),
-            Size = new Size(150, 30),
-            BackColor = Color.Orange,
-            ForeColor = Color.White,
-            FlatStyle = FlatStyle.Flat
-        };
-        btnRefresh.Click += (s, e) => LoadPartLists();
-
-        topPanel.Controls.Add(btnRefresh);
-
-        dataGridView = new DataGridView
-        {
-            Dock = DockStyle.Fill,
-            BackgroundColor = Color.White,
-            BorderStyle = BorderStyle.None,
-            ReadOnly = true,
-            AllowUserToAddRows = false,
-            SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-            AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
-        };
-
-        this.Controls.Add(dataGridView);
-        this.Controls.Add(topPanel);
-    }
-
-    private void PartListControl_Load(object? sender, EventArgs e)
-    {
-        LoadPartLists();
-    }
-
-    private void LoadPartLists()
-    {
-        try
-        {
-            var folder = DirectoryHelper.PartListPath;
-            if (!Directory.Exists(folder))
+            if (FileClassifier.Classify(file) == SupportedFileType.PartList)
             {
-                Directory.CreateDirectory(folder);
+                _detectedFiles.Add(file);
+                LstRawFiles.Items.Add(Path.GetFileName(file));
             }
-
-            // 가상의 데이터나 실제 파일 목록 로드
-            var files = Directory.GetFiles(folder, "*.xlsx");
-            var list = new List<PartListItem>();
-
-            // 파일이 없으면 테스트용 더미 데이터 추가 (UI 확인용)
-            if (files.Length == 0)
-            {
-                list.Add(new PartListItem { FilePath = "Test_20260101.xlsx", Date = "2026-01-01", PrintStatus = "Done", PdfStatus = "Done" });
-                list.Add(new PartListItem { FilePath = "Test_20260102.xlsx", Date = "2026-01-02", PrintStatus = "Ready", PdfStatus = "Pending" });
-            }
-            else
-            {
-                foreach (var file in files)
-                {
-                    list.Add(new PartListItem
-                    {
-                        FilePath = file,
-                        Date = File.GetCreationTime(file).ToString("yyyy-MM-dd"),
-                        PrintStatus = "Unknown",
-                        PdfStatus = "Unknown"
-                    });
-                }
-            }
-
-            dataGridView.DataSource = list;
-            
-            // FilePath 컬럼 숨기기 (너무 기니까)
-            if (dataGridView.Columns["FilePath"] != null)
-                dataGridView.Columns["FilePath"].Visible = false;
         }
-        catch (Exception ex)
+        LblListTitle.Text = $"Files ({_detectedFiles.Count})";
+    }
+
+    private void LstRawFiles_SelectedIndexChanged(object? sender, EventArgs e)
+    {
+        if (LstRawFiles.SelectedIndex == -1) return;
+        string fileName = LstRawFiles.Items[LstRawFiles.SelectedIndex].ToString()!;
+        string fullPath = _detectedFiles.FirstOrDefault(f => Path.GetFileName(f) == fileName) ?? "";
+        if (File.Exists(fullPath))
         {
-            MessageBox.Show($"로드 에러: {ex.Message}", "에러");
+             var fi = new FileInfo(fullPath);
+             MetaPropertyGrid.SelectedObject = new FileMetadata { Name = fi.Name, SizeKB = fi.Length/1024, Created = fi.CreationTime, Modified = fi.LastWriteTime, Directory = fi.DirectoryName };
+        }
+    }
+
+    private void BtnDelete_Click(object? sender, EventArgs e)
+    {
+        var checkedItems = LstRawFiles.CheckedItems;
+        if (checkedItems.Count == 0) return;
+        if (MessageBox.Show($"Delete {checkedItems.Count} files?", "Confirm", MessageBoxButtons.YesNo) == DialogResult.Yes)
+        {
+            foreach (var item in checkedItems) {
+                string fullPath = _detectedFiles.FirstOrDefault(f => Path.GetFileName(f) == item.ToString()) ?? "";
+                if(File.Exists(fullPath)) try{ File.Delete(fullPath); } catch{}
+            }
+            ScanImportFolder();
         }
     }
 }

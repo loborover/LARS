@@ -13,7 +13,7 @@ public class ItemCounterService
 
         // PartList 폴더의 모든 엑셀 파일 검색
         // 실제로는 파일명에 날짜가 포함된 것만 필터링하는 로직이 더 효율적일 수 있음
-        var files = Directory.GetFiles(DirectoryHelper.PartListPath, "*.xlsx");
+        var files = Directory.GetFiles(LARS.Configuration.ConfigManager.GetImportPath(), "*.xlsx");
 
         foreach (var file in files)
         {

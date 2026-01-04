@@ -11,7 +11,7 @@ static class Program
     [STAThread]
     static void Main(string[] args)
     {
-        if (args.Length > 0 && args.Contains("--verify"))
+        if (args.Length > 0 && args[0] == "test")
         {
             TestRunner.Run();
             return;

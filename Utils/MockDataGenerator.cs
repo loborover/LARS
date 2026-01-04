@@ -8,7 +8,7 @@ public static class MockDataGenerator
     // 테스트용 샘플 BOM 파일 생성
     public static void GenerateSampleBomFile()
     {
-        string filePath = Path.Combine(DirectoryHelper.SourcePath, "Excel_Export_Sample_BOM.xlsx");
+        string filePath = Path.Combine(LARS.Configuration.ConfigManager.GetImportPath(), "Excel_Export_Sample_BOM.xlsx");
         
         // 이미 존재하면 생성 안 함 (덮어쓰기 옵션 추가 가능)
         if (File.Exists(filePath)) return;

@@ -49,7 +49,11 @@ public static class TextUI       // Main 대신 TextUI 같은 이름이 더 직�
                     break;
 
                 case '2':
-                    dailyPlanProcessor.ProcessAll();
+                    foreach(var file in dailyPlanProcessor.FindDailyPlanFiles())
+                    {
+                        dailyPlanProcessor.ProcessSingle(file);
+                        Console.WriteLine($"Processed: {file}");
+                    }
                     break;
 
                 default:

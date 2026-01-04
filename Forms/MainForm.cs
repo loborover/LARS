@@ -9,22 +9,18 @@ public partial class MainForm : Form
     // Initialize with null! to suppress CS8618
     private Panel sidebarPanel = null!;
     private Panel contentPanel = null!;
-    private Button btnBomViewer = null!;
-    private Button btnPartList = null!;
-    private Button btnDailyPlan = null!;
+    
+    // New consolidated buttons
+    private Button btnDataViewer = null!;
     private Button btnItemCounter = null!;
     private Button btnStickerLabel = null!;
+    private Button btnSettings = null!;
 
     public MainForm()
     {
         InitializeComponent();
         InitializeCustomLayout();
         ApplyModernStyle();
-    }
-
-    private void InitializeComponent()
-    {
-        this.Text = "LARS";
     }
 
     private void InitializeCustomLayout()
@@ -42,36 +38,40 @@ public partial class MainForm : Form
             BackColor = Color.White
         };
 
-        btnBomViewer = CreateMenuButton("BOM Viewer", 0);
-        btnPartList = CreateMenuButton("Part List", 50);
-        btnDailyPlan = CreateMenuButton("Daily Plan", 100);
-        btnItemCounter = CreateMenuButton("Item Counter", 150);
-        btnStickerLabel = CreateMenuButton("Sticker Label", 200);
+        // Create Buttons with Dock Style
+        btnDataViewer = CreateMenuButton("데이터 뷰어 (Viewers)");
+        btnItemCounter = CreateMenuButton("아이템 카운터 (Counter)");
+        btnStickerLabel = CreateMenuButton("스티커 라벨 (Label)");
+        
+        btnSettings = CreateMenuButton("설정 (Settings)");
+        btnSettings.Dock = DockStyle.Bottom; // Bottom Align
 
-        btnBomViewer.Click += (s, e) => ShowContent(new BomViewerControl());
-        btnPartList.Click += (s, e) => ShowContent(new PartListControl());
-        btnDailyPlan.Click += (s, e) => ShowContent(new DailyPlanControl());
-        btnItemCounter.Click += (s, e) => ShowContent(new ItemCounterControl());
-        btnStickerLabel.Click += (s, e) => ShowContent(new LabelPreviewControl());
+        // Event Handlers
+        btnDataViewer.Click += (s, e) => { HighlightButton(btnDataViewer); ShowContent(new DataViewerControl()); };
+        btnItemCounter.Click += (s, e) => { HighlightButton(btnItemCounter); ShowContent(new ItemCounterControl()); };
+        btnStickerLabel.Click += (s, e) => { HighlightButton(btnStickerLabel); ShowContent(new LabelPreviewControl()); };
+        btnSettings.Click += (s, e) => { HighlightButton(btnSettings); ShowContent(new SettingsControl()); };
 
+        // Add to Sidebar (Reverse Order for Dock=Top)
         sidebarPanel.Controls.Add(btnStickerLabel);
         sidebarPanel.Controls.Add(btnItemCounter);
-        sidebarPanel.Controls.Add(btnDailyPlan);
-        sidebarPanel.Controls.Add(btnPartList);
-        sidebarPanel.Controls.Add(btnBomViewer);
+        sidebarPanel.Controls.Add(btnDataViewer);
+        sidebarPanel.Controls.Add(btnSettings); // Added first but docked bottom
 
         this.Controls.Add(contentPanel);
         this.Controls.Add(sidebarPanel);
+        
+        // Default View
+        HighlightButton(btnDataViewer);
+        ShowContent(new DataViewerControl());
     }
 
-    private Button CreateMenuButton(string text, int top)
+    private Button CreateMenuButton(string text)
     {
         return new Button
         {
             Text = text,
-            Top = top,
-            Left = 0,
-            Width = 200,
+            Dock = DockStyle.Top,
             Height = 50,
             FlatStyle = FlatStyle.Flat,
             ForeColor = Color.White,
@@ -80,6 +80,23 @@ public partial class MainForm : Form
             Padding = new Padding(20, 0, 0, 0),
             FlatAppearance = { BorderSize = 0 }
         };
+    }
+
+    private void HighlightButton(Button activeBtn)
+    {
+        // Reset all buttons
+        foreach(Control c in sidebarPanel.Controls)
+        {
+            if(c is Button b)
+            {
+                b.BackColor = Color.FromArgb(45, 45, 48);
+                b.ForeColor = Color.White;
+            }
+        }
+
+        // Highlight active
+        activeBtn.BackColor = Color.White;
+        activeBtn.ForeColor = Color.Black;
     }
 
     private void ShowContent(Control control)
@@ -91,7 +108,7 @@ public partial class MainForm : Form
 
     private void ApplyModernStyle()
     {
-        this.Text = "LARS Automation";
+        this.Text = "LARS // Logistics Automation Reporting System";
         this.Size = new Size(1280, 800);
         this.StartPosition = FormStartPosition.CenterScreen;
     }
