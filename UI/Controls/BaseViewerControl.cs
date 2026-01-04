@@ -18,7 +18,11 @@ public class BaseViewerControl : UserControl
     protected Button BtnRefresh = null!;
     protected Button BtnDelete = null!;
     protected Button BtnProcess = null!;
+    protected Button BtnPrint = null!; // New Print Button
     protected Button BtnSettings = null!;
+
+    protected CheckBox ChkSaveAsFile = null!;
+    protected CheckBox ChkDirectPrint = null!;
     
     protected Label LblListTitle = null!;
     protected CheckBox ChkSelectAll = null!;
@@ -53,17 +57,55 @@ public class BaseViewerControl : UserControl
 
         BtnRefresh = CreateMenuButton("Scan / Refresh", Color.SteelBlue);
         BtnDelete = CreateMenuButton("Delete Selected", Color.IndianRed);
-        BtnProcess = CreateMenuButton("Process Selected", LARS.UI.Themes.ColorPalette.ActionProcess);
+        BtnProcess = CreateMenuButton("Process & Save", LARS.UI.Themes.ColorPalette.ActionProcess);
         BtnProcess.Width = 160;
+        
+        BtnPrint = CreateMenuButton("Direct Print", Color.MediumPurple);
+        BtnPrint.Width = 140;
+        
         BtnSettings = CreateMenuButton("Settings", Color.Gray);
+
+        // Options
+        ChkSaveAsFile = new CheckBox 
+        { 
+            Text = "Save as File", 
+            Dock = DockStyle.Left, 
+            Checked = LARS.Configuration.ConfigManager.Instance.SaveAsFile,
+            TextAlign = System.Drawing.ContentAlignment.MiddleCenter,
+            Padding = new Padding(10, 0, 0, 0),
+            AutoSize = true
+        };
+        ChkSaveAsFile.CheckedChanged += (s, e) => {
+            LARS.Configuration.ConfigManager.Instance.SaveAsFile = ChkSaveAsFile.Checked;
+            UpdateProcessButtonState();
+        };
+
+        ChkDirectPrint = new CheckBox 
+        { 
+            Text = "Print After Process", 
+            Dock = DockStyle.Left, 
+            Checked = LARS.Configuration.ConfigManager.Instance.DirectPrint,
+            TextAlign = System.Drawing.ContentAlignment.MiddleCenter,
+            Padding = new Padding(10, 0, 0, 0),
+            AutoSize = true
+        };
+        ChkDirectPrint.CheckedChanged += (s, e) => {
+            LARS.Configuration.ConfigManager.Instance.DirectPrint = ChkDirectPrint.Checked;
+        };
 
         // Add to Panel (Reverse order for Dock.Left)
         TopMenuPanel.Controls.Add(BtnSettings);
+        TopMenuPanel.Controls.Add(new Panel { Width = 20, Dock = DockStyle.Left }); // Spacer
+        TopMenuPanel.Controls.Add(BtnPrint);
         TopMenuPanel.Controls.Add(BtnProcess);
+        TopMenuPanel.Controls.Add(ChkDirectPrint);
+        TopMenuPanel.Controls.Add(ChkSaveAsFile);
         TopMenuPanel.Controls.Add(new Panel { Width = 20, Dock = DockStyle.Left }); // Spacer
         TopMenuPanel.Controls.Add(BtnDelete);
         TopMenuPanel.Controls.Add(new Panel { Width = 10, Dock = DockStyle.Left }); // Spacer
         TopMenuPanel.Controls.Add(BtnRefresh);
+        
+        UpdateProcessButtonState();
 
         // --- 2. Main Layout ---
         MainSplitter = new SplitContainer
@@ -210,7 +252,10 @@ public class BaseViewerControl : UserControl
         e.DrawBackground();
         var item = LstRawFiles.Items[e.Index];
         var g = e.Graphics;
-        using (var pen = new Pen(Color.LightGray)) { g.DrawLine(pen, e.Bounds.Left, e.Bounds.Bottom - 1, e.Bounds.Right, e.Bounds.Bottom - 1); }
+        using (var pen = new Pen(Color.FromArgb(220, 220, 220))) // Slightly darker separator
+        { 
+            g.DrawLine(pen, e.Bounds.Left + 5, e.Bounds.Bottom - 1, e.Bounds.Right - 5, e.Bounds.Bottom - 1); 
+        }
         
         var checkState = LstRawFiles.GetItemCheckState(e.Index);
         var checkSize = CheckBoxRenderer.GetGlyphSize(g, CheckBoxState.UncheckedNormal);
@@ -228,6 +273,23 @@ public class BaseViewerControl : UserControl
         e.DrawFocusRectangle();
     }
 
+    protected void UpdateProcessButtonState()
+    {
+        bool isSaveEnabled = ChkSaveAsFile.Checked;
+        BtnProcess.Enabled = isSaveEnabled;
+        
+        if (isSaveEnabled)
+        {
+            BtnProcess.BackColor = LARS.UI.Themes.ColorPalette.ActionProcess;
+            BtnProcess.Text = "Process & Save";
+        }
+        else
+        {
+            BtnProcess.BackColor = Color.FromArgb(180, 180, 180); // Low-tone Dim Gray
+            BtnProcess.Text = "Save Disabled";
+        }
+    }
+
     private Button CreateMenuButton(string text, Color bg)
     {
         return new Button
@@ -239,7 +301,8 @@ public class BaseViewerControl : UserControl
             ForeColor = Color.White,
             FlatStyle = FlatStyle.Flat,
             Margin = new Padding(0, 0, 10, 0),
-            Cursor = Cursors.Hand
+            Cursor = Cursors.Hand,
+            FlatAppearance = { BorderSize = 0 }
         };
     }
 }

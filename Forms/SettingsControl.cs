@@ -10,6 +10,7 @@ public partial class SettingsControl : UserControl
     private TabControl tabs = null!;
     private TabPage tabGeneral = null!;
     private TabPage tabDebug = null!;
+    private TabPage tabDocuments = null!;
 
     // General Controls
     private TextBox txtGlobalImport = null!;
@@ -21,6 +22,12 @@ public partial class SettingsControl : UserControl
     private TextBox txtDebugImport = null!;
     private TextBox txtDebugExport = null!;
     private GroupBox grpDebugPaths = null!;
+
+    // Document Macro Controls
+    private ComboBox cmbDocType = null!;
+    private TextBox txtMacroEditor = null!;
+    private Button btnSaveMacro = null!;
+    private string _macroRoot = "";
 
     public SettingsControl()
     {
@@ -51,9 +58,11 @@ public partial class SettingsControl : UserControl
 
         InitializeGeneralTab();
         InitializeDebugTab();
+        InitializeDocumentsTab();
 
         tabs.TabPages.Add(tabGeneral);
         tabs.TabPages.Add(tabDebug);
+        tabs.TabPages.Add(tabDocuments);
 
         btnSave = new Button
         {
@@ -152,6 +161,99 @@ public partial class SettingsControl : UserControl
         tabDebug.Controls.Add(chkDebugMode);
         tabDebug.Controls.Add(grpDebugPaths);
         tabDebug.Controls.Add(btnTempClean);
+    }
+
+    private void InitializeDocumentsTab()
+    {
+        tabDocuments = new TabPage("문서 가공 로직 (Documents)");
+        tabDocuments.Padding = new Padding(20);
+        tabDocuments.BackColor = Color.White;
+
+        _macroRoot = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Macros");
+        if (!Directory.Exists(_macroRoot)) Directory.CreateDirectory(_macroRoot);
+
+        var lblSelect = new Label { Text = "문서 종류 선택:", Location = new Point(20, 20), AutoSize = true };
+        cmbDocType = new ComboBox { Location = new Point(130, 18), Width = 200, DropDownStyle = ComboBoxStyle.DropDownList };
+        cmbDocType.Items.AddRange(new string[] { "DailyPlan", "BOM", "PartList" });
+        cmbDocType.SelectedIndexChanged += (s, e) => LoadMacroFile();
+
+        txtMacroEditor = new TextBox
+        {
+            Location = new Point(20, 60),
+            Size = new Size(650, 260),
+            Multiline = true,
+            ScrollBars = ScrollBars.Vertical,
+            Font = new Font("Consolas", 10),
+            Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom
+        };
+
+        btnSaveMacro = new Button
+        {
+            Text = "매크로 저장 (Save Macro)",
+            Location = new Point(20, 330),
+            Size = new Size(200, 35),
+            BackColor = Color.SteelBlue,
+            ForeColor = Color.White,
+            FlatStyle = FlatStyle.Flat,
+            Anchor = AnchorStyles.Bottom | AnchorStyles.Left
+        };
+        btnSaveMacro.Click += (s, e) => SaveMacroFile();
+
+        tabDocuments.Controls.Add(lblSelect);
+        tabDocuments.Controls.Add(cmbDocType);
+        tabDocuments.Controls.Add(txtMacroEditor);
+        tabDocuments.Controls.Add(btnSaveMacro);
+        
+        if (cmbDocType.Items.Count > 0) cmbDocType.SelectedIndex = 0;
+    }
+
+    private void LoadMacroFile()
+    {
+        if (cmbDocType.SelectedItem == null) return;
+        string docType = cmbDocType.SelectedItem.ToString()!;
+        string fileName = docType switch {
+            "DailyPlan" => "DPmacro.md",
+            "BOM" => "BOMmacro.md",
+            "PartList" => "PartListmacro.md",
+            _ => ""
+        };
+
+        if (string.IsNullOrEmpty(fileName)) return;
+
+        string path = Path.Combine(_macroRoot, fileName);
+        if (File.Exists(path))
+        {
+            txtMacroEditor.Text = File.ReadAllText(path);
+        }
+        else
+        {
+            txtMacroEditor.Text = $"# {docType} 가공 로직\n\n(내용을 입력하세요)";
+        }
+    }
+
+    private void SaveMacroFile()
+    {
+        if (cmbDocType.SelectedItem == null) return;
+        string docType = cmbDocType.SelectedItem.ToString()!;
+        string fileName = docType switch {
+            "DailyPlan" => "DPmacro.md",
+            "BOM" => "BOMmacro.md",
+            "PartList" => "PartListmacro.md",
+            _ => ""
+        };
+
+        if (string.IsNullOrEmpty(fileName)) return;
+
+        try
+        {
+            string path = Path.Combine(_macroRoot, fileName);
+            File.WriteAllText(path, txtMacroEditor.Text);
+            MessageBox.Show($"{docType} 가공 로직(매크로)이 저장되었습니다.", "저장 완료");
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"파일 저장 중 오류 발생: {ex.Message}", "오류");
+        }
     }
 
     private void BtnTempClean_Click(object? sender, EventArgs e)

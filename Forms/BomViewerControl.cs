@@ -35,7 +35,12 @@ public partial class BomViewerControl : BaseViewerControl
         BtnRefresh.Click += (s, e) => ScanImportFolder();
         BtnDelete.Click += BtnDelete_Click;
         BtnProcess.Click += BtnProcess_Click;
-        BtnSettings.Click += (s, e) => new ViewerSettingsForm(ViewerType.BOM).ShowDialog();
+        BtnSettings.Click += (s, e) => {
+            if (new ViewerSettingsForm(ViewerType.BOM).ShowDialog() == DialogResult.OK)
+            {
+                if (LstRawFiles.SelectedIndex >= 0) LstRawFiles_SelectedIndexChanged(null, EventArgs.Empty);
+            }
+        };
 
         // Specific Grid Logic
         LstRawFiles.SelectedIndexChanged += LstRawFiles_SelectedIndexChanged;
@@ -117,6 +122,38 @@ public partial class BomViewerControl : BaseViewerControl
             _bindingSource.DataSource = _previewItems;
             PreviewGrid.DataSource = _bindingSource;
             
+            // Reorder and Rename columns based on HeaderMapping
+            var config = LARS.Configuration.ConfigManager.Headers.Bom;
+            var mappings = config.Mappings.OrderBy(m => m.Order).ToList();
+            
+            // Hide all first
+            foreach (DataGridViewColumn col in PreviewGrid.Columns) col.Visible = false;
+
+            int displayIdx = 0;
+            foreach (var mapping in mappings)
+            {
+                // Find property name that matches mapping.Target
+                // BomItem properties: Level, PartNo, Description, Quantity, Uom, Maker, SupplyType
+                string? propName = mapping.Target.ToLower() switch {
+                    "lvl" => "Level",
+                    "part no" => "PartNo",
+                    "description" => "Description",
+                    "qty" => "Quantity",
+                    "uom" => "Uom",
+                    "maker" => "Maker",
+                    "supply type" => "SupplyType",
+                    _ => null
+                };
+
+                if (propName != null && PreviewGrid.Columns.Contains(propName))
+                {
+                    var col = PreviewGrid.Columns[propName];
+                    col.Visible = true;
+                    col.DisplayIndex = displayIdx++;
+                    col.HeaderText = string.IsNullOrWhiteSpace(mapping.UserSet) ? mapping.Target : mapping.UserSet;
+                }
+            }
+
             ApplyDefaultLevelFilter();
             PreviewGrid.AutoResizeColumns();
         }

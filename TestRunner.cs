@@ -54,7 +54,7 @@ public static class TestRunner
             catch (Exception ex)
             {
                 Log($"[Error] BOM Verification Failed: {ex.Message}");
-                Log(ex.StackTrace);
+                if (ex.StackTrace != null) Log(ex.StackTrace);
             }
 
             // 2. Verify DailyPlan
@@ -79,7 +79,7 @@ public static class TestRunner
             catch (Exception ex)
             {
                 Log($"[Error] DailyPlan Verification Failed: {ex.Message}");
-                Log(ex.StackTrace);
+                if (ex.StackTrace != null) Log(ex.StackTrace);
             }
 
             Log("[Verification] Finished.");

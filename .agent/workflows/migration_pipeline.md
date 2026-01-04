@@ -1,5 +1,5 @@
 ---
-description: "VBA 분석, 백엔드 구현, UI 생성을 위한 3단계 에이전트 파이프라인 워크플로우"
+description: "기획, 분석, 백엔드 구현, UI 생성, 최적화 5단계 위한 에이전트 파이프라인 워크플로우"
 ---
 
 # LARS Migration Pipeline

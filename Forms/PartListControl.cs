@@ -21,7 +21,12 @@ public partial class PartListControl : BaseViewerControl
         BtnRefresh.Click += (s,e) => ScanImportFolder();
         BtnDelete.Click += BtnDelete_Click;
         BtnProcess.Click += (s,e) => MessageBox.Show("Not Implemented", "Info");
-        BtnSettings.Click += (s, e) => { new ViewerSettingsForm(ViewerType.PartList).ShowDialog(); };
+        BtnSettings.Click += (s, e) => {
+            if (new ViewerSettingsForm(ViewerType.PartList).ShowDialog() == DialogResult.OK)
+            {
+                if (LstRawFiles.SelectedIndex >= 0) LstRawFiles_SelectedIndexChanged(null, EventArgs.Empty);
+            }
+        };
         
         LstRawFiles.SelectedIndexChanged += LstRawFiles_SelectedIndexChanged;
     }

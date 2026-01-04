@@ -67,54 +67,119 @@ public class DailyPlanProcessor
                 var startCell = ws.Search("Planned Start Time").FirstOrDefault();
                 if (startCell == null) throw new Exception("Could not find 'Planned Start Time' anchor.");
 
-                int anchorRow = startCell.Address.RowNumber;
-                int startRow = anchorRow + 3; // Data starts +3 rows from anchor ('Planned Start Time' -> 'Input' -> 'W/O' -> Data)
-                int anchorCol = startCell.Address.ColumnNumber; // Column 'A' usually (Parsed Column)
+                // --- 2. Refined 4-Step Logic ---
+                var config = LARS.Configuration.ConfigManager.Headers.DailyPlan;
+                int targetHeaderRowIdx = config.TargetHeaderRow ?? 1; // Default to 1 (VBA style)
 
-                // Delete rows 1 to anchorRow (Exclusive of Anchor? No, VBA deletes Rows(1) then Columns B:D)
-                // VBA Logic:
-                // 1. Find "Planned Start Time" (Range)
-                // 2. startRow = DelCell.Row + 3
-                // 3. ws.Rows(1).Delete
-                // 4. ws.Columns("B:D").Delete (Columns 2,3,4)
-                
+                // 1. Row 1 삭제
                 ws.Row(1).Delete();
-                ws.Column(2).Delete(); // B
-                ws.Column(2).Delete(); // C (became B)
-                ws.Column(2).Delete(); // D (became B)
+                // Note: If Row 1 is deleted, the original Header Row 2 becomes Row 1.
+                // We assume targetHeaderRowIdx is relative to the *initial* file.
+                // If the user meant "Header Row is 2 IN THE ORIGINAL FILE", then after Row 1 delete, it becomes Row 1.
+                int activeHeaderRow = targetHeaderRowIdx > 0 ? targetHeaderRowIdx - 1 : 1; 
+                if (activeHeaderRow < 1) activeHeaderRow = 1;
+
+                // 2-2. 생산라인 파싱 (Before column deletion)
+                var headerRow = ws.Row(activeHeaderRow);
+                string lineName = "UnknownLine";
+                var lineCol = headerRow.CellsUsed().FirstOrDefault(c => c.GetValue<string>().Contains("생산라인"));
+                if (lineCol != null)
+                {
+                    int lineColIdx = lineCol.Address.ColumnNumber;
+                    // Find first non-empty data row in this column
+                    lineName = ws.Column(lineColIdx).CellsUsed()
+                                 .SkipWhile(c => c.Address.RowNumber <= activeHeaderRow)
+                                 .FirstOrDefault()?.GetValue<string>() ?? "UnknownLine";
+                }
+
+                // 2. 컬럼 필터링 & 3. 이름 변경 & 재배치
+                int currentLastCol = ws.LastColumnUsed().ColumnNumber();
                 
-                // After deletion, "Planned Start Time" and "W/O" headers might have shifted.
-                // Re-find key headers
-                var planQtyCell = ws.Search("W/O 계획수량").FirstOrDefault();
-                if (planQtyCell == null) throw new Exception("'W/O 계획수량' not found.");
+                // Identify target columns and their desired names/order
+                var targetMappings = config.Mappings
+                    .Where(m => !string.IsNullOrEmpty(m.Target))
+                    .OrderBy(m => m.Order)
+                    .ToList();
+
+                var tempWorkbook = new XLWorkbook();
+                var tempWs = tempWorkbook.AddWorksheet("Temp");
+                int newColIdx = 1;
+
+                foreach (var mapping in targetMappings)
+                {
+                    // Find actual column in original sheet
+                    var foundColCell = ws.Row(activeHeaderRow).CellsUsed()
+                        .FirstOrDefault(c => c.GetValue<string>().Equals(mapping.Target, StringComparison.OrdinalIgnoreCase));
+
+                    if (foundColCell != null)
+                    {
+                        int srcColIdx = foundColCell.Address.ColumnNumber;
+                        // Copy entire column to temp sheet
+                        ws.Column(srcColIdx).CopyTo(tempWs.Column(newColIdx));
+                        
+                        // Apply Width (px conversion: approx 1 unit = 7px)
+                        if (mapping.Width > 0) tempWs.Column(newColIdx).Width = mapping.Width / 7.0;
+
+                        // Rename Header in temp sheet
+                        string newName = string.IsNullOrWhiteSpace(mapping.UserSet) ? mapping.Target : mapping.UserSet;
+                        tempWs.Cell(activeHeaderRow, newColIdx).Value = newName;
+                        newColIdx++;
+                    }
+                }
+
+                // Clear original worksheet columns (Delete from right to left to avoid index issues)
+                for (int c = currentLastCol; c >= 1; c--) ws.Column(c).Delete();
+
+                // Paste back from temp sheet
+                // Paste back from temp sheet
+                if (newColIdx > 1)
+                {
+                    for (int i = 1; i < newColIdx; i++)
+                    {
+                        tempWs.Column(i).CopyTo(ws.Column(i));
+                    }
+                }
                 
-                // Rename "W/O 계획수량" -> "계획"
-                planQtyCell.Value = "계획";
+                // 1. Autofit all first
+                ws.Columns().AdjustToContents();
                 
-                // --- 2. Transformation ---
-                
-                int planCol = planQtyCell.Address.ColumnNumber;
-                int planRow = planQtyCell.Address.RowNumber;
-                
-                // 4. Insert IN, OUT columns (After '계획')
-                ws.Column(planCol + 1).InsertColumnsAfter(2); // planCol is '계획', +1 is next. Insert 2 columns.
-                ws.Cell(planRow, planCol + 1).Value = "IN";
-                ws.Cell(planRow, planCol + 2).Value = "OUT";
-                
-                // 5. Insert Connecter columns (After 'OUT', i.e., planCol + 3)
-                int connecterCol = planCol + 3;
-                ws.Column(connecterCol).InsertColumnsBefore(2); // Insert 2 cols for Connecter
-                ws.Cell(planRow, connecterCol).Value = "Connecter";
-                ws.Range(planRow, connecterCol, planRow, connecterCol + 1).Merge();
-                
-                // Find "Line" info for filename
-                var lineCell = ws.Search("Line").FirstOrDefault(); // "Line" in Header
-                string lineName = lineCell?.CellRight().GetValue<string>() ?? "UnknownLine";
-                
-                // Identify Date Columns and Delete unused future dates
-                // VBA logic searches for "부품번호" (PartNo) to find start of data
-                
-                // Calculate Durations using TimeKeeper
+                // 2. Override with manual widths from mappings ONLY IF > 0
+                int actualColIdx = 1;
+                foreach (var mapping in targetMappings)
+                {
+                    var found = ws.Row(activeHeaderRow).CellsUsed()
+                        .FirstOrDefault(c => c.GetValue<string>().Equals(string.IsNullOrWhiteSpace(mapping.UserSet) ? mapping.Target : mapping.UserSet, StringComparison.OrdinalIgnoreCase));
+                    
+                    if (found != null)
+                    {
+                        if (mapping.Width > 0)
+                        {
+                            ws.Column(found.Address.ColumnNumber).Width = mapping.Width / 7.0;
+                        }
+                        actualColIdx++;
+                    }
+                }
+
+                tempWorkbook.Dispose();
+
+                // 4. Connecter 병합셀 생성
+                // Row 2 (activeHeaderRow + 1 usually) 에서 "OUT" 찾기
+                int searchRow = activeHeaderRow + 1;
+                var outCell = ws.Row(searchRow).CellsUsed().FirstOrDefault(c => c.GetValue<string>() == "OUT");
+                if (outCell != null)
+                {
+                    int outColIdx = outCell.Address.ColumnNumber;
+                    ws.Column(outColIdx + 1).InsertColumnsAfter(2);
+                    
+                    int connStartCol = outColIdx + 1;
+                    int connEndCol = outColIdx + 2;
+                    
+                    ws.Cell(activeHeaderRow, connStartCol).Value = "Connecter";
+                    ws.Range(activeHeaderRow, connStartCol, searchRow, connEndCol).Merge();
+                    ws.Cell(activeHeaderRow, connStartCol).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                    ws.Cell(activeHeaderRow, connStartCol).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+                }
+
                 int lastDataRow = ws.LastRowUsed().RowNumber();
                 
                 // Add Meta Data Columns (TPL, UPPH, Duration)
@@ -266,96 +331,103 @@ public class DailyPlanProcessor
         {
             var ws = workbook.Worksheets.Worksheet(1);
             
-            // --- Logic Mirroring ProcessSingle ---
-            // 1. Pre-Processing
-            var startCell = ws.Search("Planned Start Time").FirstOrDefault();
-            if (startCell == null) return plan; // Or throw
+            // --- 2. Refined 4-Step Logic ---
+            var config = LARS.Configuration.ConfigManager.Headers.DailyPlan;
+            int targetHeaderRowIdx = config.TargetHeaderRow ?? 1;
 
+            // 1. Row 1 삭제
             ws.Row(1).Delete();
-            ws.Column(2).Delete();
-            ws.Column(2).Delete();
-            ws.Column(2).Delete();
-
-            var planQtyCell = ws.Search("W/O 계획수량").FirstOrDefault();
-            if (planQtyCell != null)
+            int activeHeaderRow = targetHeaderRowIdx > 0 ? targetHeaderRowIdx - 1 : 1; 
+            if (activeHeaderRow < 1) activeHeaderRow = 1;
+            
+            // 2-2. 생산라인 (Preview meta)
+            var headerRow = ws.Row(activeHeaderRow);
+            var lineCol = headerRow.CellsUsed().FirstOrDefault(c => c.GetValue<string>().Contains("생산라인"));
+            if (lineCol != null)
             {
-                planQtyCell.Value = "계획";
-                int planCol = planQtyCell.Address.ColumnNumber;
-                int planRow = planQtyCell.Address.RowNumber;
-                
-                ws.Column(planCol + 1).InsertColumnsAfter(2);
-                ws.Cell(planRow, planCol + 1).Value = "IN";
-                ws.Cell(planRow, planCol + 2).Value = "OUT";
-                
-                int connecterCol = planCol + 3;
-                ws.Column(connecterCol).InsertColumnsBefore(2);
-                ws.Cell(planRow, connecterCol).Value = "Connecter";
-                ws.Range(planRow, connecterCol, planRow, connecterCol + 1).Merge();
+                plan.LineName = ws.Column(lineCol.Address.ColumnNumber).CellsUsed()
+                                 .SkipWhile(c => c.Address.RowNumber <= activeHeaderRow)
+                                 .FirstOrDefault()?.GetValue<string>() ?? "DailyPlan";
             }
 
-            // Meta Info
-            var lineCell = ws.Search("Line").FirstOrDefault();
-            plan.LineName = lineCell?.CellRight().GetValue<string>() ?? "Unknown";
+            // 2. 컬럼 필터링 & 3. 이름 변경 & 재배치
+            int currentLastCol = ws.LastColumnUsed().ColumnNumber();
+            
+            var targetMappings = config.Mappings
+                .Where(m => !string.IsNullOrEmpty(m.Target))
+                .OrderBy(m => m.Order)
+                .ToList();
+
+            var tempWorkbook = new XLWorkbook();
+            var tempWs = tempWorkbook.AddWorksheet("Temp");
+            int newColIdx = 1;
+
+            foreach (var mapping in targetMappings)
+            {
+                var foundColCell = ws.Row(activeHeaderRow).CellsUsed()
+                    .FirstOrDefault(c => c.GetValue<string>().Equals(mapping.Target, StringComparison.OrdinalIgnoreCase));
+
+                if (foundColCell != null)
+                {
+                    ws.Column(foundColCell.Address.ColumnNumber).CopyTo(tempWs.Column(newColIdx));
+                    
+                    // Width is ignored in Preview (Always Autofit)
+                    
+                    string newName = string.IsNullOrWhiteSpace(mapping.UserSet) ? mapping.Target : mapping.UserSet;
+                    tempWs.Cell(activeHeaderRow, newColIdx).Value = newName;
+                    newColIdx++;
+                }
+            }
+
+            for (int c = currentLastCol; c >= 1; c--) ws.Column(c).Delete();
+            if (newColIdx > 1)
+            {
+                for (int i = 1; i < newColIdx; i++)
+                {
+                    tempWs.Column(i).CopyTo(ws.Column(i));
+                }
+            }
+            
+            // Preview Exception: Always Autofit all columns, ignore manual Mapping Width
+            ws.Columns().AdjustToContents();
+
+            tempWorkbook.Dispose();
+
+            // 4. Connecter (Preview adjustment)
+            int searchRow = activeHeaderRow + 1;
+            var outCell = ws.Row(searchRow).CellsUsed().FirstOrDefault(c => c.GetValue<string>() == "OUT");
+            if (outCell != null)
+            {
+                int outColIdx = outCell.Address.ColumnNumber;
+                ws.Column(outColIdx + 1).InsertColumnsAfter(2);
+                ws.Cell(activeHeaderRow, outColIdx + 1).Value = "Connecter";
+                ws.Range(activeHeaderRow, outColIdx + 1, searchRow, outColIdx + 2).Merge();
+            }
+
             plan.DateTitle = File.GetCreationTime(filePath).ToString("yyyy-MM-dd");
 
-            // Extract Headers
-            int headerRow = 2; // Approx
+            // Extract Headers (After filtering)
             int lastCol = ws.LastColumnUsed().ColumnNumber();
             for (int c = 1; c <= lastCol; c++)
             {
-                plan.Headers.Add(ws.Cell(headerRow, c).GetValue<string>());
+                plan.Headers.Add(ws.Cell(activeHeaderRow, c).GetValue<string>());
             }
 
-            // Extract Data & Grouping
-            var partNoHeader = ws.Search("부품번호").FirstOrDefault();
-            if (partNoHeader != null)
+            // Extract Data
+            int dataStartRow = activeHeaderRow + 1; 
+            int lastRowIdx = ws.LastRowUsed().RowNumber();
+            
+            for(int c=1; c<=lastCol; c++) 
+                plan.ColumnWidths.Add((float)ws.Column(c).Width * 7.5f);
+
+            for (int r = dataStartRow; r <= lastRowIdx; r++)
             {
-                int partNoCol = partNoHeader.Address.ColumnNumber;
-                int dataStartRow = partNoHeader.Address.RowNumber + 1;
-                int lastRowIdx = ws.LastRowUsed().RowNumber();
-                var models = new List<ModelInfo>();
-
-                // Column Widths (Approx from Exec)
-                for(int c=1; c<=lastCol; c++) 
-                    plan.ColumnWidths.Add((float)ws.Column(c).Width * 7.5f); // Conversion factor
-
-                for (int r = dataStartRow; r <= lastRowIdx; r++)
+                var rowVals = new List<string>();
+                for (int c = 1; c <= lastCol; c++)
                 {
-                    var rowVals = new List<string>();
-                    for (int c = 1; c <= lastCol; c++)
-                    {
-                        rowVals.Add(ws.Cell(r, c).GetValue<string>());
-                    }
-                    plan.Rows.Add(rowVals);
-
-                    // Model Info for Grouping
-                    string val = ws.Cell(r, partNoCol).GetValue<string>();
-                    if (!string.IsNullOrWhiteSpace(val))
-                    {
-                        var m = new ModelInfo(val);
-                        m.Row = r - dataStartRow; // 0-based index for Drawer
-                        m.Col = partNoCol;
-                        m.WorkOrder = ws.Cell(r, partNoCol - 1).GetValue<string>();
-                        models.Add(m);
-                    }
+                    rowVals.Add(ws.Cell(r, c).GetValue<string>());
                 }
-
-                // Grouping
-                if (models.Count > 0)
-                {
-                    var grouper = new ModelGrouper();
-                    grouper.GroupModels(models);
-
-                    // Convert GroupRange indices to Data Row indices
-                    // ModelInfo.Row is already 0-based relative to data start in this scope
-                    // No, wait. 
-                    // In ProcessSingle: m.Row = r (absolute).
-                    // In GetProcessedPlan: m.Row = r - dataStartRow (0-based relative to Plan.Rows).
-                    // This is correct for Drawer.
-                    
-                    plan.MainGroups = grouper.MainGroups;
-                    plan.SubGroups = grouper.SubGroups;
-                }
+                plan.Rows.Add(rowVals);
             }
         }
 

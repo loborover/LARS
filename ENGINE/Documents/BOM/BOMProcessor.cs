@@ -43,18 +43,21 @@ public class BOMProcessor
             using (var workbook = new XLWorkbook(filePath))
             {
                 var ws = workbook.Worksheets.Worksheet(1);
-                var headerRow = ws.Row(1);
+                var config = LARS.Configuration.ConfigManager.Headers.Bom;
+                int activeHeaderRow = config.TargetHeaderRow ?? 1;
+
+                var headerRow = ws.Row(activeHeaderRow);
                 var lastRow = ws.LastRowUsed().RowNumber();
 
                 var colMap = new Dictionary<string, int>();
                 foreach (var cell in headerRow.CellsUsed())
                 {
-                    colMap[cell.GetValue<string>()] = cell.Address.ColumnNumber; // Property on Address
+                    colMap[cell.GetValue<string>()] = cell.Address.ColumnNumber;
                 }
 
                 bool HasCol(string name) => colMap.ContainsKey(name);
 
-                for (int i = 2; i <= lastRow; i++)
+                for (int i = activeHeaderRow + 1; i <= lastRow; i++)
                 {
                     var row = ws.Row(i);
                     if (HasCol("Part No") && row.Cell(colMap["Part No"]).IsEmpty()) continue;
@@ -166,17 +169,72 @@ public class BOMProcessor
 
     private void FilterColumns(IXLWorksheet ws)
     {
-        var headerRow = ws.Row(1);
-        int lastCol = headerRow.LastCellUsed().Address.ColumnNumber; // Property on Address
+        var config = LARS.Configuration.ConfigManager.Headers.Bom;
+        int activeHeaderRow = config.TargetHeaderRow ?? 1;
+        var headerRow = ws.Row(activeHeaderRow);
+        int lastCol = headerRow.LastCellUsed().Address.ColumnNumber;
 
-        for (int i = lastCol; i >= 1; i--)
+        // Identify target columns and their desired names/order
+        var targetMappings = config.Mappings
+            .Where(m => !string.IsNullOrEmpty(m.Target))
+            .OrderBy(m => m.Order)
+            .ToList();
+
+        var tempWorkbook = new XLWorkbook();
+        var tempWs = tempWorkbook.AddWorksheet("Temp");
+        int newColIdx = 1;
+
+        foreach (var mapping in targetMappings)
         {
-            var cellValue = headerRow.Cell(i).GetValue<string>();
-            if (!_columnsForReport.Contains(cellValue))
+            // Find actual column in original sheet
+            var foundColCell = ws.Row(activeHeaderRow).CellsUsed()
+                .FirstOrDefault(c => c.GetValue<string>().Equals(mapping.Target, StringComparison.OrdinalIgnoreCase));
+
+            if (foundColCell != null)
             {
-                ws.Column(i).Delete();
+                int srcColIdx = foundColCell.Address.ColumnNumber;
+                ws.Column(srcColIdx).CopyTo(tempWs.Column(newColIdx));
+                
+                // Apply Width (px conversion: approx 1 unit = 7px)
+                if (mapping.Width > 0) tempWs.Column(newColIdx).Width = mapping.Width / 7.0;
+
+                string newName = string.IsNullOrWhiteSpace(mapping.UserSet) ? mapping.Target : mapping.UserSet;
+                tempWs.Cell(activeHeaderRow, newColIdx).Value = newName;
+                newColIdx++;
             }
         }
+
+        // Clear original columns
+        for (int i = lastCol; i >= 1; i--) ws.Column(i).Delete();
+
+        // Paste back
+        if (newColIdx > 1)
+        {
+            for (int i = 1; i < newColIdx; i++)
+            {
+                tempWs.Column(i).CopyTo(ws.Column(i));
+            }
+        }
+
+        // 1. Autofit all first
+        ws.Columns().AdjustToContents();
+
+        // 2. Override with manual widths from mappings ONLY IF > 0
+        foreach (var mapping in targetMappings)
+        {
+            var found = ws.Row(activeHeaderRow).CellsUsed()
+                .FirstOrDefault(c => c.GetValue<string>().Equals(string.IsNullOrWhiteSpace(mapping.UserSet) ? mapping.Target : mapping.UserSet, StringComparison.OrdinalIgnoreCase));
+
+            if (found != null)
+            {
+                if (mapping.Width > 0)
+                {
+                    ws.Column(found.Address.ColumnNumber).Width = mapping.Width / 7.0;
+                }
+            }
+        }
+
+        tempWorkbook.Dispose();
     }
 
     private void InsertTitleRows(IXLWorksheet ws, int count)

@@ -19,35 +19,31 @@ public partial class DailyPlanControl : BaseViewerControl
     private List<string> _detectedFiles = new();
 
     private DailyPlanCanvas _canvas;
-    
-    // Add Print Button reference (assuming it exists in BaseViewer or we add it dynamically)
-    private Button _btnPrint;
+    private ProcessedDailyPlan? _currentPlan;
 
     public DailyPlanControl()
     {
         _processor = new DailyPlanProcessor(); 
         
-        // Setup Canvas (replace or place next to MetaPropertyGrid/PreviewGrid)
-        // Adjust layout: SplitContainer (List vs Right Panel). Right Panel: Split (Preview vs Meta).
-        // For simplicity, we add Canvas to the DataPreviewPanel (where PreviewGrid usually is).
-        
         _canvas = new DailyPlanCanvas { Dock = DockStyle.Fill };
         PreviewGrid.Parent.Controls.Add(_canvas);
-        PreviewGrid.Visible = false; // Hide grid, prefer Canvas
+        PreviewGrid.Visible = false;
         _canvas.BringToFront();
 
-        // Add Print Button dynamically if not present in Designer
-        _btnPrint = new Button { Text = "Print / PDF", Size = new Size(100, 30), Anchor = AnchorStyles.Top | AnchorStyles.Right };
-        _btnPrint.Location = new Point(BtnProcess.Location.X - 110, BtnProcess.Location.Y);
-        BtnProcess.Parent.Controls.Add(_btnPrint);
-        _btnPrint.Click += BtnPrint_Click;
+        // Wire up base buttons
+        BtnPrint.Click += BtnPrint_Click;
 
         this.Load += (s, e) => ScanImportFolder();
         
         BtnRefresh.Click += (s, e) => ScanImportFolder();
         BtnDelete.Click += BtnDelete_Click;
         BtnProcess.Click += BtnProcess_Click;
-        BtnSettings.Click += (s, e) => new ViewerSettingsForm(ViewerType.DailyPlan).ShowDialog();
+        BtnSettings.Click += (s, e) => {
+            if (new ViewerSettingsForm(ViewerType.DailyPlan).ShowDialog() == DialogResult.OK)
+            {
+                if (LstRawFiles.SelectedIndex >= 0) LstRawFiles_SelectedIndexChanged(null, EventArgs.Empty);
+            }
+        };
 
         LstRawFiles.SelectedIndexChanged += LstRawFiles_SelectedIndexChanged;
     }
@@ -108,8 +104,6 @@ public partial class DailyPlanControl : BaseViewerControl
              }
         }
     }
-    
-    private ProcessedDailyPlan _currentPlan;
 
     private void BtnPrint_Click(object? sender, EventArgs e)
     {
@@ -163,7 +157,17 @@ public partial class DailyPlanControl : BaseViewerControl
             
             // Pass Directory, let Processor decide filename
             _processor.ProcessSingle(path, exportDir); 
-            MessageBox.Show($"Processed successfully. Saved to: {exportDir}", "Success");
+            
+            // Auto Print if requested
+            if (ChkDirectPrint.Checked && _currentPlan != null)
+            {
+                var exporter = new DailyPlanPdfExporter(_currentPlan);
+                exporter.Print($"DailyPlan_{_currentPlan.DateTitle}");
+            }
+            else
+            {
+                MessageBox.Show($"Processed successfully. Saved to: {exportDir}", "Success");
+            }
         } catch(Exception ex) { MessageBox.Show(ex.Message); }
     }
 
