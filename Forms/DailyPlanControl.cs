@@ -1,4 +1,5 @@
 using System.Data;
+using LARS.ENGINE.Documents.DailyPlan;
 using LARS.Models;
 using LARS.Utils;
 
@@ -8,11 +9,14 @@ public partial class DailyPlanControl : UserControl
 {
     private DataGridView dataGridView;
     private Button btnRefresh;
+    private Button btnProcess;
     private Panel topPanel;
+    private readonly DailyPlanProcessor _processor;
 
     public DailyPlanControl()
     {
         InitializeComponent();
+        _processor = new DailyPlanProcessor(DirectoryHelper.SourcePath);
     }
 
     private void InitializeComponent()
@@ -38,7 +42,19 @@ public partial class DailyPlanControl : UserControl
         };
         btnRefresh.Click += (s, e) => LoadDailyPlans();
 
+        btnProcess = new Button
+        {
+            Text = "선택 항목 처리 (Process)",
+            Location = new Point(180, 15),
+            Size = new Size(180, 30),
+            BackColor = Color.DarkBlue,
+            ForeColor = Color.White,
+            FlatStyle = FlatStyle.Flat
+        };
+        btnProcess.Click += BtnProcess_Click;
+
         topPanel.Controls.Add(btnRefresh);
+        topPanel.Controls.Add(btnProcess);
 
         dataGridView = new DataGridView
         {
@@ -64,36 +80,7 @@ public partial class DailyPlanControl : UserControl
     {
         try
         {
-            var folder = DirectoryHelper.SourcePath;
-            if (!Directory.Exists(folder))
-            {
-                Directory.CreateDirectory(folder);
-            }
-
-            // "Excel_Export_"로 시작하는 파일 검색 (VBA 로직 참조)
-            var files = Directory.GetFiles(folder, "Excel_Export_*.xlsx");
-            var list = new List<DailyPlanItem>();
-
-            // 파일이 없으면 테스트용 더미 데이터
-            if (files.Length == 0)
-            {
-                list.Add(new DailyPlanItem { FilePath = "DP_20260101_LineA.xlsx", Date = "2026-01-01", Line = "A", PrintStatus = "Done" });
-                list.Add(new DailyPlanItem { FilePath = "DP_20260101_LineB.xlsx", Date = "2026-01-01", Line = "B", PrintStatus = "Ready" });
-            }
-            else
-            {
-                foreach (var file in files)
-                {
-                    list.Add(new DailyPlanItem
-                    {
-                        FilePath = file,
-                        Date = File.GetCreationTime(file).ToString("yyyy-MM-dd"),
-                        Line = "Unknown", // 파일명 파싱 로직 필요 시 추가
-                        PrintStatus = "Ready"
-                    });
-                }
-            }
-
+            var list = _processor.LoadDailyPlans();
             dataGridView.DataSource = list;
 
             if(dataGridView.Columns["FilePath"] != null)
@@ -102,6 +89,33 @@ public partial class DailyPlanControl : UserControl
         catch (Exception ex)
         {
             MessageBox.Show($"로드 에러: {ex.Message}", "에러");
+        }
+    }
+
+    private void BtnProcess_Click(object? sender, EventArgs e)
+    {
+        if (dataGridView.SelectedRows.Count == 0)
+        {
+            MessageBox.Show("처리할 항목을 선택해주세요.", "알림");
+            return;
+        }
+
+        try
+        {
+            int successCount = 0;
+            foreach (DataGridViewRow row in dataGridView.SelectedRows)
+            {
+                if (row.DataBoundItem is DailyPlanItem item)
+                {
+                    _processor.ProcessSingle(item.FilePath);
+                    successCount++;
+                }
+            }
+            MessageBox.Show($"{successCount}개 파일 처리 완료!", "성공");
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"처리 중 에러 발생: {ex.Message}", "에러");
         }
     }
 }

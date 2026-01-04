@@ -1,5 +1,5 @@
 using System.Data;
-using LARS.Features.BomViewer;
+using LARS.ENGINE.Documents.BOM;
 using LARS.Models;
 using LARS.Utils;
 
@@ -11,10 +11,17 @@ public partial class BomViewerControl : UserControl
     private Button btnLoad;
     private Button btnExport;
     private Panel topPanel;
+    
+    // Store loaded items or file path
+    private List<BomItem> _loadedItems;
+    private string _currentFilePath;
+    private readonly BOMProcessor _processor;
 
     public BomViewerControl()
     {
         InitializeComponent();
+        _processor = new BOMProcessor();
+        _loadedItems = new List<BomItem>();
     }
 
     private void InitializeComponent()
@@ -74,55 +81,55 @@ public partial class BomViewerControl : UserControl
 
     private void BtnLoad_Click(object? sender, EventArgs e)
     {
-        try
+        using (OpenFileDialog ofd = new OpenFileDialog())
         {
-            // 테스트용 샘플 파일 생성
-            MockDataGenerator.GenerateSampleBomFile();
+            ofd.Filter = "Excel Files|*.xlsx;*.xls";
+            ofd.Title = "Select BOM File";
             
-            string sampleFile = Path.Combine(DirectoryHelper.SourcePath, "Excel_Export_Sample_BOM.xlsx");
-            
-            if (!File.Exists(sampleFile))
+            // For testing convenience, if TestSet exists, point there?
+            // if (Directory.Exists(@"d:\Workshop\LARS\TestSet")) ofd.InitialDirectory = @"d:\Workshop\LARS\TestSet";
+
+            if (ofd.ShowDialog() == DialogResult.OK)
             {
-                MessageBox.Show("BOM 파일을 찾을 수 없습니다.", "에러", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
+                try
+                {
+                    _currentFilePath = ofd.FileName;
+                    _loadedItems = _processor.LoadBOM(_currentFilePath);
+                    
+                    dataGridView.DataSource = _loadedItems;
+                    MessageBox.Show($"BOM Loaded: {_loadedItems.Count} items.", "Success");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error loading BOM: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
-
-            // 파싱 및 데이터 바인딩
-            var parser = new BomParser();
-            List<BomItem> items = parser.ParseBomFile(sampleFile);
-
-            dataGridView.DataSource = items;
-            MessageBox.Show($"BOM 로드 완료: {items.Count}개 항목", "성공");
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show($"에러 발생: {ex.Message}", "에러", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
     private void BtnExport_Click(object? sender, EventArgs e)
     {
-        if (dataGridView.DataSource is not List<BomItem> items || items.Count == 0)
+        if (string.IsNullOrEmpty(_currentFilePath) || !File.Exists(_currentFilePath))
         {
-            MessageBox.Show("내보낼 데이터가 없습니다.", "알림");
+            MessageBox.Show("Please load a BOM file first.", "Warning");
             return;
         }
 
         using (SaveFileDialog sfd = new SaveFileDialog())
         {
             sfd.Filter = "Excel Files|*.xlsx";
-            sfd.FileName = $"BOM_Export_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+            sfd.FileName = Path.GetFileNameWithoutExtension(_currentFilePath) + "_Processed.xlsx";
             
             if (sfd.ShowDialog() == DialogResult.OK)
             {
                 try
                 {
-                    ExcelHelper.SaveListToExcel(items, sfd.FileName);
-                    MessageBox.Show("엑셀 저장 완료!", "성공");
+                    _processor.ProcessSingle(_currentFilePath, sfd.FileName);
+                    MessageBox.Show("BOM processed and saved successfully!", "Success");
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"저장 중 에러 발생: {ex.Message}", "에러");
+                    MessageBox.Show($"Error saving BOM: {ex.Message}", "Error");
                 }
             }
         }

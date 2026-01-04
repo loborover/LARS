@@ -1,14 +1,19 @@
+using LARS.Features.BomViewer;
+using LARS.Models;
+using LARS.Utils;
+
 namespace LARS.Forms;
 
 public partial class MainForm : Form
 {
-    private Panel sidebarPanel;
-    private Panel contentPanel;
-    private Button btnBomViewer;
-    private Button btnPartList;
-    private Button btnDailyPlan;
-    private Button btnItemCounter;
-    private Button btnStickerLabel;
+    // Initialize with null! to suppress CS8618
+    private Panel sidebarPanel = null!;
+    private Panel contentPanel = null!;
+    private Button btnBomViewer = null!;
+    private Button btnPartList = null!;
+    private Button btnDailyPlan = null!;
+    private Button btnItemCounter = null!;
+    private Button btnStickerLabel = null!;
 
     public MainForm()
     {
@@ -17,38 +22,38 @@ public partial class MainForm : Form
         ApplyModernStyle();
     }
 
+    private void InitializeComponent()
+    {
+        this.Text = "LARS";
+    }
+
     private void InitializeCustomLayout()
     {
-        // 사이드바 패널
         sidebarPanel = new Panel
         {
             Dock = DockStyle.Left,
             Width = 200,
-            BackColor = Color.FromArgb(45, 45, 48) // 어두운 테마
+            BackColor = Color.FromArgb(45, 45, 48)
         };
 
-        // 컨텐츠 패널
         contentPanel = new Panel
         {
             Dock = DockStyle.Fill,
             BackColor = Color.White
         };
 
-        // 버튼 생성
         btnBomViewer = CreateMenuButton("BOM Viewer", 0);
         btnPartList = CreateMenuButton("Part List", 50);
         btnDailyPlan = CreateMenuButton("Daily Plan", 100);
         btnItemCounter = CreateMenuButton("Item Counter", 150);
         btnStickerLabel = CreateMenuButton("Sticker Label", 200);
 
-        // 이벤트 연결
         btnBomViewer.Click += (s, e) => ShowContent(new BomViewerControl());
         btnPartList.Click += (s, e) => ShowContent(new PartListControl());
         btnDailyPlan.Click += (s, e) => ShowContent(new DailyPlanControl());
         btnItemCounter.Click += (s, e) => ShowContent(new ItemCounterControl());
         btnStickerLabel.Click += (s, e) => ShowContent(new LabelPreviewControl());
 
-        // 컨트롤 추가
         sidebarPanel.Controls.Add(btnStickerLabel);
         sidebarPanel.Controls.Add(btnItemCounter);
         sidebarPanel.Controls.Add(btnDailyPlan);

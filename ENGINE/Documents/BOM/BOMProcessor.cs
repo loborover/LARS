@@ -1,23 +1,24 @@
+using ClosedXML.Excel;
+using System.Diagnostics;
+using LARS.Models;
+
 namespace LARS.ENGINE.Documents.BOM;
 
-/// <summary>
-/// BOM 관련 파일을 찾고, 가공(처리)하는 역할을 담당하는 클래스
-/// </summary>
-/// 지금은 파일 검색 + 자리만 잡고, 나중에 엑셀 가공 로직을 채워넣습니다.
 public class BOMProcessor
 {
     private readonly string _sourceDirectory;
 
-    public BOMProcessor(string sourceDirectory)
+    private readonly List<string> _columnsForReport = new()
+    {
+        "Lvl", "Part No", "Description", "Qty", "UOM", "Maker", "Supply Type"
+    };
+
+    public BOMProcessor(string sourceDirectory = "")
     {
         _sourceDirectory = sourceDirectory;
     }
 
-    /// <summary>
-    /// 소스 폴더에서 BOM 후보 파일들을 검색합니다.
-    /// 예: 파일명에 "Excel_Export_" 가 포함된 xlsx 파일
-    /// </summary>
-    public IEnumerable<BOMFile> FindBOMFiles()
+    public IEnumerable<string> FindBOMFiles()
     {
         if (!Directory.Exists(_sourceDirectory))
             yield break;
@@ -26,38 +27,191 @@ public class BOMProcessor
 
         foreach (var file in files)
         {
-            var name = Path.GetFileName(file);
-            if (!name.Contains("Excel_Export_", StringComparison.OrdinalIgnoreCase))
-                continue;
-
-            // 날짜/라인명 파싱은 나중에 파일명 규칙 보고 추가
-            yield return new BOMFile(file);
+            if (Path.GetFileName(file).Contains("CVZ", StringComparison.OrdinalIgnoreCase) || 
+                Path.GetFileName(file).Contains("Excel_Export_", StringComparison.OrdinalIgnoreCase))
+            {
+                yield return file;
+            }
         }
     }
 
-    /// <summary> BOM 파일 하나를 가공하는 자리. </summary>
-    public void ProcessSingle(BOMFile dp, Boolean? WriteLines=false)
+    public List<BomItem> LoadBOM(string filePath)
     {
-        if (WriteLines == true) Console.WriteLine($"[가공 시작] {dp.Path}");
-        // TODO: 여기서 엑셀 열고, 기존 VBA AutoReport_BOM 로직을 C#으로 옮길 예정
-        AutoReport(dp.Path);
-        if (WriteLines == true) Console.WriteLine($"[가공 완료] {dp.Path}");
-    }
-
-    /// <summary> 소스 폴더의 BOM 파일들을 전부 순회하면서 가공합니다. </summary>
-    public void ProcessAll()
-    {
-        foreach (var dp in FindBOMFiles())
+        var items = new List<BomItem>();
+        try
         {
-            ProcessSingle(dp);
+            using (var workbook = new XLWorkbook(filePath))
+            {
+                var ws = workbook.Worksheets.Worksheet(1);
+                var headerRow = ws.Row(1);
+                var lastRow = ws.LastRowUsed().RowNumber();
+
+                var colMap = new Dictionary<string, int>();
+                foreach (var cell in headerRow.CellsUsed())
+                {
+                    colMap[cell.GetValue<string>()] = cell.Address.ColumnNumber; // Property on Address
+                }
+
+                bool HasCol(string name) => colMap.ContainsKey(name);
+
+                for (int i = 2; i <= lastRow; i++)
+                {
+                    var row = ws.Row(i);
+                    if (HasCol("Part No") && row.Cell(colMap["Part No"]).IsEmpty()) continue;
+
+                    var item = new BomItem
+                    {
+                        Level = HasCol("Lvl") ? row.Cell(colMap["Lvl"]).GetValue<string>() : "",
+                        PartNo = HasCol("Part No") ? row.Cell(colMap["Part No"]).GetValue<string>() : "",
+                        Description = HasCol("Description") ? row.Cell(colMap["Description"]).GetValue<string>() : "",
+                        Quantity = HasCol("Qty") ? GetDouble(row.Cell(colMap["Qty"])) : 0,
+                        Uom = HasCol("UOM") ? row.Cell(colMap["UOM"]).GetValue<string>() : "",
+                        Maker = HasCol("Maker") ? row.Cell(colMap["Maker"]).GetValue<string>() : "",
+                        SupplyType = HasCol("Supply Type") ? row.Cell(colMap["Supply Type"]).GetValue<string>() : ""
+                    };
+                    items.Add(item);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading BOM: {ex.Message}");
+        }
+        return items;
+    }
+    
+    private double GetDouble(IXLCell cell)
+    {
+        if (cell.IsEmpty()) return 0;
+        if (cell.DataType == XLDataType.Number) return cell.GetValue<double>();
+        if (double.TryParse(cell.GetValue<string>(), out double val)) return val;
+        return 0;
+    }
+
+    public void ProcessSingle(string filePath, string? outputPath = null)
+    {
+        try
+        {
+            using (var workbook = new XLWorkbook(filePath))
+            {
+                var ws = workbook.Worksheets.Worksheet(1);
+
+                FilterColumns(ws);
+                InsertTitleRows(ws, 3);
+                AutoTitle(ws);
+                ApplyAutoFilter(ws);
+                ApplyStyles(ws);
+
+                string savePath = outputPath ?? Path.ChangeExtension(filePath, "_Processed.xlsx");
+                workbook.SaveAs(savePath);
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Failed to process BOM: {ex.Message}", ex);
         }
     }
-    /// <summary> Target AutoReport </summary>
-    private string AutoReport(string Target)
+
+    private void FilterColumns(IXLWorksheet ws)
     {
-        string Exportpath = Target;
-        /// 사용할 열 선정, 열 제목 변경
-        /// 
-        return Exportpath;
+        var headerRow = ws.Row(1);
+        int lastCol = headerRow.LastCellUsed().Address.ColumnNumber; // Property on Address
+
+        for (int i = lastCol; i >= 1; i--)
+        {
+            var cellValue = headerRow.Cell(i).GetValue<string>();
+            if (!_columnsForReport.Contains(cellValue))
+            {
+                ws.Column(i).Delete();
+            }
+        }
+    }
+
+    private void InsertTitleRows(IXLWorksheet ws, int count)
+    {
+        ws.Row(1).InsertRowsAbove(count);
+    }
+
+    private void AutoTitle(IXLWorksheet ws)
+    {
+        var headerRow = ws.Row(4);
+        var lvlCell = headerRow.CellsUsed().FirstOrDefault(c => c.GetValue<string>() == "Lvl");
+        var partNoCell = headerRow.CellsUsed().FirstOrDefault(c => c.GetValue<string>() == "Part No");
+
+        if (lvlCell == null || partNoCell == null) return;
+
+        var lvlColIdx = lvlCell.Address.ColumnNumber;
+        var partNoColIdx = partNoCell.Address.ColumnNumber;
+        
+        var zeroRow = ws.Column(lvlColIdx).CellsUsed()
+                        .FirstOrDefault(c => c.GetValue<string>() == "0")?.Address.RowNumber;
+
+        string title = "BOM Report";
+        if (zeroRow.HasValue)
+        {
+            title = ws.Cell(zeroRow.Value, partNoColIdx).GetValue<string>();
+            int atIndex = title.IndexOf('@');
+            if (atIndex > 0)
+            {
+                title = title.Substring(0, atIndex);
+            }
+        }
+
+        var titleCell = ws.Cell(1, 1);
+        titleCell.Value = title;
+        
+        int lastCol = ws.LastColumnUsed().ColumnNumber(); // Method on cell/row/col? 
+        // Wait, IXLColumn.ColumnNumber() is a method. IXLAddress.ColumnNumber is property.
+        // ws.LastColumnUsed() returns IXLColumn? No, IXLCell/IXLRange/IXLColumn...
+        // LastColumnUsed() returns IXLCell usually? No, IXLColumn? 
+        // Docs say LastColumnUsed() returns IXLColumn.
+        // So .ColumnNumber() is correct.
+        
+        var titleRange = ws.Range(1, 1, 3, lastCol);
+        titleRange.Merge();
+        
+        titleCell.Style.Font.FontName = "LG Smart_H Bold";
+        titleCell.Style.Font.FontSize = 25;
+        titleCell.Style.Font.Bold = true;
+        titleCell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+        titleCell.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+    }
+
+    private void ApplyAutoFilter(IXLWorksheet ws)
+    {
+        var lastCol = ws.LastColumnUsed().ColumnNumber();
+        var lastRow = ws.LastRowUsed().RowNumber();
+
+        var dataRange = ws.Range(4, 1, lastRow, lastCol);
+        dataRange.SetAutoFilter();
+    }
+
+    private void ApplyStyles(IXLWorksheet ws)
+    {
+        var lastCol = ws.LastColumnUsed().ColumnNumber();
+        var lastRow = ws.LastRowUsed().RowNumber();
+        var tableRange = ws.Range(4, 1, lastRow, lastCol);
+
+        tableRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+        tableRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+        tableRange.Style.Border.OutsideBorderColor = XLColor.Black;
+        tableRange.Style.Border.InsideBorderColor = XLColor.Black;
+
+        SetColWidth(ws, "Lvl", 3.5);
+        SetColWidth(ws, "Part No", 20);
+        SetColWidth(ws, "Description", 40);
+        SetColWidth(ws, "Qty", 5);
+        SetColWidth(ws, "UOM", 5);
+        SetColWidth(ws, "Maker", 20);
+        SetColWidth(ws, "Supply Type", 15);
+    }
+
+    private void SetColWidth(IXLWorksheet ws, string headerName, double width)
+    {
+        var header = ws.Row(4).CellsUsed().FirstOrDefault(c => c.GetValue<string>() == headerName);
+        if (header != null)
+        {
+            ws.Column(header.Address.ColumnNumber).Width = width;
+        }
     }
 }
