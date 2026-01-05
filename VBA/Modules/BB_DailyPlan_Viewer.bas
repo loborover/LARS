@@ -5,9 +5,9 @@ Public Yoil_DP As Boolean ' Day of the week On/Off Switch
 Public MRB_DP As Boolean ' Manual_Reporting_Bool_DailyPlan
 
 Private BoW As Single ' Black or White
-Private DP_Processing_WB As New Workbook ' ¸ğµâ³» Àü¿ªº¯¼ö·Î ¼±¾ğÇÔ
+Private DP_Processing_WB As New Workbook ' ëª¨ë“ˆë‚´ ì „ì—­ë³€ìˆ˜ë¡œ ì„ ì–¸í•¨
 Private Target_WorkSheet As New Worksheet
-Private PrintArea As Range ' ¸ğµâ³» ÇÁ¸°Æ®¿µ¿ª
+Private PrintArea As Range ' ëª¨ë“ˆë‚´ í”„ë¦°íŠ¸ì˜ì—­
 Private Brush As New Painter
 Private Title As String, wLine As String, vDate As String
 Private vCFR As Collection ' Columns For Report
@@ -18,7 +18,7 @@ Public Sub Read_DailyPlan(Optional Handle As Boolean, Optional ByRef Target_List
         
     If Target_Listview Is Nothing Then Set Target_Listview = AutoReportHandler.ListView_DailyPlan: Target_Listview.ListItems.Clear
     Set DailyPlan = FindFilesWithTextInName(Z_Directory.Source, "Excel_Export_")
-    If DailyPlan.Count = 0 Then: If Handle Then MsgBox "¿¬°áµÈ ÁÖ¼Ò¿¡ DailyPlan ÆÄÀÏÀÌ ¾øÀ½": Exit Sub
+    If DailyPlan.Count = 0 Then: If Handle Then MsgBox "ì—°ê²°ëœ ì£¼ì†Œì— DailyPlan íŒŒì¼ì´ ì—†ìŒ": Exit Sub
     
     With Target_Listview
         For i = 1 To DailyPlan.Count
@@ -34,15 +34,15 @@ AutoReportHandler.UpdateProgressBar AutoReportHandler.PB_BOM, (i - i / 2) / Dail
                 .SubItems(3) = "Ready" 'Print
                 .SubItems(4) = CheckFileAlreadyWritten_PDF("DailyPlan " & vDate & "_" & wLine, dc_DailyPlan) 'PDF
             End With
-        .ListItems(DPCount).Checked = True ' Ã¼Å©¹Ú½º Ã¼Å©
+        .ListItems(DPCount).Checked = True ' ì²´í¬ë°•ìŠ¤ ì²´í¬
 AutoReportHandler.UpdateProgressBar AutoReportHandler.PB_BOM, i / DailyPlan.Count * 100
 SkipLoop:
         Next i
     End With
     
-    If Handle Then MsgBox "ÀÏÀÏ»ı»ê°èÈ¹¼­ " & DPCount & "Àå ¿¬°á¿Ï·á"
+    If Handle Then MsgBox "ì¼ì¼ìƒì‚°ê³„íšì„œ " & DPCount & "ì¥ ì—°ê²°ì™„ë£Œ"
 End Sub
-' ¹®¼­ ÀÚµ¿È­, Ãâ·Â±îÁö ÇÑ¹ø¿¡ ½ÇÇàÇÏ´Â Sub
+' ë¬¸ì„œ ìë™í™”, ì¶œë ¥ê¹Œì§€ í•œë²ˆì— ì‹¤í–‰í•˜ëŠ” Sub
 Public Sub Print_DailyPlan(Optional Handle As Boolean)
     Dim DPLV As ListView
     Dim DPitem As listItem
@@ -56,14 +56,14 @@ Public Sub Print_DailyPlan(Optional Handle As Boolean)
     
     PaperCopies = CInt(AutoReportHandler.DP_PN_Copies_TB.text)
     Set DPLV = AutoReportHandler.ListView_DailyPlan
-    ListCount = DPLV.ListItems.Count: If ListCount = 0 Then MsgBox "¿¬°áµÈ µ¥ÀÌÅÍ ¾øÀ½": Exit Sub
+    ListCount = DPLV.ListItems.Count: If ListCount = 0 Then MsgBox "ì—°ê²°ëœ ë°ì´í„° ì—†ìŒ": Exit Sub
 
-    For i = 1 To ListCount ' Ã¼Å©¹Ú½º È°¼ºÈ­µÈ ¾ÆÀÌÅÛ ¼±º°
+    For i = 1 To ListCount ' ì²´í¬ë°•ìŠ¤ í™œì„±í™”ëœ ì•„ì´í…œ ì„ ë³„
         Set DPitem = DPLV.ListItems.Item(i)
         If DPitem.Checked Then Chkditem.Add DPitem.index 'SubItems(1)
     Next i
     
-    If Chkditem.Count < 1 Then MsgBox "¼±ÅÃµÈ ¹®¼­ ¾øÀ½": Exit Sub
+    If Chkditem.Count < 1 Then MsgBox "ì„ íƒëœ ë¬¸ì„œ ì—†ìŒ": Exit Sub
     
     ListCount = Chkditem.Count
     For i = 1 To ListCount
@@ -71,106 +71,106 @@ AutoReportHandler.UpdateProgressBar AutoReportHandler.PB_BOM, (i - 0.99) / ListC
         Set DPitem = DPLV.ListItems.Item(Chkditem(i))
         Set DP_Processing_WB = Workbooks.Open(DPitem.SubItems(2))
 AutoReportHandler.UpdateProgressBar AutoReportHandler.PB_BOM, (i - 0.91) / ListCount * 100
-        wLine = DPitem.SubItems(1) ' Line ÀÌ¸§ ÀÎ°è
-        Set Target_WorkSheet = DP_Processing_WB.Worksheets(1): Set ws = Target_WorkSheet: Set Brush.DrawingWorksheet = Target_WorkSheet ' ¿öÅ©½ÃÆ® Å¸°ÔÆÃ
-        DP_Processing_WB.Windows(1).WindowState = xlMinimized ' ÃÖ¼ÒÈ­
-        AutoReport_DailyPlan DP_Processing_WB 'ÀÚµ¿È­ ¼­½ÄÀÛ¼º ÄÚµå
+        wLine = DPitem.SubItems(1) ' Line ì´ë¦„ ì¸ê³„
+        Set Target_WorkSheet = DP_Processing_WB.Worksheets(1): Set ws = Target_WorkSheet: Set Brush.DrawingWorksheet = Target_WorkSheet ' ì›Œí¬ì‹œíŠ¸ íƒ€ê²ŒíŒ…
+        DP_Processing_WB.Windows(1).WindowState = xlMinimized ' ìµœì†Œí™”
+        AutoReport_DailyPlan DP_Processing_WB 'ìë™í™” ì„œì‹ì‘ì„± ì½”ë“œ
 AutoReportHandler.UpdateProgressBar AutoReportHandler.PB_BOM, (i - 0.87) / ListCount * 100
         If PrintNow.DailyPlan Then
-            Printer.PrinterNameSet  ' ±âº»ÇÁ¸°ÅÍ ÀÌ¸§ ¼³Á¤, À¯ÁöµÇ´ÂÁö È®ÀÎ
+            Printer.PrinterNameSet  ' ê¸°ë³¸í”„ë¦°í„° ì´ë¦„ ì„¤ì •, ìœ ì§€ë˜ëŠ”ì§€ í™•ì¸
             ws.PrintOut ActivePrinter:=DefaultPrinter, From:=1, To:=2, copies:=PaperCopies
             DPitem.SubItems(3) = "Done" 'Print
         Else
             DPitem.SubItems(3) = "Pass" 'Print
         End If
 AutoReportHandler.UpdateProgressBar AutoReportHandler.PB_BOM, (i - 0.73) / ListCount * 100
-'ÀúÀåÀ» À§ÇØ Å¸ÀÌÆ² ¼öÁ¤
+'ì €ì¥ì„ ìœ„í•´ íƒ€ì´í‹€ ìˆ˜ì •
         Title = "DailyPlan " & DPLV.ListItems.Item(i).text & "_" & wLine
 AutoReportHandler.UpdateProgressBar AutoReportHandler.PB_BOM, (i - 0.65) / ListCount * 100
-'ÀúÀå¿©ºÎ °áÁ¤
+'ì €ì¥ì—¬ë¶€ ê²°ì •
         SavedPath = SaveFilesWithCustomDirectory("DailyPlan", DP_Processing_WB, PS_DPforPDF(PrintArea), Title, True, True, OriginalKiller.DailyPlan)
 AutoReportHandler.UpdateProgressBar AutoReportHandler.PB_BOM, (i - 0.45) / ListCount * 100
         DPitem.SubItems(4) = "Done" 'PDF
 AutoReportHandler.UpdateProgressBar AutoReportHandler.PB_BOM, (i - 0.35) / ListCount * 100
-        If MRB_DP Then Workbooks.Open (SavedPath & ".xlsx") ' ¸Ş´º¾ó ¸ğµåÀÏ ¶§ ¿­±â
+        If MRB_DP Then Workbooks.Open (SavedPath & ".xlsx") ' ë©”ë‰´ì–¼ ëª¨ë“œì¼ ë•Œ ì—´ê¸°
 'Progress Update
 AutoReportHandler.UpdateProgressBar AutoReportHandler.PB_BOM, i / ListCount * 100
     Next i
     
-    If Handle Then MsgBox ListCount & "ÀåÀÇ DailyPlan Ãâ·Â ¿Ï·á"
+    If Handle Then MsgBox ListCount & "ì¥ì˜ DailyPlan ì¶œë ¥ ì™„ë£Œ"
     
 End Sub
-' ¹®¼­ ¼­½Ä ÀÚµ¿È­
+' ë¬¸ì„œ ì„œì‹ ìë™í™”
 
 Private Sub AutoReport_DailyPlan(ByRef Wb As Workbook)
-    ' ÃÊ±âÈ­ º¯¼ö
+    ' ì´ˆê¸°í™” ë³€ìˆ˜
     Set Target_WorkSheet = Wb.Worksheets(1)
     Set vCFR = New Collection
     
-    Dim LastCol As Long, LastRow As Long ' DailyPlan µ¥ÀÌÅÍ°¡ ÀÖ´Â ¸¶Áö¸· Çà
+    Dim LastCol As Long, LastRow As Long ' DailyPlan ë°ì´í„°ê°€ ìˆëŠ” ë§ˆì§€ë§‰ í–‰
     Dim Begin As Range, Finish As Range
     
-    SetUsingColumns vCFR ' »ç¿ëÇÏ´Â ¿­ ¼±Á¤
-    AR_1_EssentialDataExtraction LastCol, LastRow  ' ÇÊ¼öµ¥ÀÌÅÍ ÃßÃâ
-    Interior_Set_DailyPlan , LastRow, PrintArea ' Range ¼­½Ä ¼³Á¤
+    SetUsingColumns vCFR ' ì‚¬ìš©í•˜ëŠ” ì—´ ì„ ì •
+    AR_1_EssentialDataExtraction LastCol, LastRow  ' í•„ìˆ˜ë°ì´í„° ì¶”ì¶œ
+    Interior_Set_DailyPlan , LastRow, PrintArea ' Range ì„œì‹ ì„¤ì •
     AutoPageSetup Target_WorkSheet, PS_DailyPlan(PrintArea)  ' PrintPageSetup
-    MarkingUp AR_2_ModelGrouping ' ¸ğµ¨ ±×·çÇÎ
+    MarkingUp AR_2_ModelGrouping ' ëª¨ë¸ ê·¸ë£¨í•‘
     
     Set vCFR = Nothing
 End Sub
-Private Sub AR_1_EssentialDataExtraction(Optional ByRef LastCol As Long = 0, Optional ByRef LastRow As Long = 0) ' AutoReport ÃÊ¹İ ¼³Á¤ / ÇÊ¼ö µ¥ÀÌÅÍ ¿µ¿ª¸¸ ÃßÃâÇÔ
+Private Sub AR_1_EssentialDataExtraction(Optional ByRef LastCol As Long = 0, Optional ByRef LastRow As Long = 0) ' AutoReport ì´ˆë°˜ ì„¤ì • / í•„ìˆ˜ ë°ì´í„° ì˜ì—­ë§Œ ì¶”ì¶œí•¨
     Dim i As Long, startRow As Long
     Dim DelCell As Range
     Dim CopiedData As New Collection ', TimeKeeper As New Collection
     Dim ws As Worksheet: Set ws = Target_WorkSheet
     
-    Application.DisplayAlerts = False ' °æ°í¹® ºñÈ°¼ºÈ­
+    Application.DisplayAlerts = False ' ê²½ê³ ë¬¸ ë¹„í™œì„±í™”
     
-    ' ÅõÀÔ½ÃÁ¡ ½ÃÀÛ½Ã°£ ÃßÃâ
-    Set DelCell = ws.Cells.Find("Planned Start Time", lookAt:=xlWhole, MatchCase:=True) ' ÅõÀÔ½ÃÁ¡ RangeÃßÃâ
+    ' íˆ¬ì…ì‹œì  ì‹œì‘ì‹œê°„ ì¶”ì¶œ
+    Set DelCell = ws.Cells.Find("Planned End Time", lookAt:=xlWhole, MatchCase:=True) ' íˆ¬ì…ì‹œì  Rangeì¶”ì¶œ
     i = DelCell.Column: startRow = DelCell.Row + 3: LastRow = Target_WorkSheet.Cells(ws.Rows.Count, 1).End(xlUp).Row
     MergeDateTime_Flexible ws, i, 1, , startRow, "", "h:mm"
     
-    ' ÇÊ¿ä¾ø´Â Çà¿­ »èÁ¦/¼û±â±â
-    ws.Rows(1).Delete: ws.Columns("B:D").Delete ' À×¿© Çà¿­ »èÁ¦
-    ws.Cells(1, 1).Value = "ÅõÀÔ" & vbLf & "½ÃÁ¡"
-    LastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column ' µ¥ÀÌÅÍ°¡ Á¸ÀçÇÏ´Â ¸¶Áö¸· ¿­
+    ' í•„ìš”ì—†ëŠ” í–‰ì—´ ì‚­ì œ/ìˆ¨ê¸°ê¸°
+    ws.Rows(1).Delete: ws.Columns("B:D").Delete ' ì‰ì—¬ í–‰ì—´ ì‚­ì œ
+    ws.Cells(1, 1).Value = "íˆ¬ì…" & vbLf & "ì‹œì "
+    LastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column ' ë°ì´í„°ê°€ ì¡´ì¬í•˜ëŠ” ë§ˆì§€ë§‰ ì—´
 
     For i = LastCol To 2 Step -1
         Set DelCell = ws.Cells(2, i)
-        ' ÇöÀç ¿­ÀÌ vCFR¿¡ ¾ø°Å³ª, ¼ıÀÚ(³¯Â¥)¸é¼­ »ı»ê·®ÀÌ 0ÀÏ °æ¿ì »èÁ¦
+        ' í˜„ì¬ ì—´ì´ vCFRì— ì—†ê±°ë‚˜, ìˆ«ì(ë‚ ì§œ)ë©´ì„œ ìƒì‚°ëŸ‰ì´ 0ì¼ ê²½ìš° ì‚­ì œ
         If Not IsInCollection(DelCell.Value, vCFR) Xor _
-            (IsNumeric(DelCell.Value) And DelCell.Offset(1, 0).Value > 0) Then ws.Columns(i).Delete ' ¼û±â·Á¸é .Hidden = True
+            (IsNumeric(DelCell.Value) And DelCell.Offset(1, 0).Value > 0) Then ws.Columns(i).Delete ' ìˆ¨ê¸°ë ¤ë©´ .Hidden = True
     Next i
-    ' »õ·Î¿î ¼­½Ä Àû¿ëÀ» À§ÇÑ ¿­ Ãß°¡ ¹× ¼öÁ¤ÀÛ¾÷
-    Set DelCell = ws.Rows(2).Find(What:="W/O °èÈ¹¼ö·®", lookAt:=xlWhole)
-    If DelCell Is Nothing Then Stop ' ¿À·ù³ª¸é Á¤Áö
-    DelCell.Value = "°èÈ¹" ' ¿ø·¡ÀÇ ¿­ Á¦¸ñÀÌ ³Ê¹« ±æ¾î¼­ ¼öÁ¤
-    DelCell.Offset(0, 1).Value = "IN" ' ¿ø·¡ÀÇ ¿­ Á¦¸ñÀÌ ³Ê¹« ±æ¾î¼­ ¼öÁ¤
-    DelCell.Offset(0, 2).Value = "OUT" ' ¿ø·¡ÀÇ ¿­ Á¦¸ñÀÌ ³Ê¹« ±æ¾î¼­ ¼öÁ¤
-    startRow = DelCell.Offset(2, 0).Row ' StartRow ÃßÃâ
-    Set DelCell = DelCell.Offset(0, 3) ' °èÈ¹ ¼¿¿¡¼­ ¿À¸¥ÂÊÀ¸·Î ¿­ÀÌµ¿ 3¹ø ÇÏ¸é ±İÀÏ ³¯Â¥ ³ª¿È
-    ws.Columns(DelCell.Column).Insert Shift:=xlShiftToRight, CopyOrigin:=xlFormatFromLeftOrAbove ' Connecter 2*2¼¿·Î ¸¸µê
+    ' ìƒˆë¡œìš´ ì„œì‹ ì ìš©ì„ ìœ„í•œ ì—´ ì¶”ê°€ ë° ìˆ˜ì •ì‘ì—…
+    Set DelCell = ws.Rows(2).Find(What:="W/O ê³„íšìˆ˜ëŸ‰", lookAt:=xlWhole)
+    If DelCell Is Nothing Then Stop ' ì˜¤ë¥˜ë‚˜ë©´ ì •ì§€
+    DelCell.Value = "ê³„íš" ' ì›ë˜ì˜ ì—´ ì œëª©ì´ ë„ˆë¬´ ê¸¸ì–´ì„œ ìˆ˜ì •
+    DelCell.Offset(0, 1).Value = "IN" ' ì›ë˜ì˜ ì—´ ì œëª©ì´ ë„ˆë¬´ ê¸¸ì–´ì„œ ìˆ˜ì •
+    DelCell.Offset(0, 2).Value = "OUT" ' ì›ë˜ì˜ ì—´ ì œëª©ì´ ë„ˆë¬´ ê¸¸ì–´ì„œ ìˆ˜ì •
+    startRow = DelCell.Offset(2, 0).Row ' StartRow ì¶”ì¶œ
+    Set DelCell = DelCell.Offset(0, 3) ' ê³„íš ì…€ì—ì„œ ì˜¤ë¥¸ìª½ìœ¼ë¡œ ì—´ì´ë™ 3ë²ˆ í•˜ë©´ ê¸ˆì¼ ë‚ ì§œ ë‚˜ì˜´
+    ws.Columns(DelCell.Column).Insert Shift:=xlShiftToRight, CopyOrigin:=xlFormatFromLeftOrAbove ' Connecter 2*2ì…€ë¡œ ë§Œë“¦
     ws.Columns(DelCell.Column).Insert Shift:=xlShiftToRight, CopyOrigin:=xlFormatFromLeftOrAbove
     DelCell.Offset(0, -1).Value = "Connecter"
     ws.Range(DelCell.Offset(-1, -2), DelCell.Offset(0, -1)).Merge
     
     Do Until ws.Cells(1, DelCell.Offset(0, 3).Column + 1).Value = ""
-        ws.Columns(DelCell.Offset(0, 3).Column + 1).Delete ' D-day ±âÁØ, +3ÀÏ±îÁö »ì¸®°í ½Î±×¸® »èÁ¦
+        ws.Columns(DelCell.Offset(0, 3).Column + 1).Delete ' D-day ê¸°ì¤€, +3ì¼ê¹Œì§€ ì‚´ë¦¬ê³  ì‹¸ê·¸ë¦¬ ì‚­ì œ
     Loop
-    LastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column ' µ¥ÀÌÅÍ°¡ Á¸ÀçÇÏ´Â ¸¶Áö¸· ¿­
-    ws.Cells(2, LastCol + 1).Value = wLine & "-Line" ' ¶óÀÎ µ¥ÀÌÅÍ ±âÀÔ
+    LastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column ' ë°ì´í„°ê°€ ì¡´ì¬í•˜ëŠ” ë§ˆì§€ë§‰ ì—´
+    ws.Cells(2, LastCol + 1).Value = wLine & "-Line" ' ë¼ì¸ ë°ì´í„° ê¸°ì…
     ws.Range(ws.Cells(1, LastCol + 1), ws.Cells(2, LastCol + 2)).Merge
     
-    LastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column ' ¸¶Áö¸·³¯Â¥ ¿­ Ã£±â
-    LastRow = ws.Cells(ws.Rows.Count, LastCol - 1).End(xlUp).Row ' ¸¶Áö¸· ³¯Â¥ÀÇ ¸¶Áö¸· Çà Ã£±â
-    Title = DelCell.Column ' D-Day ¼¿ÀÇ ¿­ °ªÀ» Titleº¯¼ö·Î ¿Å±è.
+    LastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column ' ë§ˆì§€ë§‰ë‚ ì§œ ì—´ ì°¾ê¸°
+    LastRow = ws.Cells(ws.Rows.Count, LastCol - 1).End(xlUp).Row ' ë§ˆì§€ë§‰ ë‚ ì§œì˜ ë§ˆì§€ë§‰ í–‰ ì°¾ê¸°
+    Title = DelCell.Column ' D-Day ì…€ì˜ ì—´ ê°’ì„ Titleë³€ìˆ˜ë¡œ ì˜®ê¹€.
     
-    Do Until ws.Cells(LastRow + 1, 2).Value = "" ' ¸¶Áö¸· ¹ØÀ¸·Î °ªÀÌ ÀÖÀ¸¸é »èÁ¦
+    Do Until ws.Cells(LastRow + 1, 2).Value = "" ' ë§ˆì§€ë§‰ ë°‘ìœ¼ë¡œ ê°’ì´ ìˆìœ¼ë©´ ì‚­ì œ
         ws.Rows(LastRow + 1).Delete
     Loop
     
-    Set DelCell = ws.Rows(2).Find(What:="°èÈ¹", lookAt:=xlWhole)
+    Set DelCell = ws.Rows(2).Find(What:="ê³„íš", lookAt:=xlWhole)
     For i = 0 To 8
         If i <> 3 And i <> 4 Then
             DelCell.Offset(1, i).Formula = "=Sum(" & ws.Range(DelCell.Offset(2, i), ws.Cells(LastRow, DelCell.Offset(2, i).Column)).Address & ")"
@@ -194,7 +194,7 @@ Private Sub AR_1_EssentialDataExtraction(Optional ByRef LastCol As Long = 0, Opt
         .VerticalAlignment = xlCenter
     End With
     
-    Application.DisplayAlerts = True ' °æ°í¹® È°¼ºÈ­
+    Application.DisplayAlerts = True ' ê²½ê³ ë¬¸ í™œì„±í™”
     
 End Sub
 ' Grouping for each LOT Models
@@ -264,7 +264,7 @@ Private Sub MarkingUp(ByRef Target As D_Maps)
     Dim i As Long
     Set Brush.DrawingWorksheet = Target_WorkSheet
     
-    For i = 1 To Target.Count(SubG) ' MakeBlock À§¾Æ·¡ xlThin, Áß°£ xlHairline
+    For i = 1 To Target.Count(SubG) ' MakeBlock ìœ„ì•„ë˜ xlThin, ì¤‘ê°„ xlHairline
         MakeBlock Target.Sub_Lot(i).Start_R, Target.Sub_Lot(i).End_R
     Next i
     
@@ -286,12 +286,12 @@ Private Sub MarkingUp(ByRef Target As D_Maps)
     
 End Sub
 
-Private Sub SetUsingColumns(ByRef UsingCol As Collection) ' »ì¸± ¿­ ¼±Á¤
+Private Sub SetUsingColumns(ByRef UsingCol As Collection) ' ì‚´ë¦´ ì—´ ì„ ì •
     UsingCol.Add "W/O"
-    UsingCol.Add "ºÎÇ°¹øÈ£"
-    UsingCol.Add "W/O °èÈ¹¼ö·®"
+    UsingCol.Add "ë¶€í’ˆë²ˆí˜¸"
+    UsingCol.Add "W/O ê³„íšìˆ˜ëŸ‰"
     UsingCol.Add "W/O Input"
-    UsingCol.Add "W/O½ÇÀû"
+    UsingCol.Add "W/Oì‹¤ì "
 End Sub
 
 Private Sub Interior_Set_DailyPlan(Optional ByRef FirstRow As Long = 3, Optional LastRow As Long, Optional ByRef PR As Range)
@@ -310,15 +310,15 @@ Private Sub Interior_Set_DailyPlan(Optional ByRef FirstRow As Long = 3, Optional
     SetEdge(5) = xlInsideHorizontal
     SetEdge(6) = xlInsideVertical
     
-    LastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column ' µ¥ÀÌÅÍ°¡ Á¸ÀçÇÏ´Â ¸¶Áö¸· ¿­
-    With ws.Range(ws.Cells(1, 1), ws.Cells(2, LastCol)) ' Á¦¸ñºÎºĞ interior
+    LastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column ' ë°ì´í„°ê°€ ì¡´ì¬í•˜ëŠ” ë§ˆì§€ë§‰ ì—´
+    With ws.Range(ws.Cells(1, 1), ws.Cells(2, LastCol)) ' ì œëª©ë¶€ë¶„ interior
         .WrapText = True
         .Interior.Color = RGB(199, 253, 240)
         .Font.Bold = True
     End With
     
-    With PR ' PrintRange ÀÎ¼â¿µ¿ªÀÇ ÀÎÅ×¸®¾î ¼¼ÆÃ
-        .Font.Name = "LG½º¸¶Æ®Ã¼2.0 Regular"
+    With PR ' PrintRange ì¸ì‡„ì˜ì—­ì˜ ì¸í…Œë¦¬ì–´ ì„¸íŒ…
+        .Font.Name = "LGìŠ¤ë§ˆíŠ¸ì²´2.0 Regular"
         .Font.Size = 12
         
         For i = LBound(SetEdge) To UBound(SetEdge)
@@ -329,12 +329,12 @@ Private Sub Interior_Set_DailyPlan(Optional ByRef FirstRow As Long = 3, Optional
             End With
         Next i
         
-        .Rows.rowHeight = 15.75 ' Çà ³ôÀÌ ÁöÁ¤
+        .Rows.rowHeight = 15.75 ' í–‰ ë†’ì´ ì§€ì •
     End With
     
     If Yoil_DP Then
         Dim Target As Range
-        Set Target = ws.Range("2:2").Find(What:="°èÈ¹", LookIn:=xlValues, lookAt:=xlWhole).Offset(0, 5)
+        Set Target = ws.Range("2:2").Find(What:="ê³„íš", LookIn:=xlValues, lookAt:=xlWhole).Offset(0, 5)
         For i = 0 To 3
             DecodeDate Target.Offset(0, i)
             If Not i = 0 Then DatePartLining Target.Offset(0, i - 1)
@@ -351,7 +351,7 @@ Private Sub Interior_Set_DailyPlan(Optional ByRef FirstRow As Long = 3, Optional
     arrr(1) = 7 ' Connecter Col is 7
     arrr(2) = 13 ' Finish_Line Col is 13
     
-    For i = FirstRow To LastRow ' Connecter, FinishLine Áß°£¼± »èÁ¦ ÄÚµå
+    For i = FirstRow To LastRow ' Connecter, FinishLine ì¤‘ê°„ì„  ì‚­ì œ ì½”ë“œ
         For Each ACol In arrr
             With ws
                 Set tempRange = .Range(.Cells(i, ACol), .Cells(i, ACol + 1))
@@ -367,15 +367,15 @@ Private Sub Interior_Set_DailyPlan(Optional ByRef FirstRow As Long = 3, Optional
         If xCell.Value = "" Then xCell.Interior.Color = RGB(BoW, BoW, BoW) ' Brightness
     Next xCell
     
-' ¿­ ³Êºñ ÁöÁ¤
-    colWidth.Add 6.5   ' ÅõÀÔ½ÃÁ¡ 10.1
+' ì—´ ë„ˆë¹„ ì§€ì •
+    colWidth.Add 6.5   ' íˆ¬ì…ì‹œì  10.1
     colWidth.Add 13   ' W/O 11
-    colWidth.Add 28   ' ºÎÇ°¹øÈ£ 27
-    colWidth.Add 6  ' ¼ö·®/°èÈ¹
-    colWidth.Add 6  ' ¼ö·®/IN
-    colWidth.Add 6  ' ¼ö·®/OUT
+    colWidth.Add 28   ' ë¶€í’ˆë²ˆí˜¸ 27
+    colWidth.Add 6  ' ìˆ˜ëŸ‰/ê³„íš
+    colWidth.Add 6  ' ìˆ˜ëŸ‰/IN
+    colWidth.Add 6  ' ìˆ˜ëŸ‰/OUT
     colWidth.Add 7.5  ' Connect_1 Connect Width = 13.5 // 6.5
-    colWidth.Add 6  ' Connect_2 ' Day ³Êºñ¶û ¸ÂÃç¾ßÇÔ
+    colWidth.Add 6  ' Connect_2 ' Day ë„ˆë¹„ë‘ ë§ì¶°ì•¼í•¨
     colWidth.Add 6 ' D-Day
     colWidth.Add 6 ' D+1
     colWidth.Add 6 ' D+2
@@ -391,33 +391,33 @@ Private Sub Interior_Set_DailyPlan(Optional ByRef FirstRow As Long = 3, Optional
 End Sub
 
 Private Function GetDailyPlanWhen(DailyPlanDirectiory As String) As String
-    ' Excel ¾ÖÇÃ¸®ÄÉÀÌ¼ÇÀ» »õ·Î¿î ÀÎ½ºÅÏ½º·Î »ı¼º
+    ' Excel ì• í”Œë¦¬ì¼€ì´ì…˜ì„ ìƒˆë¡œìš´ ì¸ìŠ¤í„´ìŠ¤ë¡œ ìƒì„±
     Dim xlApp As Excel.Application: Set xlApp = New Excel.Application: xlApp.Visible = False
-    Dim Wb As Workbook: Set Wb = xlApp.Workbooks.Open(DailyPlanDirectiory) ' ¿öÅ©ºÏ ¿­±â
-    Dim ws As Worksheet: Set ws = Wb.Worksheets(1) ' ¿öÅ©½ÃÆ® ¼±ÅÃ
+    Dim Wb As Workbook: Set Wb = xlApp.Workbooks.Open(DailyPlanDirectiory) ' ì›Œí¬ë¶ ì—´ê¸°
+    Dim ws As Worksheet: Set ws = Wb.Worksheets(1) ' ì›Œí¬ì‹œíŠ¸ ì„ íƒ
 
-    ' °ªÀ» ÀĞ¾î¿À±â
+    ' ê°’ì„ ì½ì–´ì˜¤ê¸°
     Dim col(1 To 2) As Long, smallestValue As Long: smallestValue = 31
     Dim Cell As Range, Finder As Range
         
-    For Each Finder In ws.Rows(2).Cells ' DP¿¡¼­ ³¯Â¥¸¦ Ã£´Â ÁÙ
-        If Finder.Value Like "*¿ù" And Finder.Offset(2, 0).Value > 0 Then Set Cell = Finder: Exit For
+    For Each Finder In ws.Rows(2).Cells ' DPì—ì„œ ë‚ ì§œë¥¼ ì°¾ëŠ” ì¤„
+        If Finder.Value Like "*ì›”" And Finder.Offset(2, 0).Value > 0 Then Set Cell = Finder: Exit For
         col(1) = col(1) + 1: If col(1) > 70 Then Exit For
     Next Finder
-    If Cell Is Nothing Then GetDailyPlanWhen = "It's Not a DailyPlan": GoTo NAD ' ¿­¶÷ÇÑ ¹®¼­°¡ DailyPlanÀÌ ¾Æ´Ò½Ã ¿À·ùÃ³¸® ´Ü
-    Title = Cell.Value ' »ı»ê ¿ù
-    col(1) = Cell.MergeArea.Cells(1, 1).Column: col(2) = Cell.MergeArea.Cells(1, Cell.MergeArea.Columns.Count).Column ' »ı»ê ÀÏ Range ÁöÁ¤À» À§ÇÑ ¿­ °ª ÃßÀû
+    If Cell Is Nothing Then GetDailyPlanWhen = "It's Not a DailyPlan": GoTo NAD ' ì—´ëŒí•œ ë¬¸ì„œê°€ DailyPlanì´ ì•„ë‹ì‹œ ì˜¤ë¥˜ì²˜ë¦¬ ë‹¨
+    Title = Cell.Value ' ìƒì‚° ì›”
+    col(1) = Cell.MergeArea.Cells(1, 1).Column: col(2) = Cell.MergeArea.Cells(1, Cell.MergeArea.Columns.Count).Column ' ìƒì‚° ì¼ Range ì§€ì •ì„ ìœ„í•œ ì—´ ê°’ ì¶”ì 
     For Each Cell In ws.Range(ws.Cells(3, col(1)), ws.Cells(3, col(2)))
         If IsNumeric(Cell.Value) And Cell.Offset(1, 0).Value > 0 And Cell.Value < smallestValue Then smallestValue = Cell.Value
     Next Cell
-    Title = Title & "-" & smallestValue & "ÀÏ" ' Title = *¿ù-*ÀÏ
-    GetDailyPlanWhen = Title ' ³¯Â¥Çü Á¦¸ñ°ª ÀÎ°è
-    Title = smallestValue ' ³¯Â¥°ª
-    Set Cell = ws.Rows("2:3").Find(What:="»ı»ê ¶óÀÎ", lookAt:=xlWhole, LookIn:=xlValues)
+    Title = Title & "-" & smallestValue & "ì¼" ' Title = *ì›”-*ì¼
+    GetDailyPlanWhen = Title ' ë‚ ì§œí˜• ì œëª©ê°’ ì¸ê³„
+    Title = smallestValue ' ë‚ ì§œê°’
+    Set Cell = ws.Rows("2:3").Find(What:="ìƒì‚° ë¼ì¸", lookAt:=xlWhole, LookIn:=xlValues)
     wLine = Cell.Offset(2, 0).Value
 NAD:
-    Wb.Close SaveChanges:=False: Set Wb = Nothing ' ¿öÅ©ºÏ ´İ±â
-    xlApp.Quit: Set xlApp = Nothing ' Excel ¾ÖÇÃ¸®ÄÉÀÌ¼Ç Á¾·á
+    Wb.Close SaveChanges:=False: Set Wb = Nothing ' ì›Œí¬ë¶ ë‹«ê¸°
+    xlApp.Quit: Set xlApp = Nothing ' Excel ì• í”Œë¦¬ì¼€ì´ì…˜ ì¢…ë£Œ
 End Function
 
 Public Sub MMG_Do() ' Manual Model Grouping
@@ -428,25 +428,25 @@ Public Sub MMG_Do() ' Manual Model Grouping
     If vCFR Is Nothing Then Set vCFR = New Collection
     
     On Error Resume Next
-        Set ws = DP_Processing_WB.Worksheets(1) ' ¿¬»ê ¿Ï·áµÈ ¿öÅ©½ÃÆ® ¿ì¼± ÂüÁ¶
+        Set ws = DP_Processing_WB.Worksheets(1) ' ì—°ì‚° ì™„ë£Œëœ ì›Œí¬ì‹œíŠ¸ ìš°ì„  ì°¸ì¡°
         If Err.Number <> 0 Then
-            Set ws = ActiveWorkbook.ActiveSheet ' ¿öÅ©½ÃÆ® ÂüÁ¶ ½ÇÆĞ½Ã È°¼ºÈ­ ¿öÅ©½ÃÆ® ÂüÁ¶
-            Set CritR = ws.Range(Selection.Address) ' ¸ğµ¨¹øÈ£ ¿µ¿ª ÂüÁ¶
+            Set ws = ActiveWorkbook.ActiveSheet ' ì›Œí¬ì‹œíŠ¸ ì°¸ì¡° ì‹¤íŒ¨ì‹œ í™œì„±í™” ì›Œí¬ì‹œíŠ¸ ì°¸ì¡°
+            Set CritR = ws.Range(Selection.Address) ' ëª¨ë¸ë²ˆí˜¸ ì˜ì—­ ì°¸ì¡°
             Err.Clear
         Else
-            Set CritR = ws.Range(Selection.Address) ' ¿öÅ©½ÃÆ® ÂüÁ¶ ¼º°ø ½Ã ¸ğµ¨¹øÈ£ ¿µ¿ª ÂüÁ¶
+            Set CritR = ws.Range(Selection.Address) ' ì›Œí¬ì‹œíŠ¸ ì°¸ì¡° ì„±ê³µ ì‹œ ëª¨ë¸ë²ˆí˜¸ ì˜ì—­ ì°¸ì¡°
         End If
     On Error GoTo 0
     Set Brush.DrawingWorksheet = ws
     
-    CritCol = ws.Cells.Find("ºÎÇ°¹øÈ£", lookAt:=xlWhole, MatchCase:=True).Column
-    If CritR.Column <> CritCol Then MsgBox ("Àß¸øµÈ ÂüÁ¶"): Exit Sub
+    CritCol = ws.Cells.Find("ë¶€í’ˆë²ˆí˜¸", lookAt:=xlWhole, MatchCase:=True).Column
+    If CritR.Column <> CritCol Then MsgBox ("ì˜ëª»ëœ ì°¸ì¡°"): Exit Sub
     
     Brush.Stamp_it_Auto SetRangeForDraw(CritR), CollectionForUndo:=vCFR
 End Sub
 
 Public Sub MMG_Undo() ' Manual Model Grouping
-    If vCFR Is Nothing Or vCFR.Count = 0 Then MsgBox "·ÎµùµÈ µ¥ÀÌÅÍ ¾øÀ½", vbDefaultButton4: Exit Sub
+    If vCFR Is Nothing Or vCFR.Count = 0 Then MsgBox "ë¡œë”©ëœ ë°ì´í„° ì—†ìŒ", vbDefaultButton4: Exit Sub
     vCFR.Item(vCFR.Count).Delete
     vCFR.Remove (vCFR.Count)
 End Sub
@@ -455,7 +455,7 @@ Public Sub Re_Grouping()
     Set Target_WorkSheet = Selection.Worksheet
     Set Brush.DrawingWorksheet = Target_WorkSheet
     Brush.DeleteShapes
-    Dim CriterionCell As Range: Set CriterionCell = Target_WorkSheet.Cells.Find("ºÎÇ°¹øÈ£", lookAt:=xlWhole, MatchCase:=True)
+    Dim CriterionCell As Range: Set CriterionCell = Target_WorkSheet.Cells.Find("ë¶€í’ˆë²ˆí˜¸", lookAt:=xlWhole, MatchCase:=True)
     MarkingUp AR_2_ModelGrouping(CriterionCell.Row + 3, CriterionCell.Column, Target_WorkSheet)
 End Sub
 
@@ -466,7 +466,7 @@ Private Function SetRangeForDraw(ByRef Criterion_Target As Range) As Range
     Utillity.GetRangeBoundary Criterion_Target, _
                                     FirstRow, LastRow, _
                                     FirstCol, LastCol
-    LastCol = FirstCol + 6 ' 6°³ ¿­ ÀÌµ¿
+    LastCol = FirstCol + 6 ' 6ê°œ ì—´ ì´ë™
     Set SetRangeForDraw = ws.Range(ws.Cells(FirstRow, LastCol), ws.Cells(LastRow, LastCol + 3))
     'Debug.Print "SetRangeForDraw : " & SetRangeForDraw.Address
 End Function
@@ -477,22 +477,22 @@ Private Sub DecodeDate(ByRef Target As Range)
     Dim vDD As Long, LastRow As Long
     Dim WK As String, DT As Date
     
-    LastRow = ws.Cells(ws.Rows.Count, Target.Column).End(xlUp).Row ' ³¯Â¥ ¼¿ÀÇ ¸¶Áö¸· Çà ÃßÀû
-    DT = Int(CDate(ws.Cells(LastRow, 1).Value)) ' ¸¶Áö¸· ÇàÀÇ Ã¹ ¿­ÀÌ ³¯Â¥ µ¥ÀÌÅÍ°¡ ÀÖ´Â ¼¿ÀÓ
-    vDD = CInt(Target.Value) ' ÀÏ´Ü °íÀ¯ ³¯Â¥°ª ÀúÀå
-    If Day(DT) <> vDD Then DT = DateSerial(Year(DT), Month(DT), vDD) ' ½ÇÁ¦³¯Â¥°ª(DT)°ú ¸í½ÃµÈ³¯Â¥°ª(vDD)¸¦ ºñ±³ÈÄ ¸í½ÃµÈ ³¯Â¥°ªÀ» ÃßÁ¾ÇÏµµ·Ï ¼³°è
-    WK = WeekdayKorean(DT) ' ¿äÀÏ º¯È¯
-    Target.Value = DT ' ÃÖÁ¾°ª Àü´Ş
-    Target.NumberFormat = "d.aaa" ' ³¯Â¥¿Í ¿äÀÏÀÌ ±âÀçµÇµµ·Ï Æ÷¸Ë
+    LastRow = ws.Cells(ws.Rows.Count, Target.Column).End(xlUp).Row ' ë‚ ì§œ ì…€ì˜ ë§ˆì§€ë§‰ í–‰ ì¶”ì 
+    DT = Int(CDate(ws.Cells(LastRow, 1).Value)) ' ë§ˆì§€ë§‰ í–‰ì˜ ì²« ì—´ì´ ë‚ ì§œ ë°ì´í„°ê°€ ìˆëŠ” ì…€ì„
+    vDD = CInt(Target.Value) ' ì¼ë‹¨ ê³ ìœ  ë‚ ì§œê°’ ì €ì¥
+    If Day(DT) <> vDD Then DT = DateSerial(Year(DT), Month(DT), vDD) ' ì‹¤ì œë‚ ì§œê°’(DT)ê³¼ ëª…ì‹œëœë‚ ì§œê°’(vDD)ë¥¼ ë¹„êµí›„ ëª…ì‹œëœ ë‚ ì§œê°’ì„ ì¶”ì¢…í•˜ë„ë¡ ì„¤ê³„
+    WK = WeekdayKorean(DT) ' ìš”ì¼ ë³€í™˜
+    Target.Value = DT ' ìµœì¢…ê°’ ì „ë‹¬
+    Target.NumberFormat = "d.aaa" ' ë‚ ì§œì™€ ìš”ì¼ì´ ê¸°ì¬ë˜ë„ë¡ í¬ë§·
     With Target
-        .WrapText = False ' ÁÙ¹Ù²Ş False
-        .ShrinkToFit = True ' ¼¿¿¡ ¸ÂÃã True
-        .HorizontalAlignment = xlCenter ' °¡·Î Áß¾ÓÁ¤·Ä
-        .VerticalAlignment = xlCenter ' ¼¼·Î Áß¾ÓÁ¤·Ä
+        .WrapText = False ' ì¤„ë°”ê¿ˆ False
+        .ShrinkToFit = True ' ì…€ì— ë§ì¶¤ True
+        .HorizontalAlignment = xlCenter ' ê°€ë¡œ ì¤‘ì•™ì •ë ¬
+        .VerticalAlignment = xlCenter ' ì„¸ë¡œ ì¤‘ì•™ì •ë ¬
         Select Case WK
-            Case Is = "Åä"
+            Case Is = "í† "
                 .Interior.Color = RGB(150, 200, 255)
-            Case Is = "ÀÏ"
+            Case Is = "ì¼"
                 .Interior.Color = RGB(255, 150, 200)
             Case Else
                 .Interior.Color = RGB(150, 255, 200)
@@ -510,11 +510,11 @@ Private Sub DatePartLining(ByRef Target As Range)
     vThis = Target.Value
     vNext = Target.Offset(0, 1).Value
 
-    ' ³¯Â¥ ¾Æ´Ï¸é Áï½Ã Á¾·á(Á¶¿ëÈ÷ ¹«½Ã)
+    ' ë‚ ì§œ ì•„ë‹ˆë©´ ì¦‰ì‹œ ì¢…ë£Œ(ì¡°ìš©íˆ ë¬´ì‹œ)
     If Not IsDate(vThis) Then Exit Sub
     If Not IsDate(vNext) Then Exit Sub
 
-    ' ³¯Â¥¸¸ Á¤±ÔÈ­(½Ã°£ Á¦°Å)
+    ' ë‚ ì§œë§Œ ì •ê·œí™”(ì‹œê°„ ì œê±°)
     ThisDate = DateValue(CDate(vThis))
     NextDate = DateValue(CDate(vNext))
 
@@ -522,7 +522,7 @@ Private Sub DatePartLining(ByRef Target As Range)
     w2 = DatePart("ww", NextDate, vbMonday, vbFirstFourDays)
 
     If w1 <> w2 Then
-        ' ¡°°¢ ³¯Â¥¼¿ »çÀÌ¡±¸é Target ¿À¸¥ÂÊ Å×µÎ¸®°¡ °¡Àå Á¤È®
+        ' â€œê° ë‚ ì§œì…€ ì‚¬ì´â€ë©´ Target ì˜¤ë¥¸ìª½ í…Œë‘ë¦¬ê°€ ê°€ì¥ ì •í™•
         With ws.Columns(Target.Column).Borders(xlEdgeRight)
             .LineStyle = xlDouble
             .Weight = xlThick
