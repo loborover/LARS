@@ -1,4 +1,4 @@
-﻿### BA_BOM_Viewer.bas
+### BA_BOM_Viewer.bas
 ````vba
 Option Explicit
 '한번 만든 Title의 값을 이 모듈안에서 다른 서브루틴, 함수에서 참조하기 위해 모듈부에서 선언
@@ -691,7 +691,7 @@ Private Sub AR_1_EssentialDataExtraction(Optional ByRef LastCol As Long = 0, Opt
     Application.DisplayAlerts = False ' 경고문 비활성화
     
     ' 투입시점 시작시간 추출
-    Set DelCell = ws.Cells.Find("Planned Start Time", lookAt:=xlWhole, MatchCase:=True) ' 투입시점 Range추출
+    Set DelCell = ws.Cells.Find("Planned End Time", lookAt:=xlWhole, MatchCase:=True) ' 투입시점 Range추출
     i = DelCell.Column: startRow = DelCell.Row + 3: LastRow = Target_WorkSheet.Cells(ws.Rows.Count, 1).End(xlUp).Row
     MergeDateTime_Flexible ws, i, 1, , startRow, "", "h:mm"
     
