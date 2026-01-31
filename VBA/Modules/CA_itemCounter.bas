@@ -232,10 +232,10 @@ Private Sub Writing_itemCounter_from_PL(ByRef Target As Collection)
     
     Dim i As Long
     Dim Ref(0 To 3) As Date
-    Ref(0) = "2025-12-19"
-    Ref(1) = "2025-12-22"
-    Ref(2) = "2025-12-23"
-    Ref(3) = "2025-12-24"
+    Ref(0) = "2026-01-17"
+    Ref(1) = "2026-01-19"
+    Ref(2) = "2026-01-20"
+    Ref(3) = "2026-01-21"
     With ws
         For i = 0 To 9
             .Columns(baseCol).Delete

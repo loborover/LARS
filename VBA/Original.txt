@@ -1222,7 +1222,7 @@ Sub T()
 End Sub
 
 Sub icTester()
-    CA_itemCounter.PL2IC "D:\Downloads\공급문서\AutoReport\PartList\PartList 12월-19일_C11.xlsx"
+    CA_itemCounter.PL2IC "D:\Downloads\공급문서\AutoReport\PartList\PartList 01월-17일_C11.xlsx"
     
     ReActive
 End Sub
@@ -3833,15 +3833,15 @@ Private Sub AR_1_EssentialDataExtraction() ' AutoReport 초반 설정 / 필수 �
         vCell.Value = vCell.Value & "." & vCell.Offset(0, 1).Value ' 모델, Suffix 열 병합
     Next i
     ws.Columns(vCell.Offset(0, 1).Column).Delete ' 불필요한 열 삭제처리
-    CritCol(1) = ws.Rows(1).Find("계획 수량", lookAt:=xlWhole, LookIn:=xlValues).Offset(0, 1).Column
+    CritCol(1) = ws.Rows(1).Find("계획 수량", lookAt:=xlWhole, LookIn:=xlValues).Column
     CritCol(2) = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
-    PartCombine ws.Range(ws.Cells(1, CritCol(1)), ws.Cells(1, CritCol(2))), vStart, vEnd ' 단일 파트명으로 병합처리
-    DeleteDuplicateRowsInColumn (CritCol(1) - 4), vStart, vEnd, ws ' WorkOrder 중복 행 제거
-    For Each vCell In ws.Range(ws.Cells(1, CritCol(1)), ws.Cells(1, CritCol(2))) ' 제목 열 수정
+    PartCombine ws.Range(ws.Cells(1, CritCol(1) + 1), ws.Cells(1, CritCol(2))), vStart, vEnd ' 단일 파트명으로 병합처리
+    DeleteDuplicateRowsInColumn (CritCol(1) - 3), vStart, vEnd, ws, CritCol(1) ' WorkOrder 중복 행 제거
+    For Each vCell In ws.Range(ws.Cells(1, CritCol(1) + 1), ws.Cells(1, CritCol(2))) ' 제목 열 수정
         vCell.Value = Replace(ExtractBracketValue(vCell.Value), "_", vbLf)
     Next vCell
-    Replacing_Parts ws.Range(ws.Cells(vStart, CritCol(1)), ws.Cells(vEnd, CritCol(2)))
-    ws.Cells(1, 5).Value = "수량" ' 제목열 정리
+    Replacing_Parts ws.Range(ws.Cells(vStart, CritCol(1) + 1), ws.Cells(vEnd, CritCol(2)))
+    ws.Cells(1, CritCol(1)).Value = "수량" ' 제목열 정리f
     ws.Columns(6).Insert: ws.Columns(6).Insert
     ws.Cells(1, 6).Value = wLine & "-Line": ws.Cells(1, 6).Resize(1, 2).Merge
     ws.Name = "PartList_Total"
@@ -4059,10 +4059,10 @@ Private Sub Replacing_Parts(ByRef RangeTarget As Range) ' RpP
                         Target = "[피킹] Oval/Best/Sabaf"
                     Case Is = "[기미] 4102/4202/4402/4502(2)" ' Better
                         Target = "[피킹] Oval/Better"
-                    Case Is = "[] 8606/8706 [기미] 7906/8506" ' Old Gas Model
-                        Target = "[Old] Better"
+                    Case Is = "[기미] 7906/8506/8606/8706" ' Old Gas Model
+                        Target = "[피킹] FZ≒FH/Better"
                     Case Else ' 에러처리
-                        Target = "Matching Error Plz Chk Sub RpP"
+                        Target = "Matching Error"
                     End Select
                 Else
                     ' 일반처리 / 최종 문자열 재구성
@@ -5353,7 +5353,7 @@ Public Function ExtractSmallBracketValue(ByVal Txt As String, Optional ByRef Sea
 End Function
 
 Public Sub DeleteDuplicateRowsInColumn(ByVal targetCol As Long, ByRef startRow As Long, ByRef EndRow As Long, _
-        Optional ByRef tgtWs As Worksheet)
+        Optional ByRef tgtWs As Worksheet, Optional SubCol As Long)
 
     Dim colValues As New Collection   ' 중복 체크용 컬렉션
     Dim i As Long, DeleteRowCount As Long
@@ -5374,6 +5374,8 @@ Public Sub DeleteDuplicateRowsInColumn(ByVal targetCol As Long, ByRef startRow A
 
             ' 오류 번호 457: 이미 동일한 Key가 존재함을 의미
             If Err.Number = 457 Then
+                ' Value sum
+                tgtWs.Cells(i + 1, SubCol).Value = tgtWs.Cells(i + 1, SubCol).Value + tgtWs.Cells(i, SubCol).Value
                 ' 중복으로 판단된 행을 삭제
                 tgtWs.Rows(i).Delete
                 DeleteRowCount = DeleteRowCount + 1
@@ -6274,10 +6276,10 @@ Private Sub Writing_itemCounter_from_PL(ByRef Target As Collection)
     
     Dim i As Long
     Dim Ref(0 To 3) As Date
-    Ref(0) = "2025-12-19"
-    Ref(1) = "2025-12-22"
-    Ref(2) = "2025-12-23"
-    Ref(3) = "2025-12-24"
+    Ref(0) = "2026-01-17"
+    Ref(1) = "2026-01-19"
+    Ref(2) = "2026-01-20"
+    Ref(3) = "2026-01-21"
     With ws
         For i = 0 To 9
             .Columns(baseCol).Delete

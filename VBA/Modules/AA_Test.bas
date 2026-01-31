@@ -72,7 +72,7 @@ Sub T()
 End Sub
 
 Sub icTester()
-    CA_itemCounter.PL2IC "D:\Downloads\공급문서\AutoReport\PartList\PartList 12월-19일_C11.xlsx"
+    CA_itemCounter.PL2IC "D:\Downloads\공급문서\AutoReport\PartList\PartList 01월-17일_C11.xlsx"
     
     ReActive
 End Sub

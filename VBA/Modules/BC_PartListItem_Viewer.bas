@@ -183,15 +183,15 @@ Private Sub AR_1_EssentialDataExtraction() ' AutoReport 초반 설정 / 필수 데이터 
         vCell.Value = vCell.Value & "." & vCell.Offset(0, 1).Value ' 모델, Suffix 열 병합
     Next i
     ws.Columns(vCell.Offset(0, 1).Column).Delete ' 불필요한 열 삭제처리
-    CritCol(1) = ws.Rows(1).Find("계획 수량", lookAt:=xlWhole, LookIn:=xlValues).Offset(0, 1).Column
+    CritCol(1) = ws.Rows(1).Find("계획 수량", lookAt:=xlWhole, LookIn:=xlValues).Column
     CritCol(2) = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
-    PartCombine ws.Range(ws.Cells(1, CritCol(1)), ws.Cells(1, CritCol(2))), vStart, vEnd ' 단일 파트명으로 병합처리
-    DeleteDuplicateRowsInColumn (CritCol(1) - 4), vStart, vEnd, ws ' WorkOrder 중복 행 제거
-    For Each vCell In ws.Range(ws.Cells(1, CritCol(1)), ws.Cells(1, CritCol(2))) ' 제목 열 수정
+    PartCombine ws.Range(ws.Cells(1, CritCol(1) + 1), ws.Cells(1, CritCol(2))), vStart, vEnd ' 단일 파트명으로 병합처리
+    DeleteDuplicateRowsInColumn (CritCol(1) - 3), vStart, vEnd, ws, CritCol(1) ' WorkOrder 중복 행 제거
+    For Each vCell In ws.Range(ws.Cells(1, CritCol(1) + 1), ws.Cells(1, CritCol(2))) ' 제목 열 수정
         vCell.Value = Replace(ExtractBracketValue(vCell.Value), "_", vbLf)
     Next vCell
-    Replacing_Parts ws.Range(ws.Cells(vStart, CritCol(1)), ws.Cells(vEnd, CritCol(2)))
-    ws.Cells(1, 5).Value = "수량" ' 제목열 정리
+    Replacing_Parts ws.Range(ws.Cells(vStart, CritCol(1) + 1), ws.Cells(vEnd, CritCol(2)))
+    ws.Cells(1, CritCol(1)).Value = "수량" ' 제목열 정리f
     ws.Columns(6).Insert: ws.Columns(6).Insert
     ws.Cells(1, 6).Value = wLine & "-Line": ws.Cells(1, 6).Resize(1, 2).Merge
     ws.Name = "PartList_Total"
@@ -409,10 +409,10 @@ Private Sub Replacing_Parts(ByRef RangeTarget As Range) ' RpP
                         Target = "[피킹] Oval/Best/Sabaf"
                     Case Is = "[기미] 4102/4202/4402/4502(2)" ' Better
                         Target = "[피킹] Oval/Better"
-                    Case Is = "[] 8606/8706 [기미] 7906/8506" ' Old Gas Model
-                        Target = "[Old] Better"
+                    Case Is = "[기미] 7906/8506/8606/8706" ' Old Gas Model
+                        Target = "[피킹] FZ≒FH/Better"
                     Case Else ' 에러처리
-                        Target = "Matching Error Plz Chk Sub RpP"
+                        Target = "Matching Error"
                     End Select
                 Else
                     ' 일반처리 / 최종 문자열 재구성

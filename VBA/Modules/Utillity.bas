@@ -326,7 +326,7 @@ Public Function ExtractSmallBracketValue(ByVal Txt As String, Optional ByRef Sea
 End Function
 
 Public Sub DeleteDuplicateRowsInColumn(ByVal targetCol As Long, ByRef startRow As Long, ByRef EndRow As Long, _
-        Optional ByRef tgtWs As Worksheet)
+        Optional ByRef tgtWs As Worksheet, Optional SubCol As Long)
 
     Dim colValues As New Collection   ' 중복 체크용 컬렉션
     Dim i As Long, DeleteRowCount As Long
@@ -347,6 +347,8 @@ Public Sub DeleteDuplicateRowsInColumn(ByVal targetCol As Long, ByRef startRow A
 
             ' 오류 번호 457: 이미 동일한 Key가 존재함을 의미
             If Err.Number = 457 Then
+                ' Value sum
+                tgtWs.Cells(i + 1, SubCol).Value = tgtWs.Cells(i + 1, SubCol).Value + tgtWs.Cells(i, SubCol).Value
                 ' 중복으로 판단된 행을 삭제
                 tgtWs.Rows(i).Delete
                 DeleteRowCount = DeleteRowCount + 1
