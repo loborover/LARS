@@ -110,7 +110,7 @@ ARH.UpdateProgressBar ARH.PB_BOM, (i - 0.35) / ListCount * 100
         If MRB_PL Then
             Dim tWB As Workbook, Target As Range
             Set tWB = Workbooks.Open(SavedPath & ".xlsx")  ' 메뉴얼 모드일 때 열기
-            Set Target = tWB.Worksheets(1).Rows(1).Find("-Line", lookAt:=xlPart, LookIn:=xlValues).Offset(1, 1)
+            Set Target = tWB.Worksheets(1).Rows(1).Find("-Line", LookAt:=xlPart, LookIn:=xlValues).Offset(1, 1)
             tWB.Worksheets(1).Activate
             Target.Select
             ActiveWindow.FreezePanes = True
@@ -159,8 +159,8 @@ Private Sub AR_1_EssentialDataExtraction() ' AutoReport 초반 설정 / 필수 데이터 
     
     vStart = 2: vEnd = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
     ' D-Day 포함 N일치 데이터만 처리하도록 강제함.
-    CritCol(1) = ws.Rows(1).Find("YYYYMMDD", lookAt:=xlWhole, LookIn:=xlValues).Column
-    CritCol(2) = ws.Rows(1).Find("Input Time", lookAt:=xlWhole, LookIn:=xlValues).Column
+    CritCol(1) = ws.Rows(1).Find("YYYYMMDD", LookAt:=xlWhole, LookIn:=xlValues).Column
+    CritCol(2) = ws.Rows(1).Find("Input Time", LookAt:=xlWhole, LookIn:=xlValues).Column
     MergeDateTime_Flexible ws, CritCol(1), 1, CritCol(2), , "투입" & vbLf & "시점", "hh:mm"
     CritCol(2) = 0
     For i = vStart To vEnd
@@ -172,18 +172,18 @@ Private Sub AR_1_EssentialDataExtraction() ' AutoReport 초반 설정 / 필수 데이터 
     Next i
     ws.Rows(vStart & ":" & vEnd).Delete ' 불필요한 행 삭제처리
     vEnd = vStart - 1: vStart = 2
-    CritCol(1) = ws.Rows(1).Find("잔량", lookAt:=xlWhole, LookIn:=xlValues).Column
+    CritCol(1) = ws.Rows(1).Find("잔량", LookAt:=xlWhole, LookIn:=xlValues).Column
     For i = CritCol(1) To 1 Step -1 ' 불필요한 열 삭제처리
         If Not IsInCollection(ws.Cells(1, i).Value, vCFR) Then ws.Columns(i).Delete
     Next i
-    CritCol(1) = ws.Rows(1).Find("모델", lookAt:=xlWhole, LookIn:=xlValues).Column
+    CritCol(1) = ws.Rows(1).Find("모델", LookAt:=xlWhole, LookIn:=xlValues).Column
     
     For i = vStart To vEnd ' 제목 외 데이터 행 시작부터 끝까지 데이터 처리
         Set vCell = ws.Cells(i, CritCol(1))
         vCell.Value = vCell.Value & "." & vCell.Offset(0, 1).Value ' 모델, Suffix 열 병합
     Next i
     ws.Columns(vCell.Offset(0, 1).Column).Delete ' 불필요한 열 삭제처리
-    CritCol(1) = ws.Rows(1).Find("계획 수량", lookAt:=xlWhole, LookIn:=xlValues).Column
+    CritCol(1) = ws.Rows(1).Find("계획 수량", LookAt:=xlWhole, LookIn:=xlValues).Column
     CritCol(2) = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
     PartCombine ws.Range(ws.Cells(1, CritCol(1) + 1), ws.Cells(1, CritCol(2))), vStart, vEnd ' 단일 파트명으로 병합처리
     DeleteDuplicateRowsInColumn (CritCol(1) - 3), vStart, vEnd, ws, CritCol(1) ' WorkOrder 중복 행 제거
@@ -214,7 +214,7 @@ Private Sub Interior_Set_PartList(Optional ws As Worksheet)
     If ws Is Nothing Then Set ws = Target_WorkSheet
     Dim SetEdge(1 To 6) As XlBordersIndex
     Dim colWidth As New Collection
-    Dim i As Long, FirstRow As Long, LastRow As Long: FirstRow = ws.Rows(1).Find("모델", lookAt:=xlWhole, LookIn:=xlValues).Row + 1: LastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    Dim i As Long, FirstRow As Long, LastRow As Long: FirstRow = ws.Rows(1).Find("모델", LookAt:=xlWhole, LookIn:=xlValues).Row + 1: LastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
     Dim xCell As Range, Target As Range: Set PrintArea = ws.Cells(1, 1).CurrentRegion: Set Target = PrintArea
     
     SetEdge(1) = xlEdgeLeft
@@ -265,7 +265,7 @@ Private Sub Interior_Set_PartList(Optional ws As Worksheet)
     With ws
         .Columns(6).ColumnWidth = 6: .Columns(7).ColumnWidth = 7
         .Columns(6).Borders(xlEdgeRight).LineStyle = xlNone
-        .Columns(.Rows(1).Find("Tool", lookAt:=xlWhole, LookIn:=xlValues).Column).Hidden = True ' Tool 열은 숨김처리
+        .Columns(.Rows(1).Find("Tool", LookAt:=xlWhole, LookIn:=xlValues).Column).Hidden = True ' Tool 열은 숨김처리
         On Error Resume Next
         For i = FirstRow To LastRow
             Set Target = .Cells(i, 1) ' 투입시점 열 설정부분
@@ -290,7 +290,7 @@ Private Function GetPartListWhen(PartListDirectiory As String, Optional ByRef DD
     Dim ws As Worksheet: Set ws = Wb.Worksheets(1) ' 워크시트 선택
     Dim Cell As Range, SC As Long, EC As Long, i As Long
         
-    Set Cell = ws.Rows(1).Find(What:="YYYYMMDD", lookAt:=xlWhole, LookIn:=xlValues) ' PL에서 날짜를 찾는 줄
+    Set Cell = ws.Rows(1).Find(What:="YYYYMMDD", LookAt:=xlWhole, LookIn:=xlValues) ' PL에서 날짜를 찾는 줄
     If Cell Is Nothing Then GetPartListWhen = "It's Not a PartList": GoTo NAP ' 열람한 문서가 PartList가 아닐시 오류처리 단
     DDC = -1 ' 마지막 값 선보정
     SC = Cell.Row + 1: EC = ws.Cells(ws.Rows.Count, Cell.Column).End(xlUp).Row
@@ -301,8 +301,8 @@ Private Function GetPartListWhen(PartListDirectiory As String, Optional ByRef DD
     Title = Cell.Offset(1, 0).Value ' YYYYMMDD 포맷된 날짜값 인계
     Title = mid(Title, 5, 2) & "월-" & mid(Title, 7, 2) & "일"
     GetPartListWhen = Title ' 날짜형 제목값 인계
-    wLine = ws.Rows(1).Find(What:="Line", lookAt:=xlWhole, LookIn:=xlValues).Offset(1, 0).Value ' 라인 값 추출
-    SC = ws.Rows(1).Find(What:="잔량", lookAt:=xlWhole, LookIn:=xlValues).Offset(0, 1).Column + 1
+    wLine = ws.Rows(1).Find(What:="Line", LookAt:=xlWhole, LookIn:=xlValues).Offset(1, 0).Value ' 라인 값 추출
+    SC = ws.Rows(1).Find(What:="잔량", LookAt:=xlWhole, LookIn:=xlValues).Offset(0, 1).Column + 1
     EC = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
     Set Cell = ws.Range(ws.Cells(1, SC), ws.Cells(1, EC))
     Set vCFR = New Collection: Set vCFR = PartCollector(Cell, CollectionType:=Unique)
@@ -488,7 +488,7 @@ Private Sub MarkingUP_items(ByRef Target As D_Maps)
     Dim ws As Worksheet: Set ws = Target_WorkSheet
     Dim i As Long, tCol As Long, sCol As Long, eCol As Long, tRow As Long, sRow As Long, eRow As Long, Total As Long
     Dim CrrR As Range, NxtR As Range
-    sCol = ws.Rows(1).Find("-Line", lookAt:=xlPart, LookIn:=xlValues).Column + 2
+    sCol = ws.Rows(1).Find("-Line", LookAt:=xlPart, LookIn:=xlValues).Column + 2
     eCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
 '    LastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
     

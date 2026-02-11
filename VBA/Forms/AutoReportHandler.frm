@@ -56,7 +56,7 @@ Private Sub Userform_Initialize() '전처리
     Dim i As Long, wLine As Long, wDate As Long ' 반복문용 변수
     Set ws = ThisWorkbook.Worksheets("Setting"): Set ARH = Me
     
-    Me.Version_Label.Caption = "V." & ws.Cells.Find("Version", lookAt:=xlWhole, MatchCase:=True).Offset(0, 1).Value
+    Me.Version_Label.Caption = "V." & ws.Cells.Find("Version", LookAt:=xlWhole, MatchCase:=True).Offset(0, 1).Value
     
     If Not Printer.Bool_IPNS Then Printer.PrinterNameSet ' 프린터 세팅되어 있는지 확인 후 프린터 목록 초기화
     For i = 1 To Printer.PrinterName.Count

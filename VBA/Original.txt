@@ -701,7 +701,7 @@ Private Sub AR_1_EssentialDataExtraction(Optional ByRef LastCol As Long = 0, Opt
     Application.DisplayAlerts = False ' 경고문 비활성화
     
     ' 투입시점 시작시간 추출
-    Set DelCell = ws.Cells.Find("Planned Start Time", lookAt:=xlWhole, MatchCase:=True) ' 투입시점 Range추출
+    Set DelCell = ws.Cells.Find("Planned Start Time", LookAt:=xlWhole, MatchCase:=True) ' 투입시점 Range추출
     i = DelCell.Column: startRow = DelCell.Row + 3: LastRow = Target_WorkSheet.Cells(ws.Rows.Count, 1).End(xlUp).Row
     MergeDateTime_Flexible ws, i, 1, , startRow, "", "h:mm"
     
@@ -717,7 +717,7 @@ Private Sub AR_1_EssentialDataExtraction(Optional ByRef LastCol As Long = 0, Opt
             (IsNumeric(DelCell.Value) And DelCell.Offset(1, 0).Value > 0) Then ws.Columns(i).Delete ' 숨기려면 .Hidden = True
     Next i
     ' 새로운 서식 적용을 위한 열 추가 및 수정작업
-    Set DelCell = ws.Rows(2).Find(What:="W/O 계획수량", lookAt:=xlWhole)
+    Set DelCell = ws.Rows(2).Find(What:="W/O 계획수량", LookAt:=xlWhole)
     If DelCell Is Nothing Then Stop ' 오류나면 정지
     DelCell.Value = "계획" ' 원래의 열 제목이 너무 길어서 수정
     DelCell.Offset(0, 1).Value = "IN" ' 원래의 열 제목이 너무 길어서 수정
@@ -744,7 +744,7 @@ Private Sub AR_1_EssentialDataExtraction(Optional ByRef LastCol As Long = 0, Opt
         ws.Rows(LastRow + 1).Delete
     Loop
     
-    Set DelCell = ws.Rows(2).Find(What:="계획", lookAt:=xlWhole)
+    Set DelCell = ws.Rows(2).Find(What:="계획", LookAt:=xlWhole)
     For i = 0 To 8
         If i <> 3 And i <> 4 Then
             DelCell.Offset(1, i).Formula = "=Sum(" & ws.Range(DelCell.Offset(2, i), ws.Cells(LastRow, DelCell.Offset(2, i).Column)).Address & ")"
@@ -908,7 +908,7 @@ Private Sub Interior_Set_DailyPlan(Optional ByRef FirstRow As Long = 3, Optional
     
     If Yoil_DP Then
         Dim Target As Range
-        Set Target = ws.Range("2:2").Find(What:="계획", LookIn:=xlValues, lookAt:=xlWhole).Offset(0, 5)
+        Set Target = ws.Range("2:2").Find(What:="계획", LookIn:=xlValues, LookAt:=xlWhole).Offset(0, 5)
         For i = 0 To 3
             DecodeDate Target.Offset(0, i)
             If Not i = 0 Then DatePartLining Target.Offset(0, i - 1)
@@ -934,7 +934,7 @@ Private Sub Interior_Set_DailyPlan(Optional ByRef FirstRow As Long = 3, Optional
         Next ACol
     Next i
     
-    ACol = ws.Range("1:2").Find(What:="Line", LookIn:=xlValues, lookAt:=xlPart).Column
+    ACol = ws.Range("1:2").Find(What:="Line", LookIn:=xlValues, LookAt:=xlPart).Column
     Set tempRange = ws.Range(ws.Cells(FirstRow + 1, 1), ws.Cells(LastRow, ACol + 1))
     
     For Each xCell In tempRange
@@ -987,7 +987,7 @@ Private Function GetDailyPlanWhen(DailyPlanDirectiory As String) As String
     Title = Title & "-" & smallestValue & "일" ' Title = *월-*일
     GetDailyPlanWhen = Title ' 날짜형 제목값 인계
     Title = smallestValue ' 날짜값
-    Set Cell = ws.Rows("2:3").Find(What:="생산 라인", lookAt:=xlWhole, LookIn:=xlValues)
+    Set Cell = ws.Rows("2:3").Find(What:="생산 라인", LookAt:=xlWhole, LookIn:=xlValues)
     wLine = Cell.Offset(2, 0).Value
 NAD:
     Wb.Close SaveChanges:=False: Set Wb = Nothing ' 워크북 닫기
@@ -1013,7 +1013,7 @@ Public Sub MMG_Do() ' Manual Model Grouping
     On Error GoTo 0
     Set Brush.DrawingWorksheet = ws
     
-    CritCol = ws.Cells.Find("부품번호", lookAt:=xlWhole, MatchCase:=True).Column
+    CritCol = ws.Cells.Find("부품번호", LookAt:=xlWhole, MatchCase:=True).Column
     If CritR.Column <> CritCol Then MsgBox ("잘못된 참조"): Exit Sub
     
     Brush.Stamp_it_Auto SetRangeForDraw(CritR), CollectionForUndo:=vCFR
@@ -1029,7 +1029,7 @@ Public Sub Re_Grouping()
     Set Target_WorkSheet = Selection.Worksheet
     Set Brush.DrawingWorksheet = Target_WorkSheet
     Brush.DeleteShapes
-    Dim CriterionCell As Range: Set CriterionCell = Target_WorkSheet.Cells.Find("부품번호", lookAt:=xlWhole, MatchCase:=True)
+    Dim CriterionCell As Range: Set CriterionCell = Target_WorkSheet.Cells.Find("부품번호", LookAt:=xlWhole, MatchCase:=True)
     MarkingUp AR_2_ModelGrouping(CriterionCell.Row + 3, CriterionCell.Column, Target_WorkSheet)
 End Sub
 
@@ -1287,7 +1287,7 @@ Private Sub Userform_Initialize() '전처리
     Dim i As Long, wLine As Long, wDate As Long ' 반복문용 변수
     Set ws = ThisWorkbook.Worksheets("Setting"): Set ARH = Me
     
-    Me.Version_Label.Caption = "V." & ws.Cells.Find("Version", lookAt:=xlWhole, MatchCase:=True).Offset(0, 1).Value
+    Me.Version_Label.Caption = "V." & ws.Cells.Find("Version", LookAt:=xlWhole, MatchCase:=True).Offset(0, 1).Value
     
     If Not Printer.Bool_IPNS Then Printer.PrinterNameSet ' 프린터 세팅되어 있는지 확인 후 프린터 목록 초기화
     For i = 1 To Printer.PrinterName.Count
@@ -3289,14 +3289,14 @@ Sub ForceUpdateMacro()
     
     ' Setting 확인
     Set ws = ThisWorkbook.Worksheets("Setting")
-    If ("Dev" = ws.Cells.Find(What:="Develop", lookAt:=xlWhole, MatchCase:=True).Offset(0, 1).Value) Then
+    If ("Dev" = ws.Cells.Find(What:="Develop", LookAt:=xlWhole, MatchCase:=True).Offset(0, 1).Value) Then
         #If Not isDev Then
             MsgBox "개발 모드이므로 업데이트 진행 제한", vbInformation, "개발여부 확인"
         #End If
         Exit Sub
     End If
 
-    Set VersionCell = ws.Cells.Find(What:="Version", lookAt:=xlWhole, MatchCase:=True)
+    Set VersionCell = ws.Cells.Find(What:="Version", LookAt:=xlWhole, MatchCase:=True)
     'Debug.Print VersionCell.Address
     
     ' GitLab Raw URL 설정
@@ -3760,7 +3760,7 @@ ARH.UpdateProgressBar ARH.PB_BOM, (i - 0.35) / ListCount * 100
         If MRB_PL Then
             Dim tWB As Workbook, Target As Range
             Set tWB = Workbooks.Open(SavedPath & ".xlsx")  ' 메뉴얼 모드일 때 열기
-            Set Target = tWB.Worksheets(1).Rows(1).Find("-Line", lookAt:=xlPart, LookIn:=xlValues).Offset(1, 1)
+            Set Target = tWB.Worksheets(1).Rows(1).Find("-Line", LookAt:=xlPart, LookIn:=xlValues).Offset(1, 1)
             tWB.Worksheets(1).Activate
             Target.Select
             ActiveWindow.FreezePanes = True
@@ -3809,8 +3809,8 @@ Private Sub AR_1_EssentialDataExtraction() ' AutoReport 초반 설정 / 필수 �
     
     vStart = 2: vEnd = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
     ' D-Day 포함 N일치 데이터만 처리하도록 강제함.
-    CritCol(1) = ws.Rows(1).Find("YYYYMMDD", lookAt:=xlWhole, LookIn:=xlValues).Column
-    CritCol(2) = ws.Rows(1).Find("Input Time", lookAt:=xlWhole, LookIn:=xlValues).Column
+    CritCol(1) = ws.Rows(1).Find("YYYYMMDD", LookAt:=xlWhole, LookIn:=xlValues).Column
+    CritCol(2) = ws.Rows(1).Find("Input Time", LookAt:=xlWhole, LookIn:=xlValues).Column
     MergeDateTime_Flexible ws, CritCol(1), 1, CritCol(2), , "투입" & vbLf & "시점", "hh:mm"
     CritCol(2) = 0
     For i = vStart To vEnd
@@ -3822,18 +3822,18 @@ Private Sub AR_1_EssentialDataExtraction() ' AutoReport 초반 설정 / 필수 �
     Next i
     ws.Rows(vStart & ":" & vEnd).Delete ' 불필요한 행 삭제처리
     vEnd = vStart - 1: vStart = 2
-    CritCol(1) = ws.Rows(1).Find("잔량", lookAt:=xlWhole, LookIn:=xlValues).Column
+    CritCol(1) = ws.Rows(1).Find("잔량", LookAt:=xlWhole, LookIn:=xlValues).Column
     For i = CritCol(1) To 1 Step -1 ' 불필요한 열 삭제처리
         If Not IsInCollection(ws.Cells(1, i).Value, vCFR) Then ws.Columns(i).Delete
     Next i
-    CritCol(1) = ws.Rows(1).Find("모델", lookAt:=xlWhole, LookIn:=xlValues).Column
+    CritCol(1) = ws.Rows(1).Find("모델", LookAt:=xlWhole, LookIn:=xlValues).Column
     
     For i = vStart To vEnd ' 제목 외 데이터 행 시작부터 끝까지 데이터 처리
         Set vCell = ws.Cells(i, CritCol(1))
         vCell.Value = vCell.Value & "." & vCell.Offset(0, 1).Value ' 모델, Suffix 열 병합
     Next i
     ws.Columns(vCell.Offset(0, 1).Column).Delete ' 불필요한 열 삭제처리
-    CritCol(1) = ws.Rows(1).Find("계획 수량", lookAt:=xlWhole, LookIn:=xlValues).Column
+    CritCol(1) = ws.Rows(1).Find("계획 수량", LookAt:=xlWhole, LookIn:=xlValues).Column
     CritCol(2) = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
     PartCombine ws.Range(ws.Cells(1, CritCol(1) + 1), ws.Cells(1, CritCol(2))), vStart, vEnd ' 단일 파트명으로 병합처리
     DeleteDuplicateRowsInColumn (CritCol(1) - 3), vStart, vEnd, ws, CritCol(1) ' WorkOrder 중복 행 제거
@@ -3864,7 +3864,7 @@ Private Sub Interior_Set_PartList(Optional ws As Worksheet)
     If ws Is Nothing Then Set ws = Target_WorkSheet
     Dim SetEdge(1 To 6) As XlBordersIndex
     Dim colWidth As New Collection
-    Dim i As Long, FirstRow As Long, LastRow As Long: FirstRow = ws.Rows(1).Find("모델", lookAt:=xlWhole, LookIn:=xlValues).Row + 1: LastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    Dim i As Long, FirstRow As Long, LastRow As Long: FirstRow = ws.Rows(1).Find("모델", LookAt:=xlWhole, LookIn:=xlValues).Row + 1: LastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
     Dim xCell As Range, Target As Range: Set PrintArea = ws.Cells(1, 1).CurrentRegion: Set Target = PrintArea
     
     SetEdge(1) = xlEdgeLeft
@@ -3915,7 +3915,7 @@ Private Sub Interior_Set_PartList(Optional ws As Worksheet)
     With ws
         .Columns(6).ColumnWidth = 6: .Columns(7).ColumnWidth = 7
         .Columns(6).Borders(xlEdgeRight).LineStyle = xlNone
-        .Columns(.Rows(1).Find("Tool", lookAt:=xlWhole, LookIn:=xlValues).Column).Hidden = True ' Tool 열은 숨김처리
+        .Columns(.Rows(1).Find("Tool", LookAt:=xlWhole, LookIn:=xlValues).Column).Hidden = True ' Tool 열은 숨김처리
         On Error Resume Next
         For i = FirstRow To LastRow
             Set Target = .Cells(i, 1) ' 투입시점 열 설정부분
@@ -3940,7 +3940,7 @@ Private Function GetPartListWhen(PartListDirectiory As String, Optional ByRef DD
     Dim ws As Worksheet: Set ws = Wb.Worksheets(1) ' 워크시트 선택
     Dim Cell As Range, SC As Long, EC As Long, i As Long
         
-    Set Cell = ws.Rows(1).Find(What:="YYYYMMDD", lookAt:=xlWhole, LookIn:=xlValues) ' PL에서 날짜를 찾는 줄
+    Set Cell = ws.Rows(1).Find(What:="YYYYMMDD", LookAt:=xlWhole, LookIn:=xlValues) ' PL에서 날짜를 찾는 줄
     If Cell Is Nothing Then GetPartListWhen = "It's Not a PartList": GoTo NAP ' 열람한 문서가 PartList가 아닐시 오류처리 단
     DDC = -1 ' 마지막 값 선보정
     SC = Cell.Row + 1: EC = ws.Cells(ws.Rows.Count, Cell.Column).End(xlUp).Row
@@ -3951,8 +3951,8 @@ Private Function GetPartListWhen(PartListDirectiory As String, Optional ByRef DD
     Title = Cell.Offset(1, 0).Value ' YYYYMMDD 포맷된 날짜값 인계
     Title = mid(Title, 5, 2) & "월-" & mid(Title, 7, 2) & "일"
     GetPartListWhen = Title ' 날짜형 제목값 인계
-    wLine = ws.Rows(1).Find(What:="Line", lookAt:=xlWhole, LookIn:=xlValues).Offset(1, 0).Value ' 라인 값 추출
-    SC = ws.Rows(1).Find(What:="잔량", lookAt:=xlWhole, LookIn:=xlValues).Offset(0, 1).Column + 1
+    wLine = ws.Rows(1).Find(What:="Line", LookAt:=xlWhole, LookIn:=xlValues).Offset(1, 0).Value ' 라인 값 추출
+    SC = ws.Rows(1).Find(What:="잔량", LookAt:=xlWhole, LookIn:=xlValues).Offset(0, 1).Column + 1
     EC = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
     Set Cell = ws.Range(ws.Cells(1, SC), ws.Cells(1, EC))
     Set vCFR = New Collection: Set vCFR = PartCollector(Cell, CollectionType:=Unique)
@@ -4138,7 +4138,7 @@ Private Sub MarkingUP_items(ByRef Target As D_Maps)
     Dim ws As Worksheet: Set ws = Target_WorkSheet
     Dim i As Long, tCol As Long, sCol As Long, eCol As Long, tRow As Long, sRow As Long, eRow As Long, Total As Long
     Dim CrrR As Range, NxtR As Range
-    sCol = ws.Rows(1).Find("-Line", lookAt:=xlPart, LookIn:=xlValues).Column + 2
+    sCol = ws.Rows(1).Find("-Line", LookAt:=xlPart, LookIn:=xlValues).Column + 2
     eCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
 '    LastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
     
@@ -4416,13 +4416,13 @@ Public Sub SortColumnByFeeder(ByRef Feeder As Collection)
         Set ws = ActiveWorkbook.ActiveSheet
     #End If
     If ws Is Nothing Then Debug.Print "Err.WorkSheet is Nothing": Exit Sub
-    Dim Chk As Range, itemRange As Range: Set itemRange = ws.Rows(1).Find("-Line", LookIn:=xlValues, lookAt:=xlPart)
+    Dim Chk As Range, itemRange As Range: Set itemRange = ws.Rows(1).Find("-Line", LookIn:=xlValues, LookAt:=xlPart)
     Dim FirstCol As Long, LastCol As Long, i As Long
     ' 초기화
     FirstCol = itemRange.Column + 2: LastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
     Set itemRange = ws.Range(ws.Cells(1, FirstCol), ws.Cells(1, LastCol))
     ws.Columns.EntireColumn.Hidden = False
-    ws.Columns(ws.Rows(1).Find("Tool", LookIn:=xlValues, lookAt:=xlWhole).Column).Hidden = True
+    ws.Columns(ws.Rows(1).Find("Tool", LookIn:=xlValues, LookAt:=xlWhole).Column).Hidden = True
     Replacing_Feeder2item Feeder
     
     For Each Chk In itemRange
@@ -4730,13 +4730,13 @@ Private Function TryParseDateTimeFlex(ByVal vDate As Variant, ByVal vTime As Var
     End If
 
     ' 2) 텍스트인 경우 처리 (오전/오후, AM/PM, YYYYMMDD, hhmmss 등)
-    Dim s As String, sNorm As String, Y As Long, m As Long, d As Long
-    s = Trim$(CStr(vDate))
-    If Len(s) = 0 Then Exit Function
+    Dim S As String, sNorm As String, Y As Long, m As Long, d As Long
+    S = Trim$(CStr(vDate))
+    If Len(S) = 0 Then Exit Function
 
     ' a) "YYYYMMDD" 단독
-    If Len(s) = 8 And IsNumeric(s) Then
-        If TryParseYmd8_ToDate(s, baseDate) Then
+    If Len(S) = 8 And IsNumeric(S) Then
+        If TryParseYmd8_ToDate(S, baseDate) Then
             outDT = baseDate ' 시간 00:00
             TryParseDateTimeFlex = True
             Exit Function
@@ -4744,13 +4744,13 @@ Private Function TryParseDateTimeFlex(ByVal vDate As Variant, ByVal vTime As Var
     End If
 
     ' b) "YYYYMMDD HH:MM[:SS]" 또는 "YYYYMMDD 오전 HH:MM[:SS]" 등
-    If TryParse_Ymd8_And_TimeText(s, outDT) Then
+    If TryParse_Ymd8_And_TimeText(S, outDT) Then
         TryParseDateTimeFlex = True
         Exit Function
     End If
 
     ' c) 일반 텍스트 날짜/시간 (오전/오후 → AM/PM 치환 후 CDate 시도)
-    sNorm = NormalizeKoreanAmPm(s)
+    sNorm = NormalizeKoreanAmPm(S)
     On Error Resume Next
     outDT = CDate(sNorm)
     If Err.Number = 0 Then
@@ -4762,7 +4762,7 @@ End Function
 ' YYYYMMDD(숫자/텍스트) → Date (시간 00:00)
 Private Function TryParseYmd8_ToDate(ByVal v As Variant, ByRef outDate As Date) As Boolean
     Dim n As Long, Y As Long, m As Long, d As Long
-    Dim s As String
+    Dim S As String
 
     TryParseYmd8_ToDate = False
     If IsEmpty(v) Or IsError(v) Then Exit Function
@@ -4774,12 +4774,12 @@ Private Function TryParseYmd8_ToDate(ByVal v As Variant, ByRef outDate As Date) 
         m = (n \ 100) Mod 100
         d = n Mod 100
     Else
-        s = Trim$(CStr(v))
-        If Len(s) <> 8 Then Exit Function
-        If Not IsNumeric(s) Then Exit Function
-        Y = CLng(Left$(s, 4))
-        m = CLng(mid$(s, 5, 2))
-        d = CLng(Right$(s, 2))
+        S = Trim$(CStr(v))
+        If Len(S) <> 8 Then Exit Function
+        If Not IsNumeric(S) Then Exit Function
+        Y = CLng(Left$(S, 4))
+        m = CLng(mid$(S, 5, 2))
+        d = CLng(Right$(S, 2))
     End If
 
     If Y < 1900 Or m < 1 Or m > 12 Or d < 1 Or d > 31 Then Exit Function
@@ -4790,13 +4790,13 @@ End Function
 
 ' 혼합 텍스트에서 "YYYYMMDD [오전/오후|AM/PM] hh:mm[:ss]" 패턴 처리
 ' 예: "20250831 오전 08:00:00", "20250831 8:00", "20250831 PM 8:00"
-Private Function TryParse_Ymd8_And_TimeText(ByVal s As String, ByRef outDT As Date) As Boolean
+Private Function TryParse_Ymd8_And_TimeText(ByVal S As String, ByRef outDT As Date) As Boolean
     Dim sTrim As String, Y As Long, m As Long, d As Long
     Dim DatePart As String, timePart As String, posSp As Long
     Dim baseDate As Date, tfrac As Double
 
     TryParse_Ymd8_And_TimeText = False
-    sTrim = Trim$(s)
+    sTrim = Trim$(S)
     If Len(sTrim) < 8 Then Exit Function
 
     ' 앞 8자리가 YYYYMMDD인가?
@@ -4827,7 +4827,7 @@ End Function
 '  - "08:00:00"/"8:00"/"8:00 PM"/"오전 8:00" 등의 텍스트
 '  - "080000" 등 6자리 시간 텍스트
 Private Function TryGetTimeFraction_Flex(ByVal v As Variant, ByRef outFrac As Double) As Boolean
-    Dim s As String, hh As Long, nn As Long, ss As Long
+    Dim S As String, hh As Long, nn As Long, ss As Long
     Dim sNorm As String
 
     TryGetTimeFraction_Flex = False
@@ -4843,11 +4843,11 @@ Private Function TryGetTimeFraction_Flex(ByVal v As Variant, ByRef outFrac As Do
     End If
 
     ' 텍스트 처리
-    s = Trim$(CStr(v))
-    If Len(s) = 0 Then Exit Function
+    S = Trim$(CStr(v))
+    If Len(S) = 0 Then Exit Function
 
     ' "오전/오후" → AM/PM 정규화
-    sNorm = NormalizeKoreanAmPm(s)
+    sNorm = NormalizeKoreanAmPm(S)
 
     If InStr(sNorm, ":") > 0 Then
         ' "hh:mm[:ss]" (AM/PM 포함 가능)
@@ -4868,9 +4868,9 @@ Private Function TryGetTimeFraction_Flex(ByVal v As Variant, ByRef outFrac As Do
 End Function
 
 ' 한국어 오전/오후를 AM/PM으로 치환하고, 불필요한 중복 공백 정리
-Private Function NormalizeKoreanAmPm(ByVal s As String) As String
+Private Function NormalizeKoreanAmPm(ByVal S As String) As String
     Dim T As String
-    T = s
+    T = S
     ' 변형 케이스 최소화: 앞뒤 공백에 둔감하게
     T = Replace(T, "오전", "AM")
     T = Replace(T, "오 후", "PM") ' 혹시 있을 느슨한 표기
@@ -4884,7 +4884,7 @@ End Function
 
 ' (선택) DateOnly 전용 파서: 숫자형 직렬/텍스트 YYYYMMDD/표준 날짜텍스트를 아우름
 Private Function TryParse_DateOnly(ByVal v As Variant, ByRef outDate As Date) As Boolean
-    Dim s As String
+    Dim S As String
     TryParse_DateOnly = False
     outDate = 0
 
@@ -4896,9 +4896,9 @@ Private Function TryParse_DateOnly(ByVal v As Variant, ByRef outDate As Date) As
         Exit Function
     End If
 
-    s = Trim$(CStr(v))
-    If Len(s) = 8 And IsNumeric(s) Then
-        If TryParseYmd8_ToDate(s, outDate) Then
+    S = Trim$(CStr(v))
+    If Len(S) = 8 And IsNumeric(S) Then
+        If TryParseYmd8_ToDate(S, outDate) Then
             TryParse_DateOnly = True
             Exit Function
         End If
@@ -4906,7 +4906,7 @@ Private Function TryParse_DateOnly(ByVal v As Variant, ByRef outDate As Date) As
 
     ' 일반 텍스트 날짜(구분자 포함)도 허용
     On Error Resume Next
-    outDate = DateValue(CDate(s))
+    outDate = DateValue(CDate(S))
     If Err.Number = 0 Then TryParse_DateOnly = True
     On Error GoTo 0
 End Function
@@ -4966,7 +4966,7 @@ End Function
 ' 제외시간 컬렉션(TC)과의 겹침만큼 Duration에서 차감
 Private Function NetDurationSingleDay(ByVal segStart As Date, ByVal segEnd As Date, ByVal TC As Collection) As Double
     Dim dur As Double
-    Dim s As Variant, parts() As String
+    Dim S As Variant, parts() As String
     Dim exStartT As Date, exEndT As Date
     Dim exStart As Date, exEnd As Date
     Dim ovS As Date, ovE As Date
@@ -4978,8 +4978,8 @@ Private Function NetDurationSingleDay(ByVal segStart As Date, ByVal segEnd As Da
 
     dur = segEnd - segStart ' 기본 길이(일수)
 
-    For Each s In TC
-        parts = Split(CStr(s), "-")
+    For Each S In TC
+        parts = Split(CStr(S), "-")
         If UBound(parts) = 1 Then
             ' 시간 텍스트를 Time으로
             exStartT = TimeValue(parts(0))
@@ -5019,6 +5019,27 @@ Public Function isDayDiff(ByRef T1 As Range, ByRef T2 As Range, Optional ByVal M
     If Abs(DateValue(CDate(T2.Value)) - DateValue(CDate(T1.Value))) >= MinDays Then isDayDiff = True
 End Function
 
+Public Sub Reset_Timer(ByRef TimeRange As Range)
+    On Error GoTo KillSub
+    Dim ws As Worksheet: Set ws = TimeRange.Worksheet
+    Dim TDate As Date, BeforeT As Date, AfterT As Date, ResultT As Date
+    Dim TimeKeep As New Collection
+    Dim cRow As Long, tCol As Long
+    cRow = TimeRange.Row + 1
+    tCol = TimeRange.Column
+    TDate = Day(CDate(TimeRange.Value))
+    Do Until TDate <> Day(CDate(ws.Cells(cRow, tCol).Value))
+        AfterT = ws.Cells(cRow + 1, tCol).Value
+        BeforeT = ws.Cells(cRow, tCol).Value
+        ResultT = AfterT - BeforeT
+        TimeKeep.Add ResultT
+        Debug.Print cRow
+        cRow = cRow + 1
+    Loop
+    
+    TimeRange.Value = "PASS"
+KillSub: Exit Sub
+End Sub
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 TimeKeeper.bas End
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
@@ -5026,6 +5047,9 @@ TimeKeeper.bas End
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 Utillity.bas Start
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+'////////////////////////////////////////////////////////////////////////////////////////////////////
+'// 1. 전역 선언 및 초기화
+'////////////////////////////////////////////////////////////////////////////////////////////////////
 Option Explicit
 
 #If Win64 Then
@@ -5039,6 +5063,11 @@ Option Explicit
 #End If
 
 Public ARH As AutoReportHandler
+' 색상 변수 정의
+Private DEACTIVE_COLOR As Long
+Private EVALUATE_COLOR As Long
+Private REACTIVE_COLOR As Long
+Private WRAP_COLOR As Long
 
 '---------------------------
 ' 1) 파싱 결과를 담는 UDT
@@ -5104,6 +5133,16 @@ Public Enum ObjDirection4Way
     d4RIGHT = 44
 End Enum
 
+'////////////////////////////////////////////////////////////////////////////////////////////////////
+'// 2. 파일/디렉토리 처리
+'////////////////////////////////////////////////////////////////////////////////////////////////////
+Public Sub initialize_ColorSet()
+    DEACTIVE_COLOR = RGB(255, 30, 30)
+    EVALUATE_COLOR = RGB(255, 255, 30)
+    REACTIVE_COLOR = RGB(255, 255, 255)
+    WRAP_COLOR = RGB(30, 255, 60)
+End Sub
+
 Public Function SaveFilesWithCustomDirectory(directoryPath As String, _
                 ByRef Wb As Workbook, _
                 ByRef PDFpagesetup As PrintSetting, _
@@ -5160,6 +5199,9 @@ Function FindFilesWithTextInName(directoryPath As String, searchText As String, 
     End If
 End Function
 
+'////////////////////////////////////////////////////////////////////////////////////////////////////
+'// 3. 데이터 유틸리티
+'////////////////////////////////////////////////////////////////////////////////////////////////////
 Function IsInArray(valToBeFound As Variant, arr As Variant) As Boolean
     Dim element As Variant
     On Error Resume Next
@@ -5244,6 +5286,9 @@ Public Function fCCNEC(ByVal TargetRange As Range) As Long
     fCCNEC = Count
 End Function
 
+'////////////////////////////////////////////////////////////////////////////////////////////////////
+'// 4. 워크시트/범위 처리
+'////////////////////////////////////////////////////////////////////////////////////////////////////
 ' 셀 기준으로  줄 긋는 서브루틴
 Public Sub CellLiner(ByRef Target As Range, _
                                 Optional vEdge As XlBordersIndex = xlEdgeTop, _
@@ -5303,6 +5348,7 @@ Public Function CheckFileAlreadyWritten_PDF(ByRef Document_Name As String, DT As
         Exit Function
     End If
 End Function
+
 Public Sub SelfMerge(ByRef MergeTarget As Range)
     Dim r As Long, c As Long
     Dim Cell As Range
@@ -5390,6 +5436,9 @@ Public Sub DeleteDuplicateRowsInColumn(ByVal targetCol As Long, ByRef startRow A
     EndRow = EndRow - DeleteRowCount
 End Sub
 
+'////////////////////////////////////////////////////////////////////////////////////////////////////
+'// 5. 정규식 및 파싱
+'////////////////////////////////////////////////////////////////////////////////////////////////////
 '---------------------------
 ' 2) 정규식 헬퍼(Late Binding)
 '---------------------------
@@ -5476,6 +5525,9 @@ Private Function ParseMDToken(ByVal fullPath As String, Optional ByVal BaseYear 
     ParseMDToken = T
 End Function
 
+'////////////////////////////////////////////////////////////////////////////////////////////////////
+'// 6. ListView 처리
+'////////////////////////////////////////////////////////////////////////////////////////////////////
 '---------------------------------------------
 ' 5) ListView 선별 추가기 (요일/라인 필터)
 '    wantDocType  : 0 이면 타입 무시
@@ -5712,6 +5764,81 @@ Public Function RemoveLineBreaks(Target As Variant) As String
  RemoveLineBreaks = Replace(Target, vbCr, " ")
 End Function
 
+'////////////////////////////////////////////////////////////////////////////////////////////////////
+'// 7. 로트 컨트롤 및 색상 관리
+'////////////////////////////////////////////////////////////////////////////////////////////////////
+' 기존 헬퍼 함수 섹션에 추가
+Private Sub ApplyLotStyle(TargetRange As Range, ByVal RGBColor As Long, _
+                         Optional ByVal XBorder As Boolean = False)
+    With TargetRange
+        .Interior.Color = RGBColor
+        .Font.Color = RGB(255 - (RGBColor And &HFF), 255 - ((RGBColor \ &H100) And &HFF), 255 - (RGBColor \ &H10000))
+        .Font.Bold = False
+        
+        If XBorder Then
+            With .Borders(xlDiagonalDown)
+                .LineStyle = xlContinuous
+                .Color = vbRed
+                .Weight = xlThin
+            End With
+            With .Borders(xlDiagonalUp)
+                .LineStyle = xlContinuous
+                .Color = vbRed
+                .Weight = xlThin
+            End With
+        End If
+    End With
+End Sub
+
+' 통합된 로트 컨트롤 서브
+Public Sub ControlLot(ByVal RGBColor As Long, Optional ByVal XBorder As Boolean = False, _
+                     Optional ByRef Target As Range = Nothing)
+    Dim TargetRange As Range
+    Set TargetRange = GetLotTargetRange(Target)
+    
+    If Not TargetRange Is Nothing Then
+        ApplyLotStyle TargetRange, RGBColor, XBorder
+    End If
+End Sub
+
+' 내부 유틸리티 함수
+Private Function GetLotTargetRange(Optional ByRef Target As Range = Nothing) As Range
+    Dim ws As Worksheet
+    Dim LotCount As Long
+    Dim TargetRow(1 To 2) As Long
+    
+    If Target Is Nothing Then
+        Set ws = Selection.Worksheet
+        LotCount = Selection.Rows.Count
+        TargetRow(1) = Selection.Row
+        TargetRow(2) = Selection.Row + (LotCount - 1)
+    Else
+        Set ws = Target.Worksheet
+        LotCount = Target.Rows.Count
+        TargetRow(1) = Target.Row
+        TargetRow(2) = Target.Row + (LotCount - 1)
+    End If
+    
+    Set GetLotTargetRange = ws.Rows(TargetRow(1) & ":" & TargetRow(2))
+End Function
+
+' 간결화된 호출 서브
+Public Sub Deactive_Lot()
+    ControlLot DEACTIVE_COLOR
+End Sub
+
+Public Sub Evaluate_Lot()
+    ControlLot EVALUATE_COLOR
+End Sub
+
+Public Sub Reactive_Lot()
+    ControlLot REACTIVE_COLOR
+End Sub
+
+Public Sub Wrap_Lot()
+    ControlLot WRAP_COLOR
+End Sub
+
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 Utillity.bas End
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
@@ -5784,7 +5911,7 @@ Public isDirSetUp As Boolean
 
 Public Sub SetUpDirectories()
     Set ws = ThisWorkbook.Worksheets("Setting")
-    SourceFileFolder_Directory = ws.Columns(1).Find(What:="Source", lookAt:=xlWhole).Offset(0, 1).Value
+    SourceFileFolder_Directory = ws.Columns(1).Find(What:="Source", LookAt:=xlWhole).Offset(0, 1).Value
     isDirSetUp = True
 End Sub
 
@@ -6076,7 +6203,7 @@ Public Sub PL2IC(ByVal PartList_Directory As String)
 
     ' 1) Reference 바인딩
     Get_Reference PartList_Directory
-    Set rR = rWS.Rows(1).Find("-Line", lookAt:=xlPart, LookIn:=xlValues)
+    Set rR = rWS.Rows(1).Find("-Line", LookAt:=xlPart, LookIn:=xlValues)
     If rR Is Nothing Then Exit Sub
 
     ' 2) 스캔 범위 계산
@@ -6121,8 +6248,8 @@ Private Function PL_iU_Reader(ByVal rS As Long, ByVal cS As Long, ByVal rE As Lo
     Dim r As Long, c As Long
 
     rNickNames = 1
-    cDates = rWS.Rows(rNickNames).Find("투입" & vbLf & "시점", lookAt:=xlPart, LookIn:=xlValues).Column
-    cCounts = rWS.Rows(rNickNames).Find("수량", lookAt:=xlPart, LookIn:=xlValues).Column
+    cDates = rWS.Rows(rNickNames).Find("투입" & vbLf & "시점", LookAt:=xlPart, LookIn:=xlValues).Column
+    cCounts = rWS.Rows(rNickNames).Find("수량", LookAt:=xlPart, LookIn:=xlValues).Column
 
     For c = cS To cE
         sNickName = CStr(rWS.Cells(rNickNames, c).Value)

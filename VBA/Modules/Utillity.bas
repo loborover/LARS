@@ -1,4 +1,7 @@
 Attribute VB_Name = "Utillity"
+'////////////////////////////////////////////////////////////////////////////////////////////////////
+'// 1. 전역 선언 및 초기화
+'////////////////////////////////////////////////////////////////////////////////////////////////////
 Option Explicit
 
 #If Win64 Then
@@ -12,6 +15,11 @@ Option Explicit
 #End If
 
 Public ARH As AutoReportHandler
+' 색상 변수 정의
+Private DEACTIVE_COLOR As Long
+Private EVALUATE_COLOR As Long
+Private REACTIVE_COLOR As Long
+Private WRAP_COLOR As Long
 
 '---------------------------
 ' 1) 파싱 결과를 담는 UDT
@@ -77,6 +85,16 @@ Public Enum ObjDirection4Way
     d4RIGHT = 44
 End Enum
 
+'////////////////////////////////////////////////////////////////////////////////////////////////////
+'// 2. 파일/디렉토리 처리
+'////////////////////////////////////////////////////////////////////////////////////////////////////
+Public Sub initialize_ColorSet()
+    DEACTIVE_COLOR = RGB(255, 30, 30)
+    EVALUATE_COLOR = RGB(255, 255, 30)
+    REACTIVE_COLOR = RGB(255, 255, 255)
+    WRAP_COLOR = RGB(30, 255, 60)
+End Sub
+
 Public Function SaveFilesWithCustomDirectory(directoryPath As String, _
                 ByRef Wb As Workbook, _
                 ByRef PDFpagesetup As PrintSetting, _
@@ -133,6 +151,9 @@ Function FindFilesWithTextInName(directoryPath As String, searchText As String, 
     End If
 End Function
 
+'////////////////////////////////////////////////////////////////////////////////////////////////////
+'// 3. 데이터 유틸리티
+'////////////////////////////////////////////////////////////////////////////////////////////////////
 Function IsInArray(valToBeFound As Variant, arr As Variant) As Boolean
     Dim element As Variant
     On Error Resume Next
@@ -217,6 +238,9 @@ Public Function fCCNEC(ByVal TargetRange As Range) As Long
     fCCNEC = Count
 End Function
 
+'////////////////////////////////////////////////////////////////////////////////////////////////////
+'// 4. 워크시트/범위 처리
+'////////////////////////////////////////////////////////////////////////////////////////////////////
 ' 셀 기준으로  줄 긋는 서브루틴
 Public Sub CellLiner(ByRef Target As Range, _
                                 Optional vEdge As XlBordersIndex = xlEdgeTop, _
@@ -276,6 +300,7 @@ Public Function CheckFileAlreadyWritten_PDF(ByRef Document_Name As String, DT As
         Exit Function
     End If
 End Function
+
 Public Sub SelfMerge(ByRef MergeTarget As Range)
     Dim r As Long, c As Long
     Dim Cell As Range
@@ -363,6 +388,9 @@ Public Sub DeleteDuplicateRowsInColumn(ByVal targetCol As Long, ByRef startRow A
     EndRow = EndRow - DeleteRowCount
 End Sub
 
+'////////////////////////////////////////////////////////////////////////////////////////////////////
+'// 5. 정규식 및 파싱
+'////////////////////////////////////////////////////////////////////////////////////////////////////
 '---------------------------
 ' 2) 정규식 헬퍼(Late Binding)
 '---------------------------
@@ -449,6 +477,9 @@ Private Function ParseMDToken(ByVal fullPath As String, Optional ByVal BaseYear 
     ParseMDToken = T
 End Function
 
+'////////////////////////////////////////////////////////////////////////////////////////////////////
+'// 6. ListView 처리
+'////////////////////////////////////////////////////////////////////////////////////////////////////
 '---------------------------------------------
 ' 5) ListView 선별 추가기 (요일/라인 필터)
 '    wantDocType  : 0 이면 타입 무시
@@ -684,4 +715,79 @@ Public Function RemoveLineBreaks(Target As Variant) As String
  Target = Replace(Target, vbLf, " ")
  RemoveLineBreaks = Replace(Target, vbCr, " ")
 End Function
+
+'////////////////////////////////////////////////////////////////////////////////////////////////////
+'// 7. 로트 컨트롤 및 색상 관리
+'////////////////////////////////////////////////////////////////////////////////////////////////////
+' 기존 헬퍼 함수 섹션에 추가
+Private Sub ApplyLotStyle(TargetRange As Range, ByVal RGBColor As Long, _
+                         Optional ByVal XBorder As Boolean = False)
+    With TargetRange
+        .Interior.Color = RGBColor
+        .Font.Color = RGB(255 - (RGBColor And &HFF), 255 - ((RGBColor \ &H100) And &HFF), 255 - (RGBColor \ &H10000))
+        .Font.Bold = False
+        
+        If XBorder Then
+            With .Borders(xlDiagonalDown)
+                .LineStyle = xlContinuous
+                .Color = vbRed
+                .Weight = xlThin
+            End With
+            With .Borders(xlDiagonalUp)
+                .LineStyle = xlContinuous
+                .Color = vbRed
+                .Weight = xlThin
+            End With
+        End If
+    End With
+End Sub
+
+' 통합된 로트 컨트롤 서브
+Public Sub ControlLot(ByVal RGBColor As Long, Optional ByVal XBorder As Boolean = False, _
+                     Optional ByRef Target As Range = Nothing)
+    Dim TargetRange As Range
+    Set TargetRange = GetLotTargetRange(Target)
+    
+    If Not TargetRange Is Nothing Then
+        ApplyLotStyle TargetRange, RGBColor, XBorder
+    End If
+End Sub
+
+' 내부 유틸리티 함수
+Private Function GetLotTargetRange(Optional ByRef Target As Range = Nothing) As Range
+    Dim ws As Worksheet
+    Dim LotCount As Long
+    Dim TargetRow(1 To 2) As Long
+    
+    If Target Is Nothing Then
+        Set ws = Selection.Worksheet
+        LotCount = Selection.Rows.Count
+        TargetRow(1) = Selection.Row
+        TargetRow(2) = Selection.Row + (LotCount - 1)
+    Else
+        Set ws = Target.Worksheet
+        LotCount = Target.Rows.Count
+        TargetRow(1) = Target.Row
+        TargetRow(2) = Target.Row + (LotCount - 1)
+    End If
+    
+    Set GetLotTargetRange = ws.Rows(TargetRow(1) & ":" & TargetRow(2))
+End Function
+
+' 간결화된 호출 서브
+Public Sub Deactive_Lot()
+    ControlLot DEACTIVE_COLOR
+End Sub
+
+Public Sub Evaluate_Lot()
+    ControlLot EVALUATE_COLOR
+End Sub
+
+Public Sub Reactive_Lot()
+    ControlLot REACTIVE_COLOR
+End Sub
+
+Public Sub Wrap_Lot()
+    ControlLot WRAP_COLOR
+End Sub
 

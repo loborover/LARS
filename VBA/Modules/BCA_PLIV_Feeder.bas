@@ -19,13 +19,13 @@ Public Sub SortColumnByFeeder(ByRef Feeder As Collection)
         Set ws = ActiveWorkbook.ActiveSheet
     #End If
     If ws Is Nothing Then Debug.Print "Err.WorkSheet is Nothing": Exit Sub
-    Dim Chk As Range, itemRange As Range: Set itemRange = ws.Rows(1).Find("-Line", LookIn:=xlValues, lookAt:=xlPart)
+    Dim Chk As Range, itemRange As Range: Set itemRange = ws.Rows(1).Find("-Line", LookIn:=xlValues, LookAt:=xlPart)
     Dim FirstCol As Long, LastCol As Long, i As Long
     ' √ ±‚»≠
     FirstCol = itemRange.Column + 2: LastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
     Set itemRange = ws.Range(ws.Cells(1, FirstCol), ws.Cells(1, LastCol))
     ws.Columns.EntireColumn.Hidden = False
-    ws.Columns(ws.Rows(1).Find("Tool", LookIn:=xlValues, lookAt:=xlWhole).Column).Hidden = True
+    ws.Columns(ws.Rows(1).Find("Tool", LookIn:=xlValues, LookAt:=xlWhole).Column).Hidden = True
     Replacing_Feeder2item Feeder
     
     For Each Chk In itemRange

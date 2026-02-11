@@ -13,7 +13,7 @@ Public isDirSetUp As Boolean
 
 Public Sub SetUpDirectories()
     Set ws = ThisWorkbook.Worksheets("Setting")
-    SourceFileFolder_Directory = ws.Columns(1).Find(What:="Source", lookAt:=xlWhole).Offset(0, 1).Value
+    SourceFileFolder_Directory = ws.Columns(1).Find(What:="Source", LookAt:=xlWhole).Offset(0, 1).Value
     isDirSetUp = True
 End Sub
 

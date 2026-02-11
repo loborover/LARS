@@ -82,13 +82,13 @@ Private Function TryParseDateTimeFlex(ByVal vDate As Variant, ByVal vTime As Var
     End If
 
     ' 2) 텍스트인 경우 처리 (오전/오후, AM/PM, YYYYMMDD, hhmmss 등)
-    Dim s As String, sNorm As String, Y As Long, m As Long, d As Long
-    s = Trim$(CStr(vDate))
-    If Len(s) = 0 Then Exit Function
+    Dim S As String, sNorm As String, Y As Long, m As Long, d As Long
+    S = Trim$(CStr(vDate))
+    If Len(S) = 0 Then Exit Function
 
     ' a) "YYYYMMDD" 단독
-    If Len(s) = 8 And IsNumeric(s) Then
-        If TryParseYmd8_ToDate(s, baseDate) Then
+    If Len(S) = 8 And IsNumeric(S) Then
+        If TryParseYmd8_ToDate(S, baseDate) Then
             outDT = baseDate ' 시간 00:00
             TryParseDateTimeFlex = True
             Exit Function
@@ -96,13 +96,13 @@ Private Function TryParseDateTimeFlex(ByVal vDate As Variant, ByVal vTime As Var
     End If
 
     ' b) "YYYYMMDD HH:MM[:SS]" 또는 "YYYYMMDD 오전 HH:MM[:SS]" 등
-    If TryParse_Ymd8_And_TimeText(s, outDT) Then
+    If TryParse_Ymd8_And_TimeText(S, outDT) Then
         TryParseDateTimeFlex = True
         Exit Function
     End If
 
     ' c) 일반 텍스트 날짜/시간 (오전/오후 → AM/PM 치환 후 CDate 시도)
-    sNorm = NormalizeKoreanAmPm(s)
+    sNorm = NormalizeKoreanAmPm(S)
     On Error Resume Next
     outDT = CDate(sNorm)
     If Err.Number = 0 Then
@@ -114,7 +114,7 @@ End Function
 ' YYYYMMDD(숫자/텍스트) → Date (시간 00:00)
 Private Function TryParseYmd8_ToDate(ByVal v As Variant, ByRef outDate As Date) As Boolean
     Dim n As Long, Y As Long, m As Long, d As Long
-    Dim s As String
+    Dim S As String
 
     TryParseYmd8_ToDate = False
     If IsEmpty(v) Or IsError(v) Then Exit Function
@@ -126,12 +126,12 @@ Private Function TryParseYmd8_ToDate(ByVal v As Variant, ByRef outDate As Date) 
         m = (n \ 100) Mod 100
         d = n Mod 100
     Else
-        s = Trim$(CStr(v))
-        If Len(s) <> 8 Then Exit Function
-        If Not IsNumeric(s) Then Exit Function
-        Y = CLng(Left$(s, 4))
-        m = CLng(mid$(s, 5, 2))
-        d = CLng(Right$(s, 2))
+        S = Trim$(CStr(v))
+        If Len(S) <> 8 Then Exit Function
+        If Not IsNumeric(S) Then Exit Function
+        Y = CLng(Left$(S, 4))
+        m = CLng(mid$(S, 5, 2))
+        d = CLng(Right$(S, 2))
     End If
 
     If Y < 1900 Or m < 1 Or m > 12 Or d < 1 Or d > 31 Then Exit Function
@@ -142,13 +142,13 @@ End Function
 
 ' 혼합 텍스트에서 "YYYYMMDD [오전/오후|AM/PM] hh:mm[:ss]" 패턴 처리
 ' 예: "20250831 오전 08:00:00", "20250831 8:00", "20250831 PM 8:00"
-Private Function TryParse_Ymd8_And_TimeText(ByVal s As String, ByRef outDT As Date) As Boolean
+Private Function TryParse_Ymd8_And_TimeText(ByVal S As String, ByRef outDT As Date) As Boolean
     Dim sTrim As String, Y As Long, m As Long, d As Long
     Dim DatePart As String, timePart As String, posSp As Long
     Dim baseDate As Date, tfrac As Double
 
     TryParse_Ymd8_And_TimeText = False
-    sTrim = Trim$(s)
+    sTrim = Trim$(S)
     If Len(sTrim) < 8 Then Exit Function
 
     ' 앞 8자리가 YYYYMMDD인가?
@@ -179,7 +179,7 @@ End Function
 '  - "08:00:00"/"8:00"/"8:00 PM"/"오전 8:00" 등의 텍스트
 '  - "080000" 등 6자리 시간 텍스트
 Private Function TryGetTimeFraction_Flex(ByVal v As Variant, ByRef outFrac As Double) As Boolean
-    Dim s As String, hh As Long, nn As Long, ss As Long
+    Dim S As String, hh As Long, nn As Long, ss As Long
     Dim sNorm As String
 
     TryGetTimeFraction_Flex = False
@@ -195,11 +195,11 @@ Private Function TryGetTimeFraction_Flex(ByVal v As Variant, ByRef outFrac As Do
     End If
 
     ' 텍스트 처리
-    s = Trim$(CStr(v))
-    If Len(s) = 0 Then Exit Function
+    S = Trim$(CStr(v))
+    If Len(S) = 0 Then Exit Function
 
     ' "오전/오후" → AM/PM 정규화
-    sNorm = NormalizeKoreanAmPm(s)
+    sNorm = NormalizeKoreanAmPm(S)
 
     If InStr(sNorm, ":") > 0 Then
         ' "hh:mm[:ss]" (AM/PM 포함 가능)
@@ -220,9 +220,9 @@ Private Function TryGetTimeFraction_Flex(ByVal v As Variant, ByRef outFrac As Do
 End Function
 
 ' 한국어 오전/오후를 AM/PM으로 치환하고, 불필요한 중복 공백 정리
-Private Function NormalizeKoreanAmPm(ByVal s As String) As String
+Private Function NormalizeKoreanAmPm(ByVal S As String) As String
     Dim T As String
-    T = s
+    T = S
     ' 변형 케이스 최소화: 앞뒤 공백에 둔감하게
     T = Replace(T, "오전", "AM")
     T = Replace(T, "오 후", "PM") ' 혹시 있을 느슨한 표기
@@ -236,7 +236,7 @@ End Function
 
 ' (선택) DateOnly 전용 파서: 숫자형 직렬/텍스트 YYYYMMDD/표준 날짜텍스트를 아우름
 Private Function TryParse_DateOnly(ByVal v As Variant, ByRef outDate As Date) As Boolean
-    Dim s As String
+    Dim S As String
     TryParse_DateOnly = False
     outDate = 0
 
@@ -248,9 +248,9 @@ Private Function TryParse_DateOnly(ByVal v As Variant, ByRef outDate As Date) As
         Exit Function
     End If
 
-    s = Trim$(CStr(v))
-    If Len(s) = 8 And IsNumeric(s) Then
-        If TryParseYmd8_ToDate(s, outDate) Then
+    S = Trim$(CStr(v))
+    If Len(S) = 8 And IsNumeric(S) Then
+        If TryParseYmd8_ToDate(S, outDate) Then
             TryParse_DateOnly = True
             Exit Function
         End If
@@ -258,7 +258,7 @@ Private Function TryParse_DateOnly(ByVal v As Variant, ByRef outDate As Date) As
 
     ' 일반 텍스트 날짜(구분자 포함)도 허용
     On Error Resume Next
-    outDate = DateValue(CDate(s))
+    outDate = DateValue(CDate(S))
     If Err.Number = 0 Then TryParse_DateOnly = True
     On Error GoTo 0
 End Function
@@ -318,7 +318,7 @@ End Function
 ' 제외시간 컬렉션(TC)과의 겹침만큼 Duration에서 차감
 Private Function NetDurationSingleDay(ByVal segStart As Date, ByVal segEnd As Date, ByVal TC As Collection) As Double
     Dim dur As Double
-    Dim s As Variant, parts() As String
+    Dim S As Variant, parts() As String
     Dim exStartT As Date, exEndT As Date
     Dim exStart As Date, exEnd As Date
     Dim ovS As Date, ovE As Date
@@ -330,8 +330,8 @@ Private Function NetDurationSingleDay(ByVal segStart As Date, ByVal segEnd As Da
 
     dur = segEnd - segStart ' 기본 길이(일수)
 
-    For Each s In TC
-        parts = Split(CStr(s), "-")
+    For Each S In TC
+        parts = Split(CStr(S), "-")
         If UBound(parts) = 1 Then
             ' 시간 텍스트를 Time으로
             exStartT = TimeValue(parts(0))
@@ -371,3 +371,24 @@ Public Function isDayDiff(ByRef T1 As Range, ByRef T2 As Range, Optional ByVal M
     If Abs(DateValue(CDate(T2.Value)) - DateValue(CDate(T1.Value))) >= MinDays Then isDayDiff = True
 End Function
 
+Public Sub Reset_Timer(ByRef TimeRange As Range)
+    On Error GoTo KillSub
+    Dim ws As Worksheet: Set ws = TimeRange.Worksheet
+    Dim TDate As Date, BeforeT As Date, AfterT As Date, ResultT As Date
+    Dim TimeKeep As New Collection
+    Dim cRow As Long, tCol As Long
+    cRow = TimeRange.Row + 1
+    tCol = TimeRange.Column
+    TDate = Day(CDate(TimeRange.Value))
+    Do Until TDate <> Day(CDate(ws.Cells(cRow, tCol).Value))
+        AfterT = ws.Cells(cRow + 1, tCol).Value
+        BeforeT = ws.Cells(cRow, tCol).Value
+        ResultT = AfterT - BeforeT
+        TimeKeep.Add ResultT
+        Debug.Print cRow
+        cRow = cRow + 1
+    Loop
+    
+    TimeRange.Value = "PASS"
+KillSub: Exit Sub
+End Sub

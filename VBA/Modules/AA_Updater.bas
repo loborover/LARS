@@ -136,14 +136,14 @@ Sub ForceUpdateMacro()
     
     ' Setting 확인
     Set ws = ThisWorkbook.Worksheets("Setting")
-    If ("Dev" = ws.Cells.Find(What:="Develop", lookAt:=xlWhole, MatchCase:=True).Offset(0, 1).Value) Then
+    If ("Dev" = ws.Cells.Find(What:="Develop", LookAt:=xlWhole, MatchCase:=True).Offset(0, 1).Value) Then
         #If Not isDev Then
             MsgBox "개발 모드이므로 업데이트 진행 제한", vbInformation, "개발여부 확인"
         #End If
         Exit Sub
     End If
 
-    Set VersionCell = ws.Cells.Find(What:="Version", lookAt:=xlWhole, MatchCase:=True)
+    Set VersionCell = ws.Cells.Find(What:="Version", LookAt:=xlWhole, MatchCase:=True)
     'Debug.Print VersionCell.Address
     
     ' GitLab Raw URL 설정

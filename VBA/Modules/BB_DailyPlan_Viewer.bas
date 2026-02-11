@@ -127,7 +127,7 @@ Private Sub AR_1_EssentialDataExtraction(Optional ByRef LastCol As Long = 0, Opt
     Application.DisplayAlerts = False ' 경고문 비활성화
     
     ' 투입시점 시작시간 추출
-    Set DelCell = ws.Cells.Find("Planned Start Time", lookAt:=xlWhole, MatchCase:=True) ' 투입시점 Range추출
+    Set DelCell = ws.Cells.Find("Planned Start Time", LookAt:=xlWhole, MatchCase:=True) ' 투입시점 Range추출
     i = DelCell.Column: startRow = DelCell.Row + 3: LastRow = Target_WorkSheet.Cells(ws.Rows.Count, 1).End(xlUp).Row
     MergeDateTime_Flexible ws, i, 1, , startRow, "", "h:mm"
     
@@ -143,7 +143,7 @@ Private Sub AR_1_EssentialDataExtraction(Optional ByRef LastCol As Long = 0, Opt
             (IsNumeric(DelCell.Value) And DelCell.Offset(1, 0).Value > 0) Then ws.Columns(i).Delete ' 숨기려면 .Hidden = True
     Next i
     ' 새로운 서식 적용을 위한 열 추가 및 수정작업
-    Set DelCell = ws.Rows(2).Find(What:="W/O 계획수량", lookAt:=xlWhole)
+    Set DelCell = ws.Rows(2).Find(What:="W/O 계획수량", LookAt:=xlWhole)
     If DelCell Is Nothing Then Stop ' 오류나면 정지
     DelCell.Value = "계획" ' 원래의 열 제목이 너무 길어서 수정
     DelCell.Offset(0, 1).Value = "IN" ' 원래의 열 제목이 너무 길어서 수정
@@ -170,7 +170,7 @@ Private Sub AR_1_EssentialDataExtraction(Optional ByRef LastCol As Long = 0, Opt
         ws.Rows(LastRow + 1).Delete
     Loop
     
-    Set DelCell = ws.Rows(2).Find(What:="계획", lookAt:=xlWhole)
+    Set DelCell = ws.Rows(2).Find(What:="계획", LookAt:=xlWhole)
     For i = 0 To 8
         If i <> 3 And i <> 4 Then
             DelCell.Offset(1, i).Formula = "=Sum(" & ws.Range(DelCell.Offset(2, i), ws.Cells(LastRow, DelCell.Offset(2, i).Column)).Address & ")"
@@ -334,7 +334,7 @@ Private Sub Interior_Set_DailyPlan(Optional ByRef FirstRow As Long = 3, Optional
     
     If Yoil_DP Then
         Dim Target As Range
-        Set Target = ws.Range("2:2").Find(What:="계획", LookIn:=xlValues, lookAt:=xlWhole).Offset(0, 5)
+        Set Target = ws.Range("2:2").Find(What:="계획", LookIn:=xlValues, LookAt:=xlWhole).Offset(0, 5)
         For i = 0 To 3
             DecodeDate Target.Offset(0, i)
             If Not i = 0 Then DatePartLining Target.Offset(0, i - 1)
@@ -360,7 +360,7 @@ Private Sub Interior_Set_DailyPlan(Optional ByRef FirstRow As Long = 3, Optional
         Next ACol
     Next i
     
-    ACol = ws.Range("1:2").Find(What:="Line", LookIn:=xlValues, lookAt:=xlPart).Column
+    ACol = ws.Range("1:2").Find(What:="Line", LookIn:=xlValues, LookAt:=xlPart).Column
     Set tempRange = ws.Range(ws.Cells(FirstRow + 1, 1), ws.Cells(LastRow, ACol + 1))
     
     For Each xCell In tempRange
@@ -413,7 +413,7 @@ Private Function GetDailyPlanWhen(DailyPlanDirectiory As String) As String
     Title = Title & "-" & smallestValue & "일" ' Title = *월-*일
     GetDailyPlanWhen = Title ' 날짜형 제목값 인계
     Title = smallestValue ' 날짜값
-    Set Cell = ws.Rows("2:3").Find(What:="생산 라인", lookAt:=xlWhole, LookIn:=xlValues)
+    Set Cell = ws.Rows("2:3").Find(What:="생산 라인", LookAt:=xlWhole, LookIn:=xlValues)
     wLine = Cell.Offset(2, 0).Value
 NAD:
     Wb.Close SaveChanges:=False: Set Wb = Nothing ' 워크북 닫기
@@ -439,7 +439,7 @@ Public Sub MMG_Do() ' Manual Model Grouping
     On Error GoTo 0
     Set Brush.DrawingWorksheet = ws
     
-    CritCol = ws.Cells.Find("부품번호", lookAt:=xlWhole, MatchCase:=True).Column
+    CritCol = ws.Cells.Find("부품번호", LookAt:=xlWhole, MatchCase:=True).Column
     If CritR.Column <> CritCol Then MsgBox ("잘못된 참조"): Exit Sub
     
     Brush.Stamp_it_Auto SetRangeForDraw(CritR), CollectionForUndo:=vCFR
@@ -455,7 +455,7 @@ Public Sub Re_Grouping()
     Set Target_WorkSheet = Selection.Worksheet
     Set Brush.DrawingWorksheet = Target_WorkSheet
     Brush.DeleteShapes
-    Dim CriterionCell As Range: Set CriterionCell = Target_WorkSheet.Cells.Find("부품번호", lookAt:=xlWhole, MatchCase:=True)
+    Dim CriterionCell As Range: Set CriterionCell = Target_WorkSheet.Cells.Find("부품번호", LookAt:=xlWhole, MatchCase:=True)
     MarkingUp AR_2_ModelGrouping(CriterionCell.Row + 3, CriterionCell.Column, Target_WorkSheet)
 End Sub
 

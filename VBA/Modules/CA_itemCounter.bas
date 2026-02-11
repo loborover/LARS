@@ -32,7 +32,7 @@ Public Sub PL2IC(ByVal PartList_Directory As String)
 
     ' 1) Reference 바인딩
     Get_Reference PartList_Directory
-    Set rR = rWS.Rows(1).Find("-Line", lookAt:=xlPart, LookIn:=xlValues)
+    Set rR = rWS.Rows(1).Find("-Line", LookAt:=xlPart, LookIn:=xlValues)
     If rR Is Nothing Then Exit Sub
 
     ' 2) 스캔 범위 계산
@@ -77,8 +77,8 @@ Private Function PL_iU_Reader(ByVal rS As Long, ByVal cS As Long, ByVal rE As Lo
     Dim r As Long, c As Long
 
     rNickNames = 1
-    cDates = rWS.Rows(rNickNames).Find("투입" & vbLf & "시점", lookAt:=xlPart, LookIn:=xlValues).Column
-    cCounts = rWS.Rows(rNickNames).Find("수량", lookAt:=xlPart, LookIn:=xlValues).Column
+    cDates = rWS.Rows(rNickNames).Find("투입" & vbLf & "시점", LookAt:=xlPart, LookIn:=xlValues).Column
+    cCounts = rWS.Rows(rNickNames).Find("수량", LookAt:=xlPart, LookIn:=xlValues).Column
 
     For c = cS To cE
         sNickName = CStr(rWS.Cells(rNickNames, c).Value)
