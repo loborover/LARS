@@ -3,15 +3,24 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
-    <UseWindowsForms>true</UseWindowsForms>
+    <UseWPF>true</UseWPF>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>LARS</RootNamespace>
     <AssemblyName>LARS</AssemblyName>
+    <ApplicationIcon />
+    <StartupObject>LARS.App</StartupObject>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="ClosedXML" Version="0.102.1" />
+    <!-- Excel 처리: MIT 라이선스 -->
+    <PackageReference Include="ClosedXML" Version="0.104.2" />
+    <!-- MVVM: MIT 라이선스 -->
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <!-- DI: MIT 라이선스 -->
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.2" />
+    <!-- PDF 생성: MIT 라이선스 -->
+    <PackageReference Include="PdfSharpCore" Version="1.3.67" />
   </ItemGroup>
 
 </Project>
