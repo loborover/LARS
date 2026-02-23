@@ -21,7 +21,7 @@ public partial class MainViewModel : ObservableObject
     private readonly ItemCounterService _itemCounterService;
     private readonly FeederService _feederService;
     private readonly PdfExportService _pdfService;
-    private readonly DirectoryManager _dirs;
+    private readonly MultiDocService _multiDocService;
 
     public MainViewModel(
         BomReportService bomService,
@@ -30,7 +30,9 @@ public partial class MainViewModel : ObservableObject
         ItemCounterService itemCounterService,
         FeederService feederService,
         PdfExportService pdfService,
-        DirectoryManager dirs)
+        DirectoryManager dirs,
+        SettingsService settingsService,
+        MultiDocService multiDocService)
     {
         _bomService = bomService;
         _dailyPlanService = dailyPlanService;
@@ -39,6 +41,7 @@ public partial class MainViewModel : ObservableObject
         _feederService = feederService;
         _pdfService = pdfService;
         _dirs = dirs;
+        _multiDocService = multiDocService;
     }
 
     // ==========================================
@@ -77,16 +80,18 @@ public partial class MainViewModel : ObservableObject
     {
         StatusText = "BOM 파일 스캔 중...";
         IsProcessing = true;
+        Progress = 0;
         try
         {
             BomFiles.Clear();
-            var files = await Task.Run(() => _bomService.ScanBomFiles());
+            var progress = new Progress<double>(p => Progress = p * 100);
+            var files = await Task.Run(() => _bomService.ScanBomFiles(progress));
             foreach (var f in files) BomFiles.Add(f);
             BomInfoText = $"{files.Count}개 파일 발견";
             StatusText = $"BOM: {files.Count}개 파일 스캔 완료";
         }
         catch (Exception ex) { StatusText = $"오류: {ex.Message}"; }
-        finally { IsProcessing = false; }
+        finally { IsProcessing = false; Progress = 0; }
     }
 
     [RelayCommand]
@@ -198,16 +203,18 @@ public partial class MainViewModel : ObservableObject
     {
         StatusText = "DailyPlan 파일 스캔 중...";
         IsProcessing = true;
+        Progress = 0;
         try
         {
             DailyPlanFiles.Clear();
-            var files = await Task.Run(() => _dailyPlanService.ScanDailyPlanFiles(DateTime.Now.Year));
+            var progress = new Progress<double>(p => Progress = p * 100);
+            var files = await Task.Run(() => _dailyPlanService.ScanDailyPlanFiles(DateTime.Now.Year, progress));
             foreach (var f in files) DailyPlanFiles.Add(f);
             DpInfoText = $"{files.Count}개 파일 발견";
             StatusText = $"DailyPlan: {files.Count}개 파일 스캔 완료";
         }
         catch (Exception ex) { StatusText = $"오류: {ex.Message}"; }
-        finally { IsProcessing = false; }
+        finally { IsProcessing = false; Progress = 0; }
     }
 
     [RelayCommand]
@@ -296,16 +303,18 @@ public partial class MainViewModel : ObservableObject
     {
         StatusText = "PartList 파일 스캔 중...";
         IsProcessing = true;
+        Progress = 0;
         try
         {
             PartListFiles.Clear();
-            var files = await Task.Run(() => _partListService.ScanPartListFiles(DateTime.Now.Year));
+            var progress = new Progress<double>(p => Progress = p * 100);
+            var files = await Task.Run(() => _partListService.ScanPartListFiles(DateTime.Now.Year, progress));
             foreach (var f in files) PartListFiles.Add(f);
             PlInfoText = $"{files.Count}개 파일 발견";
             StatusText = $"PartList: {files.Count}개 파일 스캔 완료";
         }
         catch (Exception ex) { StatusText = $"오류: {ex.Message}"; }
-        finally { IsProcessing = false; }
+        finally { IsProcessing = false; Progress = 0; }
     }
 
     [RelayCommand]
@@ -478,22 +487,75 @@ public partial class MainViewModel : ObservableObject
         IsProcessing = true;
         try
         {
-            var result = await Task.Run(() => _itemCounterService.RunPipeline(_currentPlData));
+            ItemCounterResult result;
+            var schedules = _currentDpData?.Meta?.Schedules;
+            bool hasSchedule = schedules != null && schedules.Count > 0 && _currentDpData!.Meta!.IsValid;
+            List<(DateTime Date, int LotCount)> dateSchedules = new();
+
+            if (hasSchedule)
+            {
+                int year = DateTime.Now.Year;
+                int month = _currentDpData!.Meta!.Month;
+                foreach (var s in schedules!)
+                {
+                    try { dateSchedules.Add((new DateTime(year, month, s.Day), s.LotCount)); }
+                    catch { /* 무효한 날짜 무시 */ }
+                }
+            }
+
+            if (dateSchedules.Count > 0)
+            {
+                result = await Task.Run(() => _itemCounterService.RunPipelineWithDates(_currentPlData, dateSchedules));
+            }
+            else
+            {
+                result = await Task.Run(() => _itemCounterService.RunPipeline(_currentPlData));
+            }
+
             if (result.IsSuccess && result.MergedGroup != null)
             {
                 var dt = new DataTable();
                 dt.Columns.Add("NickName");
                 dt.Columns.Add("Vendor");
                 dt.Columns.Add("PartNumber");
-                dt.Columns.Add("QTY", typeof(long));
+
+                if (dateSchedules.Count > 0)
+                {
+                    foreach (var s in dateSchedules)
+                        dt.Columns.Add($"{s.Date.Day}일", typeof(long));
+                }
+                else
+                {
+                    dt.Columns.Add("QTY", typeof(long));
+                }
+                
                 dt.Columns.Add("Total", typeof(long));
 
                 foreach (var unit in result.MergedGroup.GetAllUnits())
-                    dt.Rows.Add(unit.NickName, unit.Vendor, unit.PartNumber, unit.QTY, unit.TotalCount);
+                {
+                    var row = dt.NewRow();
+                    row["NickName"] = unit.NickName;
+                    row["Vendor"] = unit.Vendor;
+                    row["PartNumber"] = unit.PartNumber;
+
+                    if (dateSchedules.Count > 0)
+                    {
+                        foreach (var s in dateSchedules)
+                            row[$"{s.Date.Day}일"] = unit[s.Date];
+                        row["Total"] = unit.TotalCount;
+                    }
+                    else
+                    {
+                        row["QTY"] = unit.QTY;
+                        row["Total"] = unit.QTY;
+                    }
+                    dt.Rows.Add(row);
+                }
 
                 ItemCounterDataTable = dt;
-                IcInfoText = $"병합 전 {result.TotalItemsBeforeMerge}건 → 병합 후 {result.MergedGroup.UnitCount}건";
-                StatusText = $"ItemCounter 완료: {result.MergedGroup.UnitCount}개 자재";
+                string schedInfo = dateSchedules.Count > 0 ? $" | 스케줄 {dateSchedules.Count}일 연동" : "";
+                IcInfoText = $"병합 전 {result.TotalItemsBeforeMerge}건 → 병합 후 {result.MergedGroup.UnitCount}건{schedInfo}";
+                StatusText = $"ItemCounter 완료: {result.MergedGroup.UnitCount}개 자재{schedInfo}";
             }
             else
             {
@@ -583,6 +645,90 @@ public partial class MainViewModel : ObservableObject
     }
 
     // ==========================================
+    // MultiDocuments 교차 매핑 (Sprint 8)
+    // ==========================================
+
+    public ObservableCollection<MultiDocItem> MultiDocuments { get; } = new();
+
+    [ObservableProperty]
+    private string _mdInfoText = "대기 중";
+
+    [RelayCommand]
+    private async Task LoadMultiDocumentsAsync()
+    {
+        StatusText = "교차 매핑 스캔 중...";
+        IsProcessing = true;
+        try
+        {
+            var dpFiles = await Task.Run(() => _dailyPlanService.ScanDailyPlanFiles(DateTime.Now.Year));
+            var plFiles = await Task.Run(() => _partListService.ScanPartListFiles(DateTime.Now.Year));
+
+            var matched = await Task.Run(() => _multiDocService.MatchFiles(dpFiles, plFiles));
+
+            MultiDocuments.Clear();
+            foreach (var item in matched)
+                MultiDocuments.Add(item);
+
+            MdInfoText = $"{matched.Count}개 그룹 매핑 (완전 매치는 {matched.Count(x => x.HasBoth)}개)";
+            StatusText = $"교차 매핑 완료: {matched.Count}개 그룹 발견";
+        }
+        catch (Exception ex) { StatusText = $"교차 매핑 오류: {ex.Message}"; }
+        finally { IsProcessing = false; }
+    }
+
+    [RelayCommand]
+    private async Task ProcessMultiDocumentsAsync()
+    {
+        var selected = MultiDocuments.Where(x => x.IsSelected && x.HasBoth).ToList();
+        if (selected.Count == 0)
+        {
+            StatusText = "선택된 완료 항목이 없습니다.";
+            return;
+        }
+
+        StatusText = $"일괄 처리 시작: {selected.Count}개 항목";
+        IsProcessing = true;
+        int successCount = 0;
+        Progress = 0;
+        
+        try
+        {
+            for (int i = 0; i < selected.Count; i++)
+            {
+                var item = selected[i];
+                StatusText = $"처리 중 ({i + 1}/{selected.Count}): {item.Key}...";
+                
+                // 1. PartList 로드
+                var plResult = await Task.Run(() => _partListService.ReadPartListFile(item.PartListFile!.FilePath));
+                if (!plResult.IsSuccess) continue;
+
+                // 2. 정규화
+                await Task.Run(() => _partListService.NormalizeCellValue(plResult));
+
+                // 3. Feeder 필터 적용
+                if (SelectedFeeder != null)
+                {
+                    await Task.Run(() => _partListService.FilterByFeeder(plResult, SelectedFeeder));
+                }
+
+                // 4. PDF 일괄 내보내기
+                string saveDir = _dirs.IsSetup ? _dirs.Output : Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+                string savePath = Path.Combine(saveDir, $"PartList_{item.Key}_{DateTime.Now:HHmmss}.pdf");
+                bool ok = await Task.Run(() => _pdfService.ExportWithColumnRatios(
+                    savePath, $"PartList {item.Key}",
+                    plResult.Headers, plResult.Rows.ToList(),
+                    new[] { 2.7, 5, 20, 25, 4, 30, 3, 3, 3 }));
+
+                if (ok) successCount++;
+                Progress = ((double)(i + 1) / selected.Count) * 100;
+            }
+            StatusText = $"일괄 처리 완료: {successCount}/{selected.Count} 성공";
+        }
+        catch (Exception ex) { StatusText = $"일괄 처리 오류: {ex.Message}"; }
+        finally { IsProcessing = false; Progress = 0; }
+    }
+
+    // ==========================================
     // 설정
     // ==========================================
 
@@ -617,6 +763,7 @@ public partial class MainViewModel : ObservableObject
         await ScanBomFilesAsync();
         await ScanDailyPlanFilesAsync();
         await ScanPartListFilesAsync();
+        await LoadMultiDocumentsAsync();
         LoadFeeders();
         StatusText = "전체 갱신 완료";
         IsProcessing = false;

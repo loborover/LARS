@@ -241,16 +241,19 @@ public class DailyPlanService
             int firstCol = mergeArea.FirstColumn().ColumnNumber;
             int lastCol = mergeArea.LastColumn().ColumnNumber;
 
-            // Row 3에서 최솟값 날짜 찾기 (VBA: smallestValue < 31)
+            // Row 3에서 최솟값 날짜 찾기 (VBA: smallestValue < 31) 및 스케줄 추출
             int minDay = 31;
+            var schedules = new List<(int Day, int LotCount)>();
             for (int c = firstCol; c <= lastCol; c++)
             {
                 string dayVal = ws.Cell(3, c).GetString();
                 string cntVal = ws.Cell(4, c).GetString();
                 if (int.TryParse(dayVal, out int day) &&
-                    double.TryParse(cntVal, out double cnt) && cnt > 0 &&
-                    day < minDay)
-                    minDay = day;
+                    double.TryParse(cntVal, out double cnt) && cnt > 0)
+                {
+                    if (day < minDay) minDay = day;
+                    schedules.Add((day, (int)cnt));
+                }
             }
 
             // 월 문자열에서 숫자 추출: "5월" → 5
@@ -276,7 +279,8 @@ public class DailyPlanService
                 Month = month,
                 Day = minDay < 31 ? minDay : 1,
                 Line = line,
-                IsValid = month > 0
+                IsValid = month > 0,
+                Schedules = schedules
             };
         }
         catch
@@ -384,6 +388,9 @@ public class DailyPlanMetadata
     public string Line { get; set; } = string.Empty;
     public bool IsValid { get; set; }
 
+    /// <summary>일별 생산 스케줄(일자, 총 롯트 수) 리스트</summary>
+    public List<(int Day, int LotCount)> Schedules { get; set; } = new();
+
     /// <summary>날짜 문자열: "5월-28일" 형식</summary>
     public string DateLabel => IsValid ? $"{Month}월-{Day}일" : "(날짜 없음)";
 
@@ -417,10 +424,16 @@ public class PartListService
     /// <summary>
     /// PartList 디렉토리에서 파일 목록을 스캔합니다.
     /// </summary>
-    public List<FileMetadata> ScanPartListFiles(int baseYear = 0)
+    public List<FileMetadata> ScanPartListFiles(int baseYear = 0, IProgress<double>? progress = null)
     {
         var files = FileSearcher.FindFiles(_dirs.PartList, "", ".xlsx");
-        return files.Select(f => FileMetadata.Parse(f, baseYear)).ToList();
+        var result = new List<FileMetadata>(files.Count);
+        for (int i = 0; i < files.Count; i++)
+        {
+            result.Add(FileMetadata.Parse(files[i], baseYear));
+            progress?.Report((double)(i + 1) / files.Count);
+        }
+        return result;
     }
 
     /// <summary>
@@ -664,6 +677,46 @@ public class ItemCounterService
         }
 
         // 병합
+        result.MergedGroup = MergeItems(allItems);
+        result.IsSuccess = true;
+        result.TotalItemsBeforeMerge = allItems.Count;
+        return result;
+    }
+
+    /// <summary>
+    /// PartList 데이터와 DailyPlan 스케줄(날짜, 롯트 수)을 결합해 파이프라인을 실행합니다.
+    /// 자재 수량에 날짜별 롯트 수를 곱해 집계합니다.
+    /// </summary>
+    public ItemCounterResult RunPipelineWithDates(PartListDataResult partListData, List<(DateTime Date, int LotCount)> schedules)
+    {
+        var result = new ItemCounterResult();
+        if (!partListData.IsSuccess || partListData.Rows.Count == 0)
+        {
+            result.ErrorMessage = "PartList 데이터가 없습니다.";
+            return result;
+        }
+
+        var allItems = new List<ItemUnit>();
+
+        foreach (var row in partListData.Rows)
+        {
+            string nickName = row.Count > 0 ? row[0] : "Unknown";
+
+            for (int col = 1; col < row.Count; col++)
+            {
+                string cellText = row[col];
+                if (string.IsNullOrWhiteSpace(cellText)) continue;
+
+                // 각 스케줄 날짜/롯트 수에 대해 아이템 생성 후 합산
+                foreach (var schedule in schedules)
+                {
+                    if (schedule.LotCount == 0) continue;
+                    var items = ParseCellText(cellText, nickName, schedule.Date, schedule.LotCount);
+                    allItems.AddRange(items);
+                }
+            }
+        }
+
         result.MergedGroup = MergeItems(allItems);
         result.IsSuccess = true;
         result.TotalItemsBeforeMerge = allItems.Count;

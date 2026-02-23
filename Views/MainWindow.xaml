@@ -218,6 +218,49 @@
                 </Grid>
             </TabItem>
 
+            <!-- ===== MultiDocuments 탭 ===== -->
+            <TabItem Header="🔗 교차 매핑">
+                <Grid Margin="20,16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Style="{StaticResource CardPanel}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="BD_MultiDocuments (교차 매핑 자동화)" FontSize="16" FontWeight="Bold"
+                                           Foreground="{StaticResource TextPrimaryBrush}" />
+                                <TextBlock Text="{Binding MdInfoText, StringFormat='  •  {0}'}"
+                                           FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"
+                                           VerticalAlignment="Center" Margin="8,0,0,0" />
+                            </StackPanel>
+                            <Button Grid.Column="1" Style="{StaticResource SecondaryButton}"
+                                    Content="📡 결과 스캔" Command="{Binding LoadMultiDocumentsCommand}" Margin="0,0,6,0" />
+                            <Button Grid.Column="2" Style="{StaticResource PrimaryButton}"
+                                    Content="🚀 일괄 처리 (정규화+PDF)" Command="{Binding ProcessMultiDocumentsCommand}" />
+                        </Grid>
+                    </Border>
+
+                    <!-- 매핑된 그룹 리스트 -->
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding MultiDocuments}"
+                              AutoGenerateColumns="False" IsReadOnly="False" Margin="0,4,0,0">
+                        <DataGrid.Columns>
+                            <DataGridCheckBoxColumn Header="선택" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="50" />
+                            <DataGridTextColumn Header="키 (Date_Line)" Binding="{Binding Key}" Width="150" IsReadOnly="True" />
+                            <DataGridTextColumn Header="DailyPlan" Binding="{Binding DailyPlanName}" Width="250" IsReadOnly="True" />
+                            <DataGridTextColumn Header="PartList" Binding="{Binding PartListName}" Width="250" IsReadOnly="True" />
+                            <DataGridCheckBoxColumn Header="매칭 완료" Binding="{Binding HasBoth, Mode=OneWay}" Width="80" IsReadOnly="True" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+
             <!-- ===== ItemCounter 탭 ===== -->
             <TabItem Header="🔢 ItemCounter">
                 <Grid Margin="20,16">

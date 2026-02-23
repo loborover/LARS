@@ -38,6 +38,7 @@ public partial class App : Application
         services.AddSingleton<PartListService>();
         services.AddSingleton<ItemCounterService>();
         services.AddSingleton<FeederService>();
+        services.AddSingleton<MultiDocService>();
 
         // ViewModel
         services.AddSingleton<MainViewModel>();

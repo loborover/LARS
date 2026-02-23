@@ -25,7 +25,7 @@
 | **FilterByFeeder ViewModel 연결** | `ApplyFeederFilterAsync` | ✅ 구현됨 | `MainViewModel.cs` |
 | **원본 복원** | `ResetToRaw` | ✅ 구현됨 | `MainViewModel.cs` |
 | **설정 경로 영속성 (재시작 유지)** | `SettingsService` | ✅ 구현됨 | `SettingsService.cs` |
-| **ProgressBar 실제 연동** | `IProgress<double>` | ❌ 미구현 | — |
+| **ProgressBar 실제 연동** | `IProgress<double>` | ✅ 구현됨 | `MainViewModel.cs` |
 
 ---
 
@@ -88,44 +88,44 @@
 
 ---
 
-## Sprint 6 (진행 중) 🔄 — ProgressBar 연동
+## Sprint 6 (완료) ✅ — ProgressBar 연동
 
-**목표**: 파일 스캔/PDF 생성 중 진행률 표시
+**목표**: 파일 스캔 중 진행률 표시
 
 **작업 목록**:
-1. `IProgress<double>` 인터페이스 패턴으로 서비스에 주입
-2. `ScanBomFilesAsync`, `ScanDailyPlanFilesAsync`, `ScanPartListFilesAsync`에 진행률 콜백 추가
-3. XAML ProgressBar에 `Value="{Binding Progress}"` 연결 (이미 속성 존재, 연결만 필요)
+- [x] 1. `IProgress<double>` 인터페이스 패턴으로 서비스에 주입 (`BomReportService`, `DailyPlanService`, `PartListService`)
+- [x] 2. `ScanBomFilesAsync`, `ScanDailyPlanFilesAsync`, `ScanPartListFilesAsync`에 진행률 콜백 추가
+- [x] 3. XAML ProgressBar에 `Value="{Binding Progress}"` 연결 (자동 갱신)
 
 ---
 
-## Sprint 7 (예정) ❌ — ItemCounter 날짜별 집계
+## Sprint 7 (완료) ✅ — ItemCounter 날짜별 집계
 
 **목표**: DailyPlan 스케줄 기반 날짜별 자재 수량 집계
 
 **작업 목록**:
-1. `ItemCounterService.RunPipelineWithDates()` 구현
+- [x] 1. `ItemCounterService.RunPipelineWithDates()` 구현
    - `(DateTime, LotCount)` 쌍 리스트 입력
    - 날짜별 `itemUnit.Count(date)` 집계
-2. `ItemCounterDataTable` 동적 컬럼 (날짜 헤더) 생성
-3. DailyPlan + PartList 동시 로드된 경우 자동 연동 버튼 추가
+- [x] 2. `ItemCounterDataTable` 동적 컬럼 (날짜 헤더) 생성
+- [x] 3. DailyPlan + PartList 동시 로드된 경우 자동 연동 기능 추가
 
 ---
 
-## Sprint 8 (예정) ❌ — BD_MultiDocuments (핵심 자동화)
+## Sprint 8 (완료) ✅ — BD_MultiDocuments (핵심 자동화)
 
 **목표**: DailyPlan ↔ PartList 날짜+라인 키로 파일 자동 매핑
 
 > VBA `BD_MultiDocuments.bas` + `FillListView_Intersection()` 이관
 
 **작업 목록**:
-1. `Services/MultiDocService.cs` 신규 작성
+- [x] 1. `Services/MultiDocService.cs` 신규 작성
    - 키: `yyyy-MM-dd|C##` (날짜 + 라인번호)
    - DailyPlan 파일 목록 → 키 생성
    - PartList 파일 목록 → 교차 매핑
-2. MainWindow에 `MultiDocuments 탭` 신규 추가
-3. ListView: 날짜, 라인, DailyPlan 경로, PartList 경로 표시
-4. 체크박스 선택 → 일괄 처리 (스캔 → 정규화 → PDF)
+- [x] 2. MainWindow에 `MultiDocuments 탭` 신규 추가
+- [x] 3. ListView: 날짜, 라인, DailyPlan 경로, PartList 경로 표시
+- [x] 4. 체크박스 선택 → 일괄 처리 (스캔 → 정규화 → 피더필터 → PDF)
 
 ---
 
