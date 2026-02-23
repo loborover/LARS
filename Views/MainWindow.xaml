@@ -170,6 +170,9 @@
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                 <TextBlock Text="PartList (자재 목록)" FontSize="16" FontWeight="Bold"
@@ -182,7 +185,19 @@
                                     Content="📡 스캔" Command="{Binding ScanPartListFilesCommand}" Margin="0,0,6,0" />
                             <Button Grid.Column="2" Style="{StaticResource SecondaryButton}"
                                     Content="📂 파일 열기" Command="{Binding OpenPartListFileCommand}" Margin="0,0,6,0" />
-                            <Button Grid.Column="3" Style="{StaticResource PrimaryButton}"
+                            <Button Grid.Column="3" Style="{StaticResource SecondaryButton}"
+                                    Content="🔧 정규화" Command="{Binding NormalizePartListCommand}"
+                                    ToolTip="자재 셀을 [벤더] 파트번호(수량) 표준 형식으로 정규화"
+                                    Margin="0,0,6,0" />
+                            <Button Grid.Column="4" Style="{StaticResource SecondaryButton}"
+                                    Content="🔩 Feeder 필터" Command="{Binding ApplyFeederFilterCommand}"
+                                    ToolTip="Feeder 탭에서 선택한 Feeder의 컬럼만 표시"
+                                    Margin="0,0,6,0" />
+                            <Button Grid.Column="5" Style="{StaticResource SecondaryButton}"
+                                    Content="↩ 원본" Command="{Binding ResetToRawCommand}"
+                                    ToolTip="정규화/필터 전 원본 데이터로 복원"
+                                    Margin="0,0,6,0" />
+                            <Button Grid.Column="6" Style="{StaticResource PrimaryButton}"
                                     Content="📄 PDF" Command="{Binding ExportPlPdfCommand}" />
                         </Grid>
                     </Border>

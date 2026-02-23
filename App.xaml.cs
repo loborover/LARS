@@ -30,6 +30,7 @@ public partial class App : Application
         services.AddSingleton<ExcelReaderService>();
         services.AddSingleton<PrintService>();
         services.AddSingleton<PdfExportService>();
+        services.AddSingleton<SettingsService>();
 
         // 비즈니스 서비스
         services.AddSingleton<BomReportService>();
@@ -48,7 +49,34 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        // Sprint 5: 저장된 경로 설정 자동 복원
+        var settings = _serviceProvider.GetRequiredService<SettingsService>().Load();
+        if (!string.IsNullOrWhiteSpace(settings.BasePath))
+        {
+            var dirs = _serviceProvider.GetRequiredService<DirectoryManager>();
+            dirs.Setup(settings.BasePath, settings.SourcePath);
+
+            var vm = _serviceProvider.GetRequiredService<MainViewModel>();
+            vm.BasePath = settings.BasePath;
+        }
+
         var mainWindow = _serviceProvider.GetRequiredService<Views.MainWindow>();
         mainWindow.Show();
+    }
+
+    protected override void OnExit(ExitEventArgs e)
+    {
+        // Sprint 5: 현재 경로 설정 저장
+        var dirs     = _serviceProvider.GetRequiredService<DirectoryManager>();
+        var vm       = _serviceProvider.GetRequiredService<MainViewModel>();
+        var settings = _serviceProvider.GetRequiredService<SettingsService>();
+        settings.Save(new AppSettings
+        {
+            BasePath       = dirs.BasePath,
+            SourcePath     = dirs.Source,
+            LastFeederName = vm.SelectedFeeder?.Name ?? string.Empty
+        });
+        base.OnExit(e);
     }
 }
