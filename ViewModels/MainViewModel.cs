@@ -23,7 +23,6 @@ public partial class MainViewModel : ObservableObject
     private readonly FeederService _feederService;
     private readonly PdfExportService _pdfService;
     private readonly MultiDocService _multiDocService;
-    private readonly StickerLabelService _stickerService;
     private readonly DirectoryManager _dirs;
 
     public MainViewModel(
@@ -35,8 +34,7 @@ public partial class MainViewModel : ObservableObject
         PdfExportService pdfService,
         DirectoryManager dirs,
         SettingsService settingsService,
-        MultiDocService multiDocService,
-        StickerLabelService stickerService)
+        MultiDocService multiDocService)
     {
         _bomService = bomService;
         _dailyPlanService = dailyPlanService;
@@ -46,7 +44,6 @@ public partial class MainViewModel : ObservableObject
         _pdfService = pdfService;
         _dirs = dirs;
         _multiDocService = multiDocService;
-        _stickerService = stickerService;
     }
 
     // ==========================================
@@ -106,7 +103,7 @@ public partial class MainViewModel : ObservableObject
         {
             Title = "BOM 파일 열기",
             Filter = "Excel 파일 (*.xlsx)|*.xlsx|모든 파일 (*.*)|*.*",
-            InitialDirectory = _dirs.IsSetup ? _dirs.BOM : ""
+            InitialDirectory = _dirs.IsSetup ? _dirs.SourceBOM : ""
         };
 
         if (dialog.ShowDialog() == true)
@@ -229,7 +226,7 @@ public partial class MainViewModel : ObservableObject
         {
             Title = "DailyPlan 파일 열기",
             Filter = "Excel 파일 (*.xlsx)|*.xlsx",
-            InitialDirectory = _dirs.IsSetup ? _dirs.DailyPlan : ""
+            InitialDirectory = _dirs.IsSetup ? _dirs.SourceDailyPlan : ""
         };
 
         if (dialog.ShowDialog() == true)
@@ -238,21 +235,27 @@ public partial class MainViewModel : ObservableObject
             IsProcessing = true;
             try
             {
-                var result = await Task.Run(() => _dailyPlanService.ReadDailyPlanFile(dialog.FileName));
-                if (result.IsSuccess)
+                // Step 1: RAW 데이터 읽기
+                var rawResult = await Task.Run(() => _dailyPlanService.ReadDailyPlanFile(dialog.FileName));
+                if (rawResult.IsSuccess)
                 {
-                    DailyPlanDataTable = ToDataTable(result.Headers, result.Rows);
-                    // 셀 기반 메타데이터도 함께 읽기
+                    // Step 2: 메타데이터 읽기
                     var meta = await Task.Run(() => _dailyPlanService.ReadMetaFromFile(dialog.FileName));
-                    int lotCount = result.LotGroup?.SubLots.Count ?? 0;
+                    rawResult.Meta = meta;
+
+                    // Step 3: 가공 파이프라인 실행 (AR_1)
+                    var processed = await Task.Run(() => _dailyPlanService.ProcessDailyPlanForExport(rawResult));
+
+                    DailyPlanDataTable = ToDataTable(processed.Headers, processed.Rows);
+                    int lotCount = processed.LotGroup?.SubLots.Count ?? 0;
                     string dateLabel = meta.IsValid ? meta.DateLabel : "날짜불명";
-                    DpInfoText = $"{result.Rows.Count}행 | LOT {lotCount}개 | {dateLabel} | {Path.GetFileName(dialog.FileName)}";
-                    StatusText = $"DailyPlan 로드 완료: {result.Rows.Count}행, LOT {lotCount}개";
-                    _currentDpData = result;
+                    DpInfoText = $"{processed.Rows.Count}행 | LOT {lotCount}개 | {dateLabel} | {Path.GetFileName(dialog.FileName)}";
+                    StatusText = $"DailyPlan 가공 완료: {processed.Rows.Count}행, LOT {lotCount}개";
+                    _currentDpData = processed;
                 }
                 else
                 {
-                    StatusText = $"DailyPlan 오류: {result.ErrorMessage}";
+                    StatusText = $"DailyPlan 오류: {rawResult.ErrorMessage}";
                 }
             }
             catch (Exception ex) { StatusText = $"오류: {ex.Message}"; }
@@ -329,7 +332,7 @@ public partial class MainViewModel : ObservableObject
         {
             Title = "PartList 파일 열기",
             Filter = "Excel 파일 (*.xlsx)|*.xlsx",
-            InitialDirectory = _dirs.IsSetup ? _dirs.PartList : ""
+            InitialDirectory = _dirs.IsSetup ? _dirs.SourcePartList : ""
         };
 
         if (dialog.ShowDialog() == true)
@@ -338,18 +341,22 @@ public partial class MainViewModel : ObservableObject
             IsProcessing = true;
             try
             {
-                var result = await Task.Run(() => _partListService.ReadPartListFile(dialog.FileName));
-                if (result.IsSuccess)
+                // Step 1: RAW 데이터 읽기
+                var rawResult = await Task.Run(() => _partListService.ReadPartListFile(dialog.FileName));
+                if (rawResult.IsSuccess)
                 {
-                    _rawPlData = result;        // 원본 보존
-                    _currentPlData = result;
-                    PartListDataTable = ToDataTable(result.Headers, result.Rows);
-                    PlInfoText = $"{result.Rows.Count}행 | {Path.GetFileName(dialog.FileName)}";
-                    StatusText = $"PartList 로드 완료: {result.Rows.Count}행";
+                    _rawPlData = rawResult;        // 원본 보존
+
+                    // Step 2: 가공 파이프라인 실행 (AR_1)
+                    var processed = await Task.Run(() => _partListService.ProcessPartListForExport(rawResult));
+                    _currentPlData = processed;
+                    PartListDataTable = ToDataTable(processed.Headers, processed.Rows);
+                    PlInfoText = $"{processed.Rows.Count}행 (가공) | {Path.GetFileName(dialog.FileName)}";
+                    StatusText = $"PartList 가공 완료: {processed.Rows.Count}행";
                 }
                 else
                 {
-                    StatusText = $"PartList 오류: {result.ErrorMessage}";
+                    StatusText = $"PartList 오류: {rawResult.ErrorMessage}";
                 }
             }
             catch (Exception ex) { StatusText = $"오류: {ex.Message}"; }
@@ -742,23 +749,99 @@ public partial class MainViewModel : ObservableObject
     }
 
     // ==========================================
-    // 설정
+    // 설정 (경로 관리)
     // ==========================================
 
-    [RelayCommand]
-    private void BrowseFolder()
-    {
-        var dialog = new Microsoft.Win32.OpenFolderDialog
-        {
-            Title = "작업 디렉토리 선택"
-        };
+    [ObservableProperty]
+    private string _settingsSourceBom = string.Empty;
 
+    [ObservableProperty]
+    private string _settingsSourceDailyPlan = string.Empty;
+
+    [ObservableProperty]
+    private string _settingsSourcePartList = string.Empty;
+
+    [ObservableProperty]
+    private string _settingsOutputBom = string.Empty;
+
+    [ObservableProperty]
+    private string _settingsOutputDailyPlan = string.Empty;
+
+    [ObservableProperty]
+    private string _settingsOutputPartList = string.Empty;
+
+    private void SyncSettingsToViewModel()
+    {
+        // SettingsService는 생성자 지연 후기화 혹은 별도 주석처럼 쓰이고 있음
+        // 기존 MainViewModel.cs 상단에 `SettingsService _settingsService`가 주입되어야 하지만,
+        // 없을 경우 DirectoryManager에서 직접 설정 상태를 얻기도 어려우므로 의존성 주입된 인스턴스를 확인해야 함.
+        // 현재 MainViewModel는 _dirs만 갖고 있으므로, SettingsService 필드가 부족하다면 새로 추가하거나,
+        // (App.xaml.cs에서 이미 OnStartup 시점에 AppSettings 단위로 넘기므로 App 내부 상태 저장 등 활용)
+        
+        // **수정 사항:** App.xaml.cs에서 Settings를 넘기면 더 좋으나, DI 컨테이너에서 해소하기 위해
+        // System.Windows.Application.Current 기반 ServiceProvider를 통해 가져오도록 합니다.
+        var provider = ((App)System.Windows.Application.Current).ServiceProvider;
+        var settingsService = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<SettingsService>(provider);
+        var settings = settingsService.Load();
+
+        BasePath = settings.BasePath;
+        SettingsSourceBom = settings.SourceBOM;
+        SettingsSourceDailyPlan = settings.SourceDailyPlan;
+        SettingsSourcePartList = settings.SourcePartList;
+        SettingsOutputBom = settings.OutputBOM;
+        SettingsOutputDailyPlan = settings.OutputDailyPlan;
+        SettingsOutputPartList = settings.OutputPartList;
+    }
+
+    private void SaveAndApplySettings()
+    {
+        var provider = ((App)System.Windows.Application.Current).ServiceProvider;
+        var settingsService = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<SettingsService>(provider);
+        
+        var newSettings = new AppSettings
+        {
+            BasePath = this.BasePath,
+            SourceBOM = this.SettingsSourceBom,
+            SourceDailyPlan = this.SettingsSourceDailyPlan,
+            SourcePartList = this.SettingsSourcePartList,
+            OutputBOM = this.SettingsOutputBom,
+            OutputDailyPlan = this.SettingsOutputDailyPlan,
+            OutputPartList = this.SettingsOutputPartList,
+            LastFeederName = SelectedFeeder?.Name ?? string.Empty
+        };
+        settingsService.Save(newSettings);
+        _dirs.Setup(newSettings);
+        StatusText = "설정이 저장 및 적용되었습니다.";
+    }
+
+    [RelayCommand]
+    private void BrowseBasePath()
+    {
+        var dialog = new Microsoft.Win32.OpenFolderDialog { Title = "작업 루트 디렉토리 선택" };
         if (dialog.ShowDialog() == true)
         {
             BasePath = dialog.FolderName;
-            _dirs.Setup(BasePath);
-            StatusText = $"작업 경로 설정: {BasePath}";
+            SaveAndApplySettings();
             LoadFeeders();
+        }
+    }
+
+    [RelayCommand]
+    private void BrowsePath(string param)
+    {
+        var dialog = new Microsoft.Win32.OpenFolderDialog { Title = $"{param} 폴더 선택" };
+        if (dialog.ShowDialog() == true)
+        {
+            switch (param)
+            {
+                case "SourceBOM": SettingsSourceBom = dialog.FolderName; break;
+                case "SourceDP": SettingsSourceDailyPlan = dialog.FolderName; break;
+                case "SourcePL": SettingsSourcePartList = dialog.FolderName; break;
+                case "OutBOM": SettingsOutputBom = dialog.FolderName; break;
+                case "OutDP": SettingsOutputDailyPlan = dialog.FolderName; break;
+                case "OutPL": SettingsOutputPartList = dialog.FolderName; break;
+            }
+            SaveAndApplySettings();
         }
     }
 
@@ -767,7 +850,7 @@ public partial class MainViewModel : ObservableObject
     {
         if (!_dirs.IsSetup)
         {
-            StatusText = "먼저 작업 디렉토리를 설정해 주세요.";
+            StatusText = "먼저 작업 루트 디렉토리를 설정해 주세요.";
             return;
         }
 
@@ -782,118 +865,10 @@ public partial class MainViewModel : ObservableObject
         IsProcessing = false;
     }
 
-    // ==========================================
-    // StickerLabel 탭 (Sprint 9)
-    // ==========================================
-
-    /// <summary>DataGrid 미리보기 행 (바인딩용 익명 타입 대신 record).</summary>
-    public record StickerRow(int No, string NickName, string Vendor, string PartNumber, long QTY);
-
-    [ObservableProperty]
-    private string _stickerInfoText = "라벨 없음";
-
-    [ObservableProperty]
-    private string _stickerWidthMm = "70";
-
-    [ObservableProperty]
-    private string _stickerHeightMm = "37";
-
-    [ObservableProperty]
-    private string _stickerColumns = "2";
-
-    public List<string> StickerSources { get; } = new() { "PartList", "ItemCounter" };
-
-    [ObservableProperty]
-    private string _selectedStickerSource = "PartList";
-
-    [ObservableProperty]
-    private List<StickerRow> _stickerPreviewRows = new();
-
-    // 내부 라벨 캐시
-    private List<StickerLabelInfo> _plLabels  = new();
-    private List<StickerLabelInfo> _icLabels  = new();
-
-    /// <summary>
-    /// 현재 로드된 PartList / ItemCounter 데이터에서 라벨 목록을 갱신합니다.
-    /// </summary>
-    [RelayCommand]
-    private void RefreshStickerLabels()
+    // 초기화용 메서드 (생성자 호출 권장)
+    public void Initialize()
     {
-        // ── PartList → 라벨 변환 ──
-        _plLabels.Clear();
-        if (_currentPlData?.IsSuccess == true)
-        {
-            int nickIdx   = _currentPlData.Headers.IndexOf("NickName");
-            int vendIdx   = _currentPlData.Headers.IndexOf("Vendor");
-            int partIdx   = _currentPlData.Headers.IndexOf("Part No");
-            int qtyIdx    = _currentPlData.Headers.IndexOf("QTY");
-
-            // 헤더명을 찾지 못하면 순서 기반 폴백 (0~3)
-            nickIdx  = nickIdx  < 0 ? 0 : nickIdx;
-            vendIdx  = vendIdx  < 0 ? 1 : vendIdx;
-            partIdx  = partIdx  < 0 ? 2 : partIdx;
-            qtyIdx   = qtyIdx   < 0 ? 3 : qtyIdx;
-
-            foreach (var row in _currentPlData.Rows)
-            {
-                string nick = row.ElementAtOrDefault(nickIdx) ?? "";
-                string vend = row.ElementAtOrDefault(vendIdx) ?? "";
-                string part = row.ElementAtOrDefault(partIdx) ?? "";
-                long.TryParse(row.ElementAtOrDefault(qtyIdx), out long qty);
-
-                if (!string.IsNullOrWhiteSpace(nick) || !string.IsNullOrWhiteSpace(part))
-                    _plLabels.Add(new StickerLabelInfo(nick, vend, part, qty));
-            }
-        }
-
-        // ── ItemCounter DataTable → 라벨 변환 ──
-        _icLabels.Clear();
-        if (ItemCounterDataTable != null)
-        {
-            foreach (System.Data.DataRow dr in ItemCounterDataTable.Rows)
-            {
-                string nick = dr["NickName"]?.ToString() ?? "";
-                string vend = dr["Vendor"]?.ToString()   ?? "";
-                string part = dr["PartNumber"]?.ToString() ?? "";
-                long.TryParse(dr["Total"]?.ToString(), out long qty);
-
-                if (!string.IsNullOrWhiteSpace(nick) || !string.IsNullOrWhiteSpace(part))
-                    _icLabels.Add(new StickerLabelInfo(nick, vend, part, qty));
-            }
-        }
-
-        UpdateStickerPreview();
-        StatusText = $"StickerLabel 갱신: PartList {_plLabels.Count}개, ItemCounter {_icLabels.Count}개";
-    }
-
-    partial void OnSelectedStickerSourceChanged(string value) => UpdateStickerPreview();
-
-    private void UpdateStickerPreview()
-    {
-        var source = SelectedStickerSource == "ItemCounter" ? _icLabels : _plLabels;
-        StickerPreviewRows = source
-            .Select((l, i) => new StickerRow(i + 1, l.NickName, l.Vendor, l.PartNumber, l.QTY))
-            .ToList();
-        StickerInfoText = $"라벨 {StickerPreviewRows.Count}개 ({SelectedStickerSource} 출처)";
-    }
-
-    /// <summary>
-    /// 현재 설정으로 PDF를 직접 저장합니다 (Dialog 없이 빠른 경로).
-    /// </summary>
-    [RelayCommand]
-    private async Task OpenStickerLabelDialogAsync()
-    {
-        // 라벨이 없으면 먼저 갱신
-        if (_plLabels.Count == 0 && _icLabels.Count == 0)
-            RefreshStickerLabels();
-
-        var dialog = new StickerLabelDialog(
-            _stickerService,
-            _plLabels,
-            _icLabels);
-
-        dialog.ShowDialog();
-        await Task.CompletedTask;
+        SyncSettingsToViewModel();
     }
 
     // ==========================================

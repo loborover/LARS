@@ -11,13 +11,13 @@ namespace LARS;
 /// </summary>
 public partial class App : Application
 {
-    private readonly ServiceProvider _serviceProvider;
+    public ServiceProvider ServiceProvider { get; }
 
     public App()
     {
         var services = new ServiceCollection();
         ConfigureServices(services);
-        _serviceProvider = services.BuildServiceProvider();
+        ServiceProvider = services.BuildServiceProvider();
     }
 
     /// <summary>
@@ -39,46 +39,37 @@ public partial class App : Application
         services.AddSingleton<ItemCounterService>();
         services.AddSingleton<FeederService>();
         services.AddSingleton<MultiDocService>();
-        services.AddSingleton<StickerLabelService>();
 
-        // ViewModel
-        services.AddSingleton<MainViewModel>();
+        // 뷰모델 등록
+        services.AddTransient<MainViewModel>();
 
-        // MainWindow
-        services.AddSingleton<Views.MainWindow>();
+        // 뷰 등록
+        services.AddTransient<Views.MainWindow>();
     }
 
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
 
-        // Sprint 5: 저장된 경로 설정 자동 복원
-        var settings = _serviceProvider.GetRequiredService<SettingsService>().Load();
+        // 새 환경: AppSettings 전체를 넘겨서 DirectoryManager 구성
+        var settings = ServiceProvider.GetRequiredService<SettingsService>().Load();
         if (!string.IsNullOrWhiteSpace(settings.BasePath))
         {
-            var dirs = _serviceProvider.GetRequiredService<DirectoryManager>();
-            dirs.Setup(settings.BasePath, settings.SourcePath);
+            var dirs = ServiceProvider.GetRequiredService<DirectoryManager>();
+            dirs.Setup(settings);
 
-            var vm = _serviceProvider.GetRequiredService<MainViewModel>();
+            var vm = ServiceProvider.GetRequiredService<MainViewModel>();
             vm.BasePath = settings.BasePath;
         }
 
-        var mainWindow = _serviceProvider.GetRequiredService<Views.MainWindow>();
+        var mainWindow = ServiceProvider.GetRequiredService<Views.MainWindow>();
         mainWindow.Show();
     }
 
     protected override void OnExit(ExitEventArgs e)
     {
-        // Sprint 5: 현재 경로 설정 저장
-        var dirs     = _serviceProvider.GetRequiredService<DirectoryManager>();
-        var vm       = _serviceProvider.GetRequiredService<MainViewModel>();
-        var settings = _serviceProvider.GetRequiredService<SettingsService>();
-        settings.Save(new AppSettings
-        {
-            BasePath       = dirs.BasePath,
-            SourcePath     = dirs.Source,
-            LastFeederName = vm.SelectedFeeder?.Name ?? string.Empty
-        });
+        // 런타임 중 변경된 경로들은 다시 OnExit 바인딩 시점에서 SettingsService를 통해 직접 저장 처리됨
+        // (MainViewModel 측에서 UpdateSettingsAndSave 등의 메서드로 실시간 저장)
         base.OnExit(e);
     }
 }

@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:LARS.ViewModels"
-        Title="LARS — LOT Auto Report System"
+        Title="LARS — Logistics Automation Report System"
         Width="1360" Height="860"
         MinWidth="960" MinHeight="600"
         WindowStartupLocation="CenterScreen"
@@ -32,18 +32,16 @@
                         <TextBlock Text="L" FontSize="18" FontWeight="Bold"
                                    Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
-                    <StackPanel VerticalAlignment="Center">
+                <StackPanel VerticalAlignment="Center">
                         <TextBlock Text="LARS" FontSize="18" FontWeight="Bold"
                                    Foreground="{StaticResource TextPrimaryBrush}" />
-                        <TextBlock Text="LOT Auto Report System" FontSize="10"
+                        <TextBlock Text="Logistics Automation Report System" FontSize="10"
                                    Foreground="{StaticResource TextMutedBrush}" Margin="0,-2,0,0" />
                     </StackPanel>
                 </StackPanel>
 
-                <!-- 오른쪽 버튼 -->
+                <!-- 오른쪽 버튼: 갱신 -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Style="{StaticResource SecondaryButton}" Content="📂 폴더 설정"
-                            Command="{Binding BrowseFolderCommand}" Margin="0,0,8,0" />
                     <Button Style="{StaticResource PrimaryButton}" Content="🔄 전체 갱신"
                             Command="{Binding RefreshAllCommand}" />
                 </StackPanel>
@@ -53,8 +51,12 @@
         <!-- ==================== 메인 콘텐츠 ==================== -->
         <TabControl Grid.Row="1" SelectedIndex="{Binding SelectedTabIndex}" Margin="0">
 
-            <!-- ===== BOM 탭 ===== -->
-            <TabItem Header="📋 BOM">
+            <!-- ===== AutoReport 탭 (BOM/DailyPlan/PartList/ItemCounter/MultiDocs 통합) ===== -->
+            <TabItem Header="📊 AutoReport">
+                <TabControl Margin="4,4,4,0">
+
+                    <!-- ===== BOM 하위탭 ===== -->
+                    <TabItem Header="📋 BOM">
                 <Grid Margin="20,16">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -102,10 +104,10 @@
                     <DataGrid Grid.Row="2" ItemsSource="{Binding BomDataTable}"
                               AutoGenerateColumns="True" IsReadOnly="True" />
                 </Grid>
-            </TabItem>
+                    </TabItem>
 
-            <!-- ===== DailyPlan 탭 ===== -->
-            <TabItem Header="📅 DailyPlan">
+                    <!-- ===== DailyPlan 하위탭 ===== -->
+                    <TabItem Header="📅 DailyPlan">
                 <Grid Margin="20,16">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -152,10 +154,10 @@
                     <DataGrid Grid.Row="2" ItemsSource="{Binding DailyPlanDataTable}"
                               AutoGenerateColumns="True" IsReadOnly="True" />
                 </Grid>
-            </TabItem>
+                    </TabItem>
 
-            <!-- ===== PartList 탭 ===== -->
-            <TabItem Header="📦 PartList">
+                    <!-- ===== PartList 하위탭 ===== -->
+                    <TabItem Header="📦 PartList">
                 <Grid Margin="20,16">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -216,10 +218,10 @@
                     <DataGrid Grid.Row="2" ItemsSource="{Binding PartListDataTable}"
                               AutoGenerateColumns="True" IsReadOnly="True" />
                 </Grid>
-            </TabItem>
+                    </TabItem>
 
-            <!-- ===== MultiDocuments 탭 ===== -->
-            <TabItem Header="🔗 교차 매핑">
+                    <!-- ===== MultiDocuments 하위탭 ===== -->
+                    <TabItem Header="🔗 교차 매핑">
                 <Grid Margin="20,16">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -259,10 +261,10 @@
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
-            </TabItem>
+                    </TabItem>
 
-            <!-- ===== ItemCounter 탭 ===== -->
-            <TabItem Header="🔢 ItemCounter">
+                    <!-- ===== ItemCounter 하위탭 ===== -->
+                    <TabItem Header="🔢 ItemCounter">
                 <Grid Margin="20,16">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -290,10 +292,10 @@
                     <DataGrid Grid.Row="1" ItemsSource="{Binding ItemCounterDataTable}"
                               AutoGenerateColumns="True" IsReadOnly="True" Margin="0,4,0,0" />
                 </Grid>
-            </TabItem>
+                    </TabItem>
 
-            <!-- ===== Feeder 탭 ===== -->
-            <TabItem Header="🔧 Feeder">
+                    <!-- ===== Feeder 하위탭 ===== -->
+                    <TabItem Header="🔧 Feeder">
                 <Grid Margin="20,16">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="320" />
@@ -390,157 +392,166 @@
                                  Margin="0,4,0,0" />
                     </Grid>
                 </Grid>
+                    </TabItem>
+                </TabControl>
             </TabItem>
 
-            <!-- ===== StickerLabel 탭 ===== -->
-            <TabItem Header="🏷️ StickerLabel">
-                <Grid Margin="20,16">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
 
-                    <!-- 액션 바 -->
-                    <Border Grid.Row="0" Style="{StaticResource CardPanel}">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <TextBlock Text="StickerLabel (스티커 라벨 인쇄)" FontSize="16" FontWeight="Bold"
-                                           Foreground="{StaticResource TextPrimaryBrush}" />
-                                <TextBlock Text="{Binding StickerInfoText, StringFormat='  •  {0}'}"
-                                           FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"
-                                           VerticalAlignment="Center" Margin="8,0,0,0" />
-                            </StackPanel>
-                            <Button Grid.Column="1" Style="{StaticResource SecondaryButton}"
-                                    Content="🔄 목록 갱신" Command="{Binding RefreshStickerLabelsCommand}"
-                                    Margin="0,0,6,0" />
-                            <Button Grid.Column="2" Style="{StaticResource PrimaryButton}"
-                                    Content="🖨️ 라벨 PDF 저장" Command="{Binding OpenStickerLabelDialogCommand}" />
-                        </Grid>
-                    </Border>
-
-                    <!-- 설정 패널 -->
-                    <Border Grid.Row="1" Style="{StaticResource CardPanel}" Margin="0,0,0,0">
-                        <UniformGrid Columns="4">
-                            <StackPanel Margin="0,0,12,0">
-                                <TextBlock Text="라벨 너비 (mm)" FontSize="11" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,2" />
-                                <TextBox Text="{Binding StickerWidthMm, UpdateSourceTrigger=PropertyChanged}"
-                                         Padding="6,4" />
-                            </StackPanel>
-                            <StackPanel Margin="0,0,12,0">
-                                <TextBlock Text="라벨 높이 (mm)" FontSize="11" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,2" />
-                                <TextBox Text="{Binding StickerHeightMm, UpdateSourceTrigger=PropertyChanged}"
-                                         Padding="6,4" />
-                            </StackPanel>
-                            <StackPanel Margin="0,0,12,0">
-                                <TextBlock Text="열 수" FontSize="11" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,2" />
-                                <TextBox Text="{Binding StickerColumns, UpdateSourceTrigger=PropertyChanged}"
-                                         Padding="6,4" />
-                            </StackPanel>
-                            <StackPanel>
-                                <TextBlock Text="출처" FontSize="11" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,2" />
-                                <ComboBox ItemsSource="{Binding StickerSources}"
-                                          SelectedItem="{Binding SelectedStickerSource}"
-                                          Padding="6,4" />
-                            </StackPanel>
-                        </UniformGrid>
-                    </Border>
-
-                    <!-- 라벨 미리보기 DataGrid -->
-                    <DataGrid Grid.Row="2" ItemsSource="{Binding StickerPreviewRows}"
-                              AutoGenerateColumns="False" IsReadOnly="True" Margin="0,4,0,0">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="#"          Binding="{Binding No}"         Width="50" />
-                            <DataGridTextColumn Header="NickName"   Binding="{Binding NickName}"   Width="150" />
-                            <DataGridTextColumn Header="Vendor"     Binding="{Binding Vendor}"     Width="160" />
-                            <DataGridTextColumn Header="Part No"    Binding="{Binding PartNumber}" Width="*" />
-                            <DataGridTextColumn Header="QTY"        Binding="{Binding QTY}"        Width="80" />
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </Grid>
-            </TabItem>
-
-            <!-- ===== 설정 탭 ===== -->
+            <!-- ===== 설정 최상위 탭 ===== -->
             <TabItem Header="⚙️ 설정">
-                <Grid Margin="20,16">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
+                <TabControl Margin="4,4,4,0">
+                    <!-- 1. 기본/정보 탭 -->
+                    <TabItem Header="기본 정보">
+                        <Grid Margin="20,16">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
 
-                    <Border Grid.Row="0" Style="{StaticResource CardPanel}">
-                        <StackPanel>
-                            <TextBlock Text="📁 작업 디렉토리" FontSize="16" FontWeight="Bold"
-                                       Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,12" />
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBox Grid.Column="0" Text="{Binding BasePath, Mode=TwoWay}"
-                                         IsReadOnly="True" Margin="0,0,8,0" />
-                                <Button Grid.Column="1" Style="{StaticResource SecondaryButton}"
-                                        Content="변경..." Command="{Binding BrowseFolderCommand}" />
-                            </Grid>
-                        </StackPanel>
-                    </Border>
+                            <Border Grid.Row="0" Style="{StaticResource CardPanel}" Margin="0,0,0,16">
+                                <StackPanel>
+                                    <TextBlock Text="📁 루트 작업 디렉토리 지정" FontSize="16" FontWeight="Bold"
+                                               Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,12" />
+                                    <TextBlock Text="모든 파일은 이 폴더 하위의 'LARS_Documents' 내부에서 안전하게 관리됩니다." 
+                                               Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,8" FontSize="12"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox Grid.Column="0" Text="{Binding BasePath, Mode=TwoWay}"
+                                                 IsReadOnly="True" Margin="0,0,8,0" />
+                                        <Button Grid.Column="1" Style="{StaticResource SecondaryButton}"
+                                                Content="변경..." Command="{Binding BrowseBasePathCommand}" />
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
 
-                    <Border Grid.Row="1" Style="{StaticResource CardPanel}">
-                        <StackPanel>
-                            <TextBlock Text="📂 하위 디렉토리" FontSize="16" FontWeight="Bold"
-                                       Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,12" />
-                            <UniformGrid Columns="3" Margin="0,4,0,0">
-                                <StackPanel Margin="0,0,8,8">
-                                    <TextBlock Text="BOM" Foreground="{StaticResource AccentBrush}" FontWeight="Bold" />
-                                    <TextBlock Text="BOM 파일 저장 경로" Foreground="{StaticResource TextMutedBrush}" FontSize="11" />
+                            <Border Grid.Row="1" Style="{StaticResource CardPanel}">
+                                <StackPanel>
+                                    <TextBlock Text="ℹ️ 앱 정보" FontSize="16" FontWeight="Bold"
+                                               Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,12" />
+                                    <TextBlock Foreground="{StaticResource TextSecondaryBrush}" FontSize="12">
+                                        <Run Text="LARS v1.1" FontWeight="Bold" Foreground="{StaticResource AccentBrush}" />
+                                        <LineBreak />
+                                        <Run Text="Logistics Automation Report System — C# WPF Edition" />
+                                        <LineBreak />
+                                        <Run Text=".NET 8.0 | ClosedXML | PdfSharpCore | CommunityToolkit.Mvvm" />
+                                        <LineBreak />
+                                        <Run Text="모든 라이브러리: MIT 라이선스" Foreground="{StaticResource SuccessBrush}" />
+                                    </TextBlock>
                                 </StackPanel>
-                                <StackPanel Margin="0,0,8,8">
-                                    <TextBlock Text="DailyPlan" Foreground="{StaticResource AccentBrush}" FontWeight="Bold" />
-                                    <TextBlock Text="생산계획 파일 저장 경로" Foreground="{StaticResource TextMutedBrush}" FontSize="11" />
-                                </StackPanel>
-                                <StackPanel Margin="0,0,8,8">
-                                    <TextBlock Text="PartList" Foreground="{StaticResource AccentBrush}" FontWeight="Bold" />
-                                    <TextBlock Text="자재 목록 파일 저장 경로" Foreground="{StaticResource TextMutedBrush}" FontSize="11" />
-                                </StackPanel>
-                                <StackPanel Margin="0,0,8,8">
-                                    <TextBlock Text="Feeder" Foreground="{StaticResource AccentBrush}" FontWeight="Bold" />
-                                    <TextBlock Text="Feeder 설정 저장 경로" Foreground="{StaticResource TextMutedBrush}" FontSize="11" />
-                                </StackPanel>
-                                <StackPanel Margin="0,0,8,8">
-                                    <TextBlock Text="Output" Foreground="{StaticResource SuccessBrush}" FontWeight="Bold" />
-                                    <TextBlock Text="PDF 보고서 출력 경로" Foreground="{StaticResource TextMutedBrush}" FontSize="11" />
-                                </StackPanel>
-                                <StackPanel Margin="0,0,8,8">
-                                    <TextBlock Text="Backup" Foreground="{StaticResource WarningBrush}" FontWeight="Bold" />
-                                    <TextBlock Text="백업 저장 경로" Foreground="{StaticResource TextMutedBrush}" FontSize="11" />
-                                </StackPanel>
-                            </UniformGrid>
-                        </StackPanel>
-                    </Border>
+                            </Border>
+                        </Grid>
+                    </TabItem>
 
-                    <Border Grid.Row="2" Style="{StaticResource CardPanel}">
-                        <StackPanel>
-                            <TextBlock Text="ℹ️ 정보" FontSize="16" FontWeight="Bold"
-                                       Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,12" />
-                            <TextBlock Foreground="{StaticResource TextSecondaryBrush}" FontSize="12">
-                                <Run Text="LARS v1.0" FontWeight="Bold" Foreground="{StaticResource AccentBrush}" />
-                                <LineBreak />
-                                <Run Text="LOT Auto Report System — C# WPF Edition" />
-                                <LineBreak />
-                                <Run Text=".NET 8.0 | ClosedXML | PdfSharpCore | CommunityToolkit.Mvvm" />
-                                <LineBreak />
-                                <Run Text="모든 라이브러리: MIT 라이선스" Foreground="{StaticResource SuccessBrush}" />
-                            </TextBlock>
-                        </StackPanel>
-                    </Border>
-                </Grid>
+                    <!-- 2. 세부 경로 관리 탭 -->
+                    <TabItem Header="경로 관리 (고급)">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel Margin="20,16">
+                                <TextBlock Text="경로들을 비워둘 경우, Source(스캔)는 기본 '다운로드' 폴더를, Output(출력/시스템)은 루트 디렉토리 내부 폴더를 기본으로 사용합니다."
+                                           Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,16" FontSize="13" FontStyle="Italic" TextWrapping="Wrap"/>
+
+                                <!-- Source 경로 설정 -->
+                                <Border Style="{StaticResource CardPanel}" Margin="0,0,0,16">
+                                    <StackPanel>
+                                        <TextBlock Text="📥 스캔 원본(Source) 폴더 지정" FontSize="16" FontWeight="Bold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,12" />
+
+                                        <Grid Margin="0,0,0,8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="80"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="60"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="BOM" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                            <TextBox Grid.Column="1" Text="{Binding SettingsSourceBom, Mode=TwoWay}" IsReadOnly="True" Margin="0,0,8,0" />
+                                            <Button Grid.Column="2" Content="선택" Command="{Binding BrowsePathCommand}" CommandParameter="SourceBOM" Style="{StaticResource SecondaryButton}"/>
+                                        </Grid>
+
+                                        <Grid Margin="0,0,0,8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="80"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="60"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="DailyPlan" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                            <TextBox Grid.Column="1" Text="{Binding SettingsSourceDailyPlan, Mode=TwoWay}" IsReadOnly="True" Margin="0,0,8,0" />
+                                            <Button Grid.Column="2" Content="선택" Command="{Binding BrowsePathCommand}" CommandParameter="SourceDP" Style="{StaticResource SecondaryButton}"/>
+                                        </Grid>
+
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="80"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="60"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="PartList" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                            <TextBox Grid.Column="1" Text="{Binding SettingsSourcePartList, Mode=TwoWay}" IsReadOnly="True" Margin="0,0,8,0" />
+                                            <Button Grid.Column="2" Content="선택" Command="{Binding BrowsePathCommand}" CommandParameter="SourcePL" Style="{StaticResource SecondaryButton}"/>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Output 경로 설정 -->
+                                <Border Style="{StaticResource CardPanel}">
+                                    <StackPanel>
+                                        <TextBlock Text="📤 출력(Output)/시스템 폴더 지정" FontSize="16" FontWeight="Bold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,12" />
+
+                                        <Grid Margin="0,0,0,8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="80"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="60"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="BOM 출력" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                            <TextBox Grid.Column="1" Text="{Binding SettingsOutputBom, Mode=TwoWay}" IsReadOnly="True" Margin="0,0,8,0" />
+                                            <Button Grid.Column="2" Content="선택" Command="{Binding BrowsePathCommand}" CommandParameter="OutBOM" Style="{StaticResource SecondaryButton}"/>
+                                        </Grid>
+
+                                        <Grid Margin="0,0,0,8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="80"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="60"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="DailyPlan" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                            <TextBox Grid.Column="1" Text="{Binding SettingsOutputDailyPlan, Mode=TwoWay}" IsReadOnly="True" Margin="0,0,8,0" />
+                                            <Button Grid.Column="2" Content="선택" Command="{Binding BrowsePathCommand}" CommandParameter="OutDP" Style="{StaticResource SecondaryButton}"/>
+                                        </Grid>
+
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="80"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="60"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="PartList" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                            <TextBox Grid.Column="1" Text="{Binding SettingsOutputPartList, Mode=TwoWay}" IsReadOnly="True" Margin="0,0,8,0" />
+                                            <Button Grid.Column="2" Content="선택" Command="{Binding BrowsePathCommand}" CommandParameter="OutPL" Style="{StaticResource SecondaryButton}"/>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </TabItem>
+
+                    <!-- 3. Performance 탭 -->
+                    <TabItem Header="🚀 Performance (고급)">
+                        <Grid Margin="20,16">
+                            <Border Style="{StaticResource CardPanel}" VerticalAlignment="Top">
+                                <StackPanel>
+                                    <TextBlock Text="🚀 다중 코어 처리 (Multi-core Computing)" FontSize="18" FontWeight="Bold"
+                                               Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,12" />
+                                    <TextBlock Text="실무 환경에서 한 번에 쏟아지는 막대한 양의 문서를 지연 없이 즉각적으로 인식하고 가공할 수 있도록 지원하는 고속 병렬 처리 모듈입니다." 
+                                               Foreground="{StaticResource TextSecondaryBrush}" FontSize="13" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </TabItem>
+                </TabControl>
             </TabItem>
         </TabControl>
 

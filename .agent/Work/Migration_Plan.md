@@ -148,6 +148,118 @@
 
 ---
 
+## Sprint 10 (완료) ✅ — PartList 핵심 가공 파이프라인 (P0)
+
+**목표**: VBA `AR_1_EssentialDataExtraction`(PartList)의 전체 가공 파이프라인 검증 및 구현
+
+> 📌 VBA에서 가장 복잡한 단일 함수. 호출 순서와 부작용(열/행 삭제)을 정확히 재현해야 함.
+> 📌 참조: [VBA_Review.md §2.3](file:///d:/Workshop/LARS/.agent/Work/VBA_Review.md)
+
+**작업 목록**:
+- [x] 1. **투입시점 병합** — `MergeDateTimeColumns()` 구현
+- [x] 2. **D-Day N일 트리밍** — `TrimByDayCount()` 구현
+- [x] 3. **불필요 열 삭제** — `FilterEssentialColumns()` 구현
+- [x] 4. **모델+Suffix 병합** — `MergeModelSuffix()` 구현
+- [x] 5. **`PartCombine`** — `CombineDuplicateParts()` 구현
+- [x] 6. **`DeleteDuplicateRowsInColumn`** — `RemoveDuplicateWorkOrders()` 구현
+- [x] 7. **`Replacing_Parts`** — `NormalizeVendorName()` + `NormalizeAllPartColumns()` 구현
+- [x] Burner 매핑 VBA 원본 기준 `[기미]`/`[피킹]`으로 수정
+
+**검증 결과**: `dotnet build` — 0 errors / 0 warnings ✅
+
+---
+
+## Sprint 11 — ItemCounter 파싱 정밀 검증 (P0)
+
+**목표**: VBA `Re_Categorizing` + `PL_Compressor` 로직의 C# 구현 정밀 검증
+
+> 📌 참조: [VBA_Review.md §2.4](file:///d:/Workshop/LARS/.agent/Work/VBA_Review.md)
+
+**작업 목록**:
+- [ ] 1. **`Re_Categorizing` 파싱 검증** — 셀 문자열 → itemUnit 분해
+   - `" [" → "$["` 치환 → `"$"` 기준 Split → Vendor별 분리
+   - `ExtractBracketValue()` → 벤더명 추출
+   - `"/"` 기준 파트넘버 분리, `"()"` 안의 값 → QTY
+   - `Count(InputDate) = LotCounts × QTY`
+- [ ] 2. **`PL_Compressor` 병합 검증** — ID_Hash(`Vendor_NickName_PartNumber`) 기준 병합
+   - 동일 Hash → `MergeCountsFrom()` (날짜별 Count 합산)
+- [ ] 3. **단위 테스트 작성** — 실제 PartList 셀 데이터 5개 이상 샘플로 테스트
+   - 입력 예: `[기미] 4102/4202(2)/4502 [SABAF S.P.A.] 6904/7302`
+   - 기대 출력: 5개 itemUnit (QTY 1,2,1,1,1)
+
+**검증 방법**: 단위 테스트 전량 통과 + VBA 결과물과 행 수·합계값 일치.
+
+---
+
+## Sprint 12 (완료) ✅ — DailyPlan 가공 및 ModelGrouping (P1)
+
+**목표**: VBA `AR_1(DailyPlan)` + `AR_2_ModelGrouping` 3단계 폴백 구현 검증
+
+> 📌 참조: [VBA_Review.md §2.2](file:///d:/Workshop/LARS/.agent/Work/VBA_Review.md)
+
+**작업 목록**:
+- [x] 1. **DailyPlan `AR_1`** — `ProcessDailyPlanForExport()` 구현 (열 필터링 + 모델Suffix 병합)
+- [x] 2. **`AR_2_ModelGrouping` 3단계 폴백** — `IsSameGroup()` 구현
+   - 1차: `SpecNumber` 비교 → 2차: `TySpec` (Species≠"LS63") → 3차: `Species`
+- [x] 3. **모델 열 자동 탐지** — 가공 후 열 인덱스 변동에도 정확한 그루핑
+- [x] `DailyPlanDataResult` DTO 확장 (`IsProcessed`, `Rows` set 가능)
+
+**검증 결과**: `dotnet build` — 0 errors / 0 warnings ✅
+
+**검증 방법**: DailyPlan xlsx로 그루핑 결과 확인 — VBA 출력물과 그룹 경계 행번호 비교.
+
+---
+
+## Sprint 13 — 파일 스캔 데이터 유효성 + BOM Level 필터 (P2~P3)
+
+**목표**: 파일 스캔 시 실제 데이터 포함 여부 검증 + BOM Level 필터 정밀화
+
+> 📌 VBA는 파일을 열어서 헤더/데이터 존재 여부를 확인 후 스킵 처리
+> 📌 참조: [VBA_Review.md §5.1](file:///d:/Workshop/LARS/.agent/Work/VBA_Review.md)
+
+**작업 목록**:
+- [ ] 1. **BOM 파일 유효성 검증** — `ws.Cells(2,3).Value`에 모델명 존재 확인
+- [ ] 2. **DailyPlan 유효성** — Row 2 `*월` 패턴 + Row 3 수치>0 확인 → 아니면 스킵
+- [ ] 3. **PartList 유효성** — Row 1 `YYYYMMDD` 헤더 확인 → 아니면 스킵
+- [ ] 4. **BOM `FilterByLevel` 정밀화** — Level 문자열 매칭
+   - `0`, `.1`, `..2`, `...3`, `*S*`, `*Q*` 등 계층별 필터
+   - UI 체크박스와 연동 (VBA: `CB_Lvl1_BOM`, `CB_LvlAll_BOM` 등)
+
+**검증 방법**: 비정상 파일(빈 파일, 다른 형식) 투입 시 스킵 처리 확인.
+
+---
+
+## Sprint 14 — C# 코드 대조 검증 및 문서 갱신 (메타)
+
+**목표**: VBA↔C# 전체 로직 1:1 대조 + 문서 갱신
+
+**작업 목록**:
+- [ ] 1. `ReportServices.cs` 전체 메서드 vs VBA 함수 1:1 대조표 작성
+- [ ] 2. 누락/불일치 항목 목록화
+- [ ] 3. `Csharp_Review.md` 업데이트 — 검증 결과 반영
+- [ ] 4. `Migration_Plan.md` 최종 갱신 — Sprint별 완료 상태 확정
+- [ ] 5. `dotnet build` 0 errors / 0 warnings 확인
+
+**검증 방법**: `Csharp_Review.md`에 모든 VBA 함수 대응 상태(✅/⚠️/❌) 기록 완료.
+
+---
+
+## VBA→C# 갭 요약 (Sprint 10~14 대응)
+
+> `VBA_Review.md` §4.1 이관 우선순위에서 도출
+
+| 우선순위 | VBA 함수 | Sprint | C# 현 상태 |
+|---------|---------|--------|-----------|
+| **P0** | `AR_1_EssentialDataExtraction` (PartList) | **10** | ❓ 미검증 |
+| **P0** | `Re_Categorizing` / `PL_Compressor` | **11** | ⚠️ 부분 |
+| **P1** | `AR_1` (DailyPlan) + `AR_2_ModelGrouping` | **12** | ⚠️ 부분 |
+| **P1** | `GetDailyPlanWhen` / `GetPartListWhen` | **12, 13** | ⚠️ 부분 |
+| **P2** | `PartCombine` + `Replacing_Parts` | **10** | ❓ 미검증 |
+| **P3** | `FilterByLevel` (BOM) | **13** | ⚠️ 부분 |
+| **P3** | `MergeDateTime_Flexible` | **10** | ⚠️ 부분 |
+
+---
+
 ## 아키텍처 원칙 (전체 공통)
 
 - 서비스는 **순수 C#**, VBA/COM 의존성 없음
@@ -156,3 +268,4 @@
 - UI: **WPF + CommunityToolkit.Mvvm**
 - 모든 I/O: **async/await + Task.Run**
 - DI: **Microsoft.Extensions.DependencyInjection**
+
