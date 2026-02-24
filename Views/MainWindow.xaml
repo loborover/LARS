@@ -392,6 +392,79 @@
                 </Grid>
             </TabItem>
 
+            <!-- ===== StickerLabel 탭 ===== -->
+            <TabItem Header="🏷️ StickerLabel">
+                <Grid Margin="20,16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <!-- 액션 바 -->
+                    <Border Grid.Row="0" Style="{StaticResource CardPanel}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="StickerLabel (스티커 라벨 인쇄)" FontSize="16" FontWeight="Bold"
+                                           Foreground="{StaticResource TextPrimaryBrush}" />
+                                <TextBlock Text="{Binding StickerInfoText, StringFormat='  •  {0}'}"
+                                           FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"
+                                           VerticalAlignment="Center" Margin="8,0,0,0" />
+                            </StackPanel>
+                            <Button Grid.Column="1" Style="{StaticResource SecondaryButton}"
+                                    Content="🔄 목록 갱신" Command="{Binding RefreshStickerLabelsCommand}"
+                                    Margin="0,0,6,0" />
+                            <Button Grid.Column="2" Style="{StaticResource PrimaryButton}"
+                                    Content="🖨️ 라벨 PDF 저장" Command="{Binding OpenStickerLabelDialogCommand}" />
+                        </Grid>
+                    </Border>
+
+                    <!-- 설정 패널 -->
+                    <Border Grid.Row="1" Style="{StaticResource CardPanel}" Margin="0,0,0,0">
+                        <UniformGrid Columns="4">
+                            <StackPanel Margin="0,0,12,0">
+                                <TextBlock Text="라벨 너비 (mm)" FontSize="11" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,2" />
+                                <TextBox Text="{Binding StickerWidthMm, UpdateSourceTrigger=PropertyChanged}"
+                                         Padding="6,4" />
+                            </StackPanel>
+                            <StackPanel Margin="0,0,12,0">
+                                <TextBlock Text="라벨 높이 (mm)" FontSize="11" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,2" />
+                                <TextBox Text="{Binding StickerHeightMm, UpdateSourceTrigger=PropertyChanged}"
+                                         Padding="6,4" />
+                            </StackPanel>
+                            <StackPanel Margin="0,0,12,0">
+                                <TextBlock Text="열 수" FontSize="11" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,2" />
+                                <TextBox Text="{Binding StickerColumns, UpdateSourceTrigger=PropertyChanged}"
+                                         Padding="6,4" />
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Text="출처" FontSize="11" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,2" />
+                                <ComboBox ItemsSource="{Binding StickerSources}"
+                                          SelectedItem="{Binding SelectedStickerSource}"
+                                          Padding="6,4" />
+                            </StackPanel>
+                        </UniformGrid>
+                    </Border>
+
+                    <!-- 라벨 미리보기 DataGrid -->
+                    <DataGrid Grid.Row="2" ItemsSource="{Binding StickerPreviewRows}"
+                              AutoGenerateColumns="False" IsReadOnly="True" Margin="0,4,0,0">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="#"          Binding="{Binding No}"         Width="50" />
+                            <DataGridTextColumn Header="NickName"   Binding="{Binding NickName}"   Width="150" />
+                            <DataGridTextColumn Header="Vendor"     Binding="{Binding Vendor}"     Width="160" />
+                            <DataGridTextColumn Header="Part No"    Binding="{Binding PartNumber}" Width="*" />
+                            <DataGridTextColumn Header="QTY"        Binding="{Binding QTY}"        Width="80" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+
             <!-- ===== 설정 탭 ===== -->
             <TabItem Header="⚙️ 설정">
                 <Grid Margin="20,16">

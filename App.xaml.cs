@@ -39,6 +39,7 @@ public partial class App : Application
         services.AddSingleton<ItemCounterService>();
         services.AddSingleton<FeederService>();
         services.AddSingleton<MultiDocService>();
+        services.AddSingleton<StickerLabelService>();
 
         // ViewModel
         services.AddSingleton<MainViewModel>();

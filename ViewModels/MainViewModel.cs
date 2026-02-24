@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LARS.Models;
 using LARS.Services;
+using LARS.Views;
 
 namespace LARS.ViewModels;
 
@@ -22,6 +23,8 @@ public partial class MainViewModel : ObservableObject
     private readonly FeederService _feederService;
     private readonly PdfExportService _pdfService;
     private readonly MultiDocService _multiDocService;
+    private readonly StickerLabelService _stickerService;
+    private readonly DirectoryManager _dirs;
 
     public MainViewModel(
         BomReportService bomService,
@@ -32,7 +35,8 @@ public partial class MainViewModel : ObservableObject
         PdfExportService pdfService,
         DirectoryManager dirs,
         SettingsService settingsService,
-        MultiDocService multiDocService)
+        MultiDocService multiDocService,
+        StickerLabelService stickerService)
     {
         _bomService = bomService;
         _dailyPlanService = dailyPlanService;
@@ -42,6 +46,7 @@ public partial class MainViewModel : ObservableObject
         _pdfService = pdfService;
         _dirs = dirs;
         _multiDocService = multiDocService;
+        _stickerService = stickerService;
     }
 
     // ==========================================
@@ -699,11 +704,19 @@ public partial class MainViewModel : ObservableObject
                 StatusText = $"처리 중 ({i + 1}/{selected.Count}): {item.Key}...";
                 
                 // 1. PartList 로드
-                var plResult = await Task.Run(() => _partListService.ReadPartListFile(item.PartListFile!.FilePath));
+                var plResult = await Task.Run(() => _partListService.ReadPartListFile(item.PartListFile!.FullPath));
                 if (!plResult.IsSuccess) continue;
 
-                // 2. 정규화
-                await Task.Run(() => _partListService.NormalizeCellValue(plResult));
+                // 2. 정규화 (각 셀을 NormalizeCellValue로 변환)
+                await Task.Run(() =>
+                {
+                    for (int r = 0; r < plResult.Rows.Count; r++)
+                    for (int c = 0; c < plResult.Rows[r].Count; c++)
+                    {
+                        string hdr = c < plResult.Headers.Count ? plResult.Headers[c] : "";
+                        plResult.Rows[r][c] = _partListService.NormalizeCellValue(plResult.Rows[r][c], hdr);
+                    }
+                });
 
                 // 3. Feeder 필터 적용
                 if (SelectedFeeder != null)
@@ -767,6 +780,120 @@ public partial class MainViewModel : ObservableObject
         LoadFeeders();
         StatusText = "전체 갱신 완료";
         IsProcessing = false;
+    }
+
+    // ==========================================
+    // StickerLabel 탭 (Sprint 9)
+    // ==========================================
+
+    /// <summary>DataGrid 미리보기 행 (바인딩용 익명 타입 대신 record).</summary>
+    public record StickerRow(int No, string NickName, string Vendor, string PartNumber, long QTY);
+
+    [ObservableProperty]
+    private string _stickerInfoText = "라벨 없음";
+
+    [ObservableProperty]
+    private string _stickerWidthMm = "70";
+
+    [ObservableProperty]
+    private string _stickerHeightMm = "37";
+
+    [ObservableProperty]
+    private string _stickerColumns = "2";
+
+    public List<string> StickerSources { get; } = new() { "PartList", "ItemCounter" };
+
+    [ObservableProperty]
+    private string _selectedStickerSource = "PartList";
+
+    [ObservableProperty]
+    private List<StickerRow> _stickerPreviewRows = new();
+
+    // 내부 라벨 캐시
+    private List<StickerLabelInfo> _plLabels  = new();
+    private List<StickerLabelInfo> _icLabels  = new();
+
+    /// <summary>
+    /// 현재 로드된 PartList / ItemCounter 데이터에서 라벨 목록을 갱신합니다.
+    /// </summary>
+    [RelayCommand]
+    private void RefreshStickerLabels()
+    {
+        // ── PartList → 라벨 변환 ──
+        _plLabels.Clear();
+        if (_currentPlData?.IsSuccess == true)
+        {
+            int nickIdx   = _currentPlData.Headers.IndexOf("NickName");
+            int vendIdx   = _currentPlData.Headers.IndexOf("Vendor");
+            int partIdx   = _currentPlData.Headers.IndexOf("Part No");
+            int qtyIdx    = _currentPlData.Headers.IndexOf("QTY");
+
+            // 헤더명을 찾지 못하면 순서 기반 폴백 (0~3)
+            nickIdx  = nickIdx  < 0 ? 0 : nickIdx;
+            vendIdx  = vendIdx  < 0 ? 1 : vendIdx;
+            partIdx  = partIdx  < 0 ? 2 : partIdx;
+            qtyIdx   = qtyIdx   < 0 ? 3 : qtyIdx;
+
+            foreach (var row in _currentPlData.Rows)
+            {
+                string nick = row.ElementAtOrDefault(nickIdx) ?? "";
+                string vend = row.ElementAtOrDefault(vendIdx) ?? "";
+                string part = row.ElementAtOrDefault(partIdx) ?? "";
+                long.TryParse(row.ElementAtOrDefault(qtyIdx), out long qty);
+
+                if (!string.IsNullOrWhiteSpace(nick) || !string.IsNullOrWhiteSpace(part))
+                    _plLabels.Add(new StickerLabelInfo(nick, vend, part, qty));
+            }
+        }
+
+        // ── ItemCounter DataTable → 라벨 변환 ──
+        _icLabels.Clear();
+        if (ItemCounterDataTable != null)
+        {
+            foreach (System.Data.DataRow dr in ItemCounterDataTable.Rows)
+            {
+                string nick = dr["NickName"]?.ToString() ?? "";
+                string vend = dr["Vendor"]?.ToString()   ?? "";
+                string part = dr["PartNumber"]?.ToString() ?? "";
+                long.TryParse(dr["Total"]?.ToString(), out long qty);
+
+                if (!string.IsNullOrWhiteSpace(nick) || !string.IsNullOrWhiteSpace(part))
+                    _icLabels.Add(new StickerLabelInfo(nick, vend, part, qty));
+            }
+        }
+
+        UpdateStickerPreview();
+        StatusText = $"StickerLabel 갱신: PartList {_plLabels.Count}개, ItemCounter {_icLabels.Count}개";
+    }
+
+    partial void OnSelectedStickerSourceChanged(string value) => UpdateStickerPreview();
+
+    private void UpdateStickerPreview()
+    {
+        var source = SelectedStickerSource == "ItemCounter" ? _icLabels : _plLabels;
+        StickerPreviewRows = source
+            .Select((l, i) => new StickerRow(i + 1, l.NickName, l.Vendor, l.PartNumber, l.QTY))
+            .ToList();
+        StickerInfoText = $"라벨 {StickerPreviewRows.Count}개 ({SelectedStickerSource} 출처)";
+    }
+
+    /// <summary>
+    /// 현재 설정으로 PDF를 직접 저장합니다 (Dialog 없이 빠른 경로).
+    /// </summary>
+    [RelayCommand]
+    private async Task OpenStickerLabelDialogAsync()
+    {
+        // 라벨이 없으면 먼저 갱신
+        if (_plLabels.Count == 0 && _icLabels.Count == 0)
+            RefreshStickerLabels();
+
+        var dialog = new StickerLabelDialog(
+            _stickerService,
+            _plLabels,
+            _icLabels);
+
+        dialog.ShowDialog();
+        await Task.CompletedTask;
     }
 
     // ==========================================

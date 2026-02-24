@@ -145,9 +145,9 @@ public class PdfExportService
     /// <summary>
     /// 열 너비 비율(ratio)을 적용한 PDF 내보내기 공통 메서드.
     /// </summary>
-    private bool ExportWithColumnRatios(string outputPath, string title,
+    public bool ExportWithColumnRatios(string outputPath, string title,
         List<string> headers, List<List<string>> rows,
-        double[] colRatios, bool isLandscape, bool printTitleInHeader)
+        double[] colRatios, bool isLandscape = false, bool printTitleInHeader = true)
     {
         try
         {

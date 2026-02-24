@@ -236,10 +236,18 @@ public class DailyPlanService
             if (monthCell == null)
                 return DailyPlanMetadata.Invalid(filePath);
 
-            // 병합 범위 가져오기
-            var mergeArea = monthCell.MergeArea;
-            int firstCol = mergeArea.FirstColumn().ColumnNumber;
-            int lastCol = mergeArea.LastColumn().ColumnNumber;
+            // 병합 범위 가져오기 (ClosedXML: IsMerged() + MergedRange())
+            int firstCol, lastCol;
+            if (monthCell.IsMerged())
+            {
+                var mergeArea = monthCell.MergedRange();
+                firstCol = mergeArea.FirstCell().Address.ColumnNumber;
+                lastCol  = mergeArea.LastCell().Address.ColumnNumber;
+            }
+            else
+            {
+                firstCol = lastCol = monthCell.Address.ColumnNumber;
+            }
 
             // Row 3에서 최솟값 날짜 찾기 (VBA: smallestValue < 31) 및 스케줄 추출
             int minDay = 31;

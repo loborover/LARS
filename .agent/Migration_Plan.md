@@ -129,14 +129,22 @@
 
 ---
 
-## Sprint 9 (예정, 선택사항) ❌ — StickerLabel 인쇄
+## Sprint 9 (완료) ✅ — StickerLabel 인쇄
 
 **목표**: VBA StickerLabel.cls 이관
 
 **작업 목록**:
-1. 스티커 라벨 레이아웃 정의 (크기, 여백)
-2. PDF 렌더링으로 라벨 출력
-3.별도 탭 또는 Dialog로 구성
+1. ✅ `Models/StickerLabelInfo.cs` — 스티커 라벨 데이터 모델 + 설정 record
+2. ✅ `Services/StickerLabelService.cs` — PdfSharpCore 기반 A4 그리드 라벨 렌더링
+3. ✅ `Views/StickerLabelDialog.xaml` + `.cs` — 별도 Dialog (크기/열 설정 + PDF 저장)
+4. ✅ `MainWindow.xaml` — `🏷️ StickerLabel` 탭 추가 (미리보기 DataGrid + 설정 패널)
+5. ✅ `MainViewModel.cs` — `RefreshStickerLabelsCommand` / `OpenStickerLabelDialogCommand` 추가
+6. ✅ `App.xaml.cs` — `StickerLabelService` DI 등록
+
+**추가 수정 (기존 버그)**:
+- ✅ `ReportServices.cs` — `IXLCell.MergeArea` → `IsMerged() + MergedRange()` API 수정
+- ✅ `MainViewModel.cs` — `FileMetadata.FilePath` → `FullPath` 수정
+- ✅ `PdfExportService.cs` — `ExportWithColumnRatios` `private` → `public` 수정
 
 ---
 
