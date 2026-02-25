@@ -40,8 +40,10 @@
                     </StackPanel>
                 </StackPanel>
 
-                <!-- 오른쪽 버튼: 갱신 -->
+                <!-- 오른쪽 버튼: 매크로 에디터 + 갱신 -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Style="{StaticResource SecondaryButton}" Content="🧩 매크로 에디터"
+                            Command="{Binding OpenMacroEditorCommand}" Margin="0,0,8,0" />
                     <Button Style="{StaticResource PrimaryButton}" Content="🔄 전체 갱신"
                             Command="{Binding RefreshAllCommand}" />
                 </StackPanel>

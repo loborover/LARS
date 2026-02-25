@@ -23,4 +23,9 @@
     <PackageReference Include="PdfSharpCore" Version="1.3.67" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- TestSet 폴더의 .cs 파일이 LARS 빌드에 포함되지 않도록 제외 -->
+    <Compile Remove="TestSet\**" />
+  </ItemGroup>
+
 </Project>

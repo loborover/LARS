@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>LARS.TestHarness</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ClosedXML" Version="0.104.1" />
+  </ItemGroup>
+
+  <!-- LARS 프로젝트의 Services/Models를 소스 레벨로 참조 (WPF 의존성 없이) -->
+  <ItemGroup>
+    <Compile Include="..\..\Services\ExcelReaderService.cs" Link="Services\ExcelReaderService.cs" />
+    <Compile Include="..\..\Services\ReportServices.cs" Link="Services\ReportServices.cs" />
+    <Compile Include="..\..\Services\DirectoryManager.cs" Link="Services\DirectoryManager.cs" />
+    <Compile Include="..\..\Services\MacroRunner.cs" Link="Services\MacroRunner.cs" />
+    <Compile Include="..\..\Services\MacroStorageService.cs" Link="Services\MacroStorageService.cs" />
+    <Compile Include="..\..\Services\SettingsService.cs" Link="Services\SettingsService.cs" />
+    <Compile Include="..\..\Services\FeederService.cs" Link="Services\FeederService.cs" />
+    <Compile Include="..\..\Utils\Helpers.cs" Link="Utils\Helpers.cs" />
+    <Compile Include="..\..\Models\**\*.cs" Link="Models\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+</Project>

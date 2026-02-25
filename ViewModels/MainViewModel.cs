@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.Input;
 using LARS.Models;
 using LARS.Services;
 using LARS.Views;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace LARS.ViewModels;
 
@@ -44,6 +45,26 @@ public partial class MainViewModel : ObservableObject
         _pdfService = pdfService;
         _dirs = dirs;
         _multiDocService = multiDocService;
+    }
+
+    // ==========================================
+    // 커맨드: 매크로 에디터 열기
+    // ==========================================
+
+    [RelayCommand]
+    private void OpenMacroEditor()
+    {
+        try
+        {
+            var sp = ((App)Application.Current).ServiceProvider;
+            var editorWindow = sp.GetRequiredService<MacroEditorWindow>();
+            editorWindow.Show();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"매크로 에디터를 열 수 없습니다:\n{ex.Message}", "오류",
+                MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     // ==========================================
@@ -118,8 +139,7 @@ public partial class MainViewModel : ObservableObject
         IsProcessing = true;
         try
         {
-            // ProcessBomForExport: 지정 컬럼 필터 + 타이틀 추출 (VBA AutoReport_BOM)
-            var result = await Task.Run(() => _bomService.ProcessBomForExport(filePath));
+            var result = await Task.Run(() => _bomService.ReadBomFile(filePath));
             if (result.IsSuccess)
             {
                 BomDataTable = ToDataTable(result.Headers, result.Rows);
@@ -129,19 +149,7 @@ public partial class MainViewModel : ObservableObject
             }
             else
             {
-                // 컬럼 탐지 실패 시 단순 읽기로 폴백
-                var fallback = await Task.Run(() => _bomService.ReadBomFile(filePath));
-                if (fallback.IsSuccess)
-                {
-                    BomDataTable = ToDataTable(fallback.Headers, fallback.Rows);
-                    BomInfoText = $"{fallback.Rows.Count}행 로드(원시) | {Path.GetFileName(filePath)}";
-                    StatusText = $"BOM 로드 완료(원시): {fallback.Rows.Count}행";
-                    _currentBomData = fallback;
-                }
-                else
-                {
-                    StatusText = $"BOM 오류: {result.ErrorMessage}";
-                }
+                StatusText = $"BOM 오류: {result.ErrorMessage}";
             }
         }
         catch (Exception ex) { StatusText = $"오류: {ex.Message}"; }
@@ -235,23 +243,17 @@ public partial class MainViewModel : ObservableObject
             IsProcessing = true;
             try
             {
-                // Step 1: RAW 데이터 읽기
                 var rawResult = await Task.Run(() => _dailyPlanService.ReadDailyPlanFile(dialog.FileName));
                 if (rawResult.IsSuccess)
                 {
-                    // Step 2: 메타데이터 읽기
                     var meta = await Task.Run(() => _dailyPlanService.ReadMetaFromFile(dialog.FileName));
                     rawResult.Meta = meta;
 
-                    // Step 3: 가공 파이프라인 실행 (AR_1)
-                    var processed = await Task.Run(() => _dailyPlanService.ProcessDailyPlanForExport(rawResult));
-
-                    DailyPlanDataTable = ToDataTable(processed.Headers, processed.Rows);
-                    int lotCount = processed.LotGroup?.SubLots.Count ?? 0;
+                    DailyPlanDataTable = ToDataTable(rawResult.Headers, rawResult.Rows);
                     string dateLabel = meta.IsValid ? meta.DateLabel : "날짜불명";
-                    DpInfoText = $"{processed.Rows.Count}행 | LOT {lotCount}개 | {dateLabel} | {Path.GetFileName(dialog.FileName)}";
-                    StatusText = $"DailyPlan 가공 완료: {processed.Rows.Count}행, LOT {lotCount}개";
-                    _currentDpData = processed;
+                    DpInfoText = $"{rawResult.Rows.Count}행 | {dateLabel} | {Path.GetFileName(dialog.FileName)}";
+                    StatusText = $"DailyPlan 로드 완료: {rawResult.Rows.Count}행";
+                    _currentDpData = rawResult;
                 }
                 else
                 {
@@ -341,18 +343,13 @@ public partial class MainViewModel : ObservableObject
             IsProcessing = true;
             try
             {
-                // Step 1: RAW 데이터 읽기
                 var rawResult = await Task.Run(() => _partListService.ReadPartListFile(dialog.FileName));
                 if (rawResult.IsSuccess)
                 {
-                    _rawPlData = rawResult;        // 원본 보존
-
-                    // Step 2: 가공 파이프라인 실행 (AR_1)
-                    var processed = await Task.Run(() => _partListService.ProcessPartListForExport(rawResult));
-                    _currentPlData = processed;
-                    PartListDataTable = ToDataTable(processed.Headers, processed.Rows);
-                    PlInfoText = $"{processed.Rows.Count}행 (가공) | {Path.GetFileName(dialog.FileName)}";
-                    StatusText = $"PartList 가공 완료: {processed.Rows.Count}행";
+                    _currentPlData = rawResult;
+                    PartListDataTable = ToDataTable(rawResult.Headers, rawResult.Rows);
+                    PlInfoText = $"{rawResult.Rows.Count}행 | {Path.GetFileName(dialog.FileName)}";
+                    StatusText = $"PartList 로드 완료: {rawResult.Rows.Count}행";
                 }
                 else
                 {
@@ -362,89 +359,6 @@ public partial class MainViewModel : ObservableObject
             catch (Exception ex) { StatusText = $"오류: {ex.Message}"; }
             finally { IsProcessing = false; }
         }
-    }
-
-    private PartListDataResult? _rawPlData;  // 원본 보존 (정규화/필터 전)
-
-    /// <summary>
-    /// 자재 셀 표준 형식으로 정규화. VBA Re_Categorizing_PL 대응.
-    /// </summary>
-    [RelayCommand]
-    private async Task NormalizePartListAsync()
-    {
-        if (_rawPlData == null || !_rawPlData.IsSuccess)
-        {
-            StatusText = "PartList 데이터를 먼저 로드해 주세요.";
-            return;
-        }
-        IsProcessing = true;
-        StatusText = "자재 셀 정규화 중...";
-        try
-        {
-            var normalized = await Task.Run(() =>
-            {
-                var r = new PartListDataResult
-                {
-                    FilePath = _rawPlData.FilePath,
-                    IsSuccess = true,
-                    Headers = _rawPlData.Headers.ToList()
-                };
-                foreach (var row in _rawPlData.Rows)
-                {
-                    var newRow = new List<string>();
-                    for (int c = 0; c < row.Count; c++)
-                    {
-                        string hdr = c < _rawPlData.Headers.Count ? _rawPlData.Headers[c] : "";
-                        newRow.Add(_partListService.NormalizeCellValue(row[c], hdr));
-                    }
-                    r.Rows.Add(newRow);
-                }
-                return r;
-            });
-            _currentPlData = normalized;
-            PartListDataTable = ToDataTable(normalized.Headers, normalized.Rows);
-            PlInfoText = $"{normalized.Rows.Count}행 | 정규화됨 | {Path.GetFileName(_rawPlData.FilePath)}";
-            StatusText = "자재 셀 정규화 완료";
-        }
-        catch (Exception ex) { StatusText = $"오류: {ex.Message}"; }
-        finally { IsProcessing = false; }
-    }
-
-    /// <summary>
-    /// 선택된 Feeder 기준 컬럼 필터. VBA SortColumnByFeeder 대응.
-    /// </summary>
-    [RelayCommand]
-    private async Task ApplyFeederFilterAsync()
-    {
-        if (_currentPlData == null || !_currentPlData.IsSuccess)
-        { StatusText = "PartList 데이터를 먼저 로드해 주세요."; return; }
-        if (SelectedFeeder == null)
-        { StatusText = "Feeder 탭에서 Feeder를 먼저 선택해 주세요."; return; }
-
-        IsProcessing = true;
-        StatusText = $"Feeder '{SelectedFeeder.Name}' 컬럼 필터 적용 중...";
-        try
-        {
-            var filtered = await Task.Run(() =>
-                _partListService.FilterByFeeder(_currentPlData, SelectedFeeder));
-            _currentPlData = filtered;
-            PartListDataTable = ToDataTable(filtered.Headers, filtered.Rows);
-            PlInfoText = $"{filtered.Rows.Count}행 | {filtered.Headers.Count}열 | Feeder: {SelectedFeeder.Name}";
-            StatusText = $"Feeder 필터 완료: {filtered.Headers.Count}개 컬럼";
-        }
-        catch (Exception ex) { StatusText = $"오류: {ex.Message}"; }
-        finally { IsProcessing = false; }
-    }
-
-    /// <summary>원본 데이터로 복원.</summary>
-    [RelayCommand]
-    private void ResetToRaw()
-    {
-        if (_rawPlData == null) return;
-        _currentPlData = _rawPlData;
-        PartListDataTable = ToDataTable(_rawPlData.Headers, _rawPlData.Rows);
-        PlInfoText = $"{_rawPlData.Rows.Count}행 | 원본 | {Path.GetFileName(_rawPlData.FilePath)}";
-        StatusText = "원본 데이터로 복원됨";
     }
 
     [RelayCommand]
@@ -710,34 +624,16 @@ public partial class MainViewModel : ObservableObject
                 var item = selected[i];
                 StatusText = $"처리 중 ({i + 1}/{selected.Count}): {item.Key}...";
                 
-                // 1. PartList 로드
+                // PartList 로드
                 var plResult = await Task.Run(() => _partListService.ReadPartListFile(item.PartListFile!.FullPath));
                 if (!plResult.IsSuccess) continue;
 
-                // 2. 정규화 (각 셀을 NormalizeCellValue로 변환)
-                await Task.Run(() =>
-                {
-                    for (int r = 0; r < plResult.Rows.Count; r++)
-                    for (int c = 0; c < plResult.Rows[r].Count; c++)
-                    {
-                        string hdr = c < plResult.Headers.Count ? plResult.Headers[c] : "";
-                        plResult.Rows[r][c] = _partListService.NormalizeCellValue(plResult.Rows[r][c], hdr);
-                    }
-                });
-
-                // 3. Feeder 필터 적용
-                if (SelectedFeeder != null)
-                {
-                    await Task.Run(() => _partListService.FilterByFeeder(plResult, SelectedFeeder));
-                }
-
-                // 4. PDF 일괄 내보내기
+                // PDF 일괄 내보내기
                 string saveDir = _dirs.IsSetup ? _dirs.Output : Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
                 string savePath = Path.Combine(saveDir, $"PartList_{item.Key}_{DateTime.Now:HHmmss}.pdf");
-                bool ok = await Task.Run(() => _pdfService.ExportWithColumnRatios(
+                bool ok = await Task.Run(() => _pdfService.ExportTableToPdf(
                     savePath, $"PartList {item.Key}",
-                    plResult.Headers, plResult.Rows.ToList(),
-                    new[] { 2.7, 5, 20, 25, 4, 30, 3, 3, 3 }));
+                    plResult.Headers, plResult.Rows.ToList()));
 
                 if (ok) successCount++;
                 Progress = ((double)(i + 1) / selected.Count) * 100;

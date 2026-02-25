@@ -28,7 +28,6 @@ public partial class App : Application
         // 인프라 서비스
         services.AddSingleton<DirectoryManager>();
         services.AddSingleton<ExcelReaderService>();
-        services.AddSingleton<PrintService>();
         services.AddSingleton<PdfExportService>();
         services.AddSingleton<SettingsService>();
 
@@ -40,11 +39,22 @@ public partial class App : Application
         services.AddSingleton<FeederService>();
         services.AddSingleton<MultiDocService>();
 
+        // 매크로 서비스
+        services.AddSingleton<MacroRunner>();
+        services.AddSingleton<MacroStorageService>();
+
         // 뷰모델 등록
-        services.AddTransient<MainViewModel>();
+        services.AddSingleton<MainViewModel>();
+        services.AddTransient<MacroEditorViewModel>();
 
         // 뷰 등록
         services.AddTransient<Views.MainWindow>();
+        services.AddTransient<Views.MacroEditorWindow>();
+
+#if DEBUG
+        // AI Agent 테스트 API (Debug 전용)
+        services.AddSingleton<TestApiService>();
+#endif
     }
 
     protected override void OnStartup(StartupEventArgs e)
@@ -64,12 +74,19 @@ public partial class App : Application
 
         var mainWindow = ServiceProvider.GetRequiredService<Views.MainWindow>();
         mainWindow.Show();
+
+#if DEBUG
+        // Debug HTTP API 서버 시작 (localhost:19840)
+        var testApi = ServiceProvider.GetRequiredService<TestApiService>();
+        testApi.Start();
+#endif
     }
 
     protected override void OnExit(ExitEventArgs e)
     {
-        // 런타임 중 변경된 경로들은 다시 OnExit 바인딩 시점에서 SettingsService를 통해 직접 저장 처리됨
-        // (MainViewModel 측에서 UpdateSettingsAndSave 등의 메서드로 실시간 저장)
+#if DEBUG
+        ServiceProvider.GetService<TestApiService>()?.Dispose();
+#endif
         base.OnExit(e);
     }
 }

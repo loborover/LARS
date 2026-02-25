@@ -58,14 +58,49 @@
 - **처리**: 파일명에서 날짜+라인 추출 → 교집합 매핑
 - **출력**: 매칭된 문서 쌍 ListView + 일괄 처리
 
-### 2.6. Performance (Multi-core Computing)
+### 2.6. Visual Macro Editor (VME)
+- **역할**: 사용자가 코딩 없이 **드래그&드롭 블록 에디터**로 데이터 가공 파이프라인(매크로)을 직접 조립·실행할 수 있게 하는 시각적 자동화 도구.
+- **배경**: 현장 담당자마다 원하는 보고서 양식이 다르지만, 관리자가 모든 요청에 코드를 수정해줄 수 없음. VBA 매크로보다 훨씬 낮은 진입 장벽으로 사용자 자율 커스터마이징을 지원.
+- **핵심 기능**:
+  | 기능 | 설명 |
+  |------|------|
+  | **블록 팔레트** | 입력/열조작/행조작/변환/집계/출력 카테고리의 14종 블록을 제공 |
+  | **파이프라인 캔버스** | 블록을 좌→우로 배치하여 실행 순서를 시각적으로 편집 |
+  | **속성 패널** | 선택된 블록의 세부 설정(대상 열, 필터 조건 등)을 편집 |
+  | **매크로 실행 엔진** | `MacroRunner`가 토폴로지 정렬로 블록을 순차 실행, 결과를 DataTable로 반환 |
+  | **Raw / Processed View** | 매크로 실행 전 원본(Raw)과 실행 후 가공 결과(Processed)를 나란히 비교하는 이중 뷰 |
+  | **JSON 저장/불러오기** | 매크로를 JSON으로 영속화, 타 PC로 이식 가능 |
+- **향후 확장 — Drawing Engine (Shape 조작)**:
+  - **Drawing Engine**을 도입하여 기본 도형(Primitive Shape)인 `Box`, `TextBox`, `Line`, `Dot` 등을 제공.
+  - 사용자는 기본 도형을 **Viewport** 위에 자유롭게 배치·조합하여 라벨, 스티커, 보고서 헤더 등 목적에 맞는 **응용 도형(Composite Shape)**을 만들 수 있음.
+  - 이를 통해 데이터 가공뿐 아니라 **보고서 외형 디자인·인쇄 레이아웃**까지 사용자가 자유롭게 커스터마이징하는 올인원 에디터로 발전.
+- **책임 범위**:
+  - 기존 하드코딩 파이프라인(`ProcessBomForExport` 등)을 **궁극적으로 VME로 완전 대체**할 예정. 즉시 레거시 로직을 제거.
+  - 매크로 실행 중 오류 발생 시, 사용자에게 어떤 블록에서 문제가 생겼는지 명확하게 피드백.
+
+### 2.7. Performance (Multi-core Computing)
 - **개요**: 실무 환경에서 발생하는 거대한 양의 문서(수십~수백 개)를 한 번에 즉각적으로 인식하고 가공할 수 있도록 돕는 병렬 처리 아키텍처 지원.
 - **특징**: 스레드 및 코어 자원을 최대한 활용하여 백그라운드에서 데이터를 분산 처리함으로써 UI의 멈춤 현상을 방지하고 작업 소요 시간을 획기적으로 줄이는 것이 목표.
 
-### 2.6. StickerLabel
-- **입력**: 라벨 데이터 (모델명, W/O, 수량 등)
-- **처리**: A4 그리드 레이아웃 라벨 배치
-- **출력**: PDF 라벨 인쇄
+### 2.8. StickerLabel → Drawing Engine 흡수 예정
+- **현재**: 라벨 데이터(모델명, W/O, 수량 등) → A4 그리드 레이아웃 → PDF 라벨 인쇄.
+- **향후**: VME의 **Drawing Engine** 기반으로 재구현. 사용자가 기본 도형(`Box`, `TextBox`, `Line`, `Dot`)을 조합하여 라벨 양식을 직접 디자인하고, Viewport에서 실시간 미리보기 후 PDF 출력하는 구조로 전환.
+- 기존 `StickerLabelService`의 하드코딩 레이아웃은 Drawing Engine 완성 시 대체됨.
+
+### 2.9. AI Agent Testability (자동 검증 인프라)
+- **목적**: AI 에이전트가 LARS의 기능을 자동으로 실행·조회·검증할 수 있는 인터페이스를 제공합니다. 터미널(pwsh)에서 명령 한 줄로 ViewModel 상태 조회, 매크로 실행, 데이터 검증, 스크린샷 캡처가 가능합니다.
+- **구성 요소**:
+  1. **내장 Debug HTTP API** (`#if DEBUG` 전용)
+     - LARS.exe 실행 시 `localhost:19840`에 경량 HTTP 서버 활성화
+     - 엔드포인트: ViewModel 상태 조회, 매크로 실행, DataGrid 데이터 JSON 반환, 스크린샷 PNG 캡처
+     - AI 에이전트가 `curl`/`Invoke-WebRequest`로 호출하여 앱 상태를 실시간 검증
+  2. **Headless ViewModel 테스트** (`TestSet/` 콘솔 프로젝트)
+     - UI 없이 ViewModel/Service 레벨에서 데이터 가공 로직을 직접 실행·검증
+     - `dotnet run`으로 실행 → 결과를 JSON/콘솔 출력 → AI 에이전트가 파싱
+- **원칙**:
+  - Debug API는 `#if DEBUG` 가드로 릴리스 빌드에 절대 포함되지 않음
+  - 프로덕션 코드에 테스트 전용 의존성을 추가하지 않음
+  - 테스트 결과는 `TestSet/VerificationOutput/`에 저장
 
 ---
 
@@ -88,14 +123,27 @@
 
 ```
 LARS/
-├── Models/          ← 데이터 모델 (ModelInfo, ItemUnit, Lot, ...)
-├── Services/        ← 비즈니스 로직 (ReportServices, PdfExportService, ...)
-├── ViewModels/      ← MVVM ViewModel (MainViewModel)
-├── Views/           ← WPF XAML (MainWindow, StickerLabelDialog)
-├── VBA/             ← VBA 원본 소스 (참조용)
+├── Models/              ← 데이터 모델 (ModelInfo, ItemUnit, Lot, ...)
+│   └── Macro/           ← VME 모델 (NodeModel, MacroDefinition, ...)
+├── Services/            ← 비즈니스 로직
+│   ├── ReportServices   ← BOM/DailyPlan/PartList 보고서 서비스
+│   ├── MacroRunner      ← VME 실행 엔진
+│   ├── MacroStorage     ← VME JSON 저장/불러오기
+│   ├── PdfExportService ← PDF 렌더링
+│   └── ...              ← DirectoryManager, SettingsService 등
+├── ViewModels/          ← MVVM ViewModel
+│   ├── MainViewModel
+│   └── MacroEditorViewModel
+├── Views/               ← WPF XAML
+│   ├── MainWindow
+│   └── MacroEditorWindow
+├── Converters/          ← WPF 값 변환기
+├── Utils/               ← 유틸리티 헬퍼
+├── Themes/              ← 테마/리소스 딕셔너리
+├── VBA/                 ← VBA 원본 소스 (참조용)
 └── .agent/
-    ├── Identity.md  ← 에이전트 행동 강령
-    └── Work/        ← 업무 문서 (이 파일 포함)
+    ├── Identity.md      ← 에이전트 행동 강령
+    └── Work/            ← 업무 문서 (이 파일 포함)
 ```
 
 ### 4.1. 핵심 원칙
@@ -127,3 +175,18 @@ LARS/
 | Sprint 14 | 대기 | VBA↔C# 전체 대조 검증 |
 
 > 상세 Sprint 내용: [Migration_Plan.md](file:///d:/Workshop/LARS/.agent/Work/Migration_Plan.md)
+
+---
+
+## 7. 유지보수 프로세스
+
+### 7.1. 빌드 후 정합성 검증
+- **매 빌드 완료 시**, 에이전트는 이 기획서(LARS_Project.md)와 실제 소스코드의 정합성을 자동으로 검증합니다.
+- 기획서에 명시되지 않은 코드가 발견되면 사용자에게 보고하고, 불필요한 경우 과감히 삭제하여 프로젝트를 최적 상태로 유지합니다.
+
+### 7.2. 코드 리뷰 자동 갱신
+- **매 빌드 완료 시**, 에이전트는 프로젝트 전체를 분석하여 [Csharp_Review.md](file:///d:/Workshop/LARS/.agent/Work/Csharp_Review.md) 파일을 최신 상태로 갱신합니다.
+- 리뷰 항목: 파일별 역할 요약, 코드 품질, 개선 제안 등.
+
+### 7.3. 아키텍처 동기화
+- 소스 폴더 구조가 변경될 때마다, 이 문서의 §4 아키텍처 트리를 업데이트하여 문서와 코드가 항상 1:1 대응되도록 합니다.

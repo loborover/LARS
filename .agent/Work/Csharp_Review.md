@@ -18,8 +18,8 @@
 | **DI** | Microsoft.Extensions.DependencyInjection 9.0.2 |
 | **Nullable** | Enabled |
 | **Implicit Usings** | Enabled |
-| **총 C# 파일** | 25개 (Services 10 / Models 9 / ViewModels 1 / Views 3 / Utils 1 / Converters 1) |
-| **총 코드 라인** | 약 3,200줄 (XAML 제외) |
+| **총 C# 파일** | 27개 (Services 10 / Models 12 / ViewModels 2 / Views 4 / Utils 1 / Converters 1) |
+| **총 코드 라인** | 약 4,500줄 (XAML 제외, VME 포함) |
 
 ---
 
@@ -72,12 +72,13 @@
 
 ```
 App() → ConfigureServices(IServiceCollection)
-  ├── Singleton: DirectoryManager, ExcelReaderService, PrintService
+  ├── Singleton: DirectoryManager, ExcelReaderService
   ├── Singleton: PdfExportService, SettingsService, StickerLabelService
   ├── Singleton: BomReportService, DailyPlanService, PartListService
   ├── Singleton: ItemCounterService, FeederService, MultiDocService
-  ├── Singleton: MainViewModel
-  └── Singleton: MainWindow
+  ├── Singleton: MacroRunner, MacroStorageService
+  ├── Transient: MainViewModel, MacroEditorViewModel
+  └── Transient: MainWindow, MacroEditorWindow
 
 OnStartup → SettingsService.Load() → DirectoryManager.Setup() → MainWindow.Show()
 OnExit    → SettingsService.Save(BasePath, SourcePath, LastFeederName)
@@ -125,10 +126,9 @@ OnExit    → SettingsService.Save(BasePath, SourcePath, LastFeederName)
 
 | 서비스 | LOC | VBA 대응 | 의존성 | 역할 |
 |--------|-----|----------|--------|------|
-| `DirectoryManager` | 49 | Z_Directory.bas | — | BasePath 기준 6개 하위 폴더(BOM/DailyPlan/PartList/Feeder/Backup/Output) 경로 제공, 자동 생성 |
+| `DirectoryManager` | 88 | Z_Directory.bas | — | BasePath 기준 하위 폴더 경로 제공, Source 폴백(다운로드 폴더) |
 | `ExcelReaderService` | 89 | Excel COM 호출 | ClosedXML | ReadRange, ReadAll, FindCell, GetSheetNames, GetUsedRange |
 | `SettingsService` | 62 | — | System.Text.Json | `%AppData%/LARS/settings.json` 읽기/쓰기 |
-| `PrintService` | 36 | Printer.bas | — | PDF 저장 (stub) + PrintDialog 표시 |
 
 #### 비즈니스 서비스
 
@@ -146,7 +146,14 @@ OnExit    → SettingsService.Save(BasePath, SourcePath, LastFeederName)
 | 서비스 | LOC | VBA 대응 | 핵심 메서드 |
 |--------|-----|----------|------------|
 | `PdfExportService` | 281 | Printer.bas | `ExportTableToPdf()` (범용), `ExportBomToPdf()` (비율 적용), `ExportDailyPlanToPdf()` (가로), `ExportWithColumnRatios()` (공통 엔진) |
-| `StickerLabelService` | 147 | StickerLabel.cls | `GenerateStickerPdf()`: A4 그리드 라벨 렌더링 |
+| `StickerLabelService` | 147 | StickerLabel.cls | `GenerateStickerPdf()`: A4 그리드 라벨 렌더링 (향후 Drawing Engine으로 대체 예정) |
+
+#### VME (Visual Macro Editor) 서비스
+
+| 서비스 | LOC | 역할 |
+|--------|-----|------|
+| `MacroRunner` | 330 | 매크로 실행 엔진: 토폴로지 정렬 + 11개 노드 타입(ExcelRead, ColumnDelete/Select/Rename, RowFilter, Sort, DuplicateMerge, CellReplace, GroupSum/Count) 실행 |
+| `MacroStorageService` | 80 | 매크로 JSON 직렬화/역직렬화 (`%AppData%/LARS/Macros/`) |
 
 ---
 
@@ -160,8 +167,9 @@ VBA의 `AutoReportHandler.frm` 이벤트 핸들러를 대체하는 **중앙 컨�
 MainViewModel : ObservableObject
 │
 ├── [의존성 주입] (10개 서비스)
-│   _bomService, _dailyPlanService, _partListService, _itemCounterService,
-│   _feederService, _pdfService, _dirs, _multiDocService, _stickerService
+│
+├── [매크로 에디터 진입]
+│   Commands: OpenMacroEditorCommand (별도 윈도우 열기)
 │
 ├── [공통 상태] (5개 속성)
 │   StatusText, IsProcessing, Progress, SelectedTabIndex, BasePath
@@ -227,10 +235,10 @@ MainViewModel : ObservableObject
 
 | 파일 | 역할 |
 |------|------|
-| `MainWindow.xaml` (573줄) | 메인 UI: 8개 탭(BOM, DailyPlan, PartList, 교차매핑, ItemCounter, Feeder, StickerLabel, 설정) + 타이틀바 + 상태바 |
+| `MainWindow.xaml` (580줄) | 메인 UI: 탭(BOM, DailyPlan, PartList, 교차매핑, ItemCounter, Feeder, StickerLabel, 설정[기본정보/경로관리/Performance]) + 타이틀바(매크로 에디터 버튼) + 상태바 |
 | `MainWindow.xaml.cs` (10줄) | 코드비하인드: DataContext = DI 주입된 MainViewModel |
-| `StickerLabelDialog.xaml` | 스티커 라벨 PDF 저장 Dialog (독립 스타일) |
-| `StickerLabelDialog.xaml.cs` | Dialog 로직: 출처 전환, 설정 파싱, PDF 저장 + 열기 |
+| `MacroEditorWindow.xaml` (200줄) | VME 에디터: 3분할 UI (팔레트/캔버스/속성패널) + 미리보기 + 상태바 |
+| `MacroEditorWindow.xaml.cs` (18줄) | 코드비하인드: DataContext = DI 주입된 MacroEditorViewModel |
 
 #### MainWindow 탭 구조
 
@@ -277,9 +285,10 @@ graph TB
         DM["DirectoryManager"]
         ERS["ExcelReaderService"]
         SS["SettingsService"]
-        PS["PrintService"]
         PES["PdfExportService"]
         SLS["StickerLabelService"]
+        MR["MacroRunner"]
+        MSS["MacroStorageService"]
     end
 
     subgraph BIZ["Business Services"]
@@ -293,11 +302,12 @@ graph TB
 
     subgraph VM["ViewModel"]
         MVM["MainViewModel"]
+        MEVM["MacroEditorViewModel"]
     end
 
     subgraph VIEW["Views"]
         MW["MainWindow.xaml"]
-        SLD["StickerLabelDialog.xaml"]
+        MEW["MacroEditorWindow.xaml"]
     end
 
     BRS --> ERS
@@ -317,8 +327,10 @@ graph TB
     MVM --> MDS
     MVM --> SLS
     MVM --> DM
+    MEVM --> MR
+    MEVM --> MSS
     MW -.-> MVM
-    SLD --> SLS
+    MEW -.-> MEVM
 ```
 
 ---
