@@ -35,7 +35,8 @@ public partial class MainViewModel : ObservableObject
         PdfExportService pdfService,
         DirectoryManager dirs,
         SettingsService settingsService,
-        MultiDocService multiDocService)
+        MultiDocService multiDocService,
+        MacroEditorViewModel macroViewModel)
     {
         _bomService = bomService;
         _dailyPlanService = dailyPlanService;
@@ -45,7 +46,10 @@ public partial class MainViewModel : ObservableObject
         _pdfService = pdfService;
         _dirs = dirs;
         _multiDocService = multiDocService;
+        MacroViewModel = macroViewModel;
     }
+
+    public MacroEditorViewModel MacroViewModel { get; }
 
     // ==========================================
     // 커맨드: 매크로 에디터 열기
@@ -91,6 +95,9 @@ public partial class MainViewModel : ObservableObject
     // ==========================================
 
     public ObservableCollection<FileMetadata> BomFiles { get; } = new();
+
+    [ObservableProperty]
+    private FileMetadata? _selectedBomFile;
 
     [ObservableProperty]
     private DataTable? _bomDataTable;
@@ -156,6 +163,60 @@ public partial class MainViewModel : ObservableObject
         finally { IsProcessing = false; }
     }
 
+    [RelayCommand]
+    private async Task PreviewSelectedBomAsync()
+    {
+        if (SelectedBomFile == null) return;
+        await LoadBomDataAsync(SelectedBomFile.FullPath);
+    }
+
+    [RelayCommand]
+    private void EditSelectedBom()
+    {
+        if (SelectedBomFile == null || !File.Exists(SelectedBomFile.FullPath)) return;
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = SelectedBomFile.FullPath,
+                UseShellExecute = true
+            });
+            StatusText = $"엑셀 열기 성공: {SelectedBomFile.FileName}";
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"파일 열기 오류: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private void DeleteSelectedBom()
+    {
+        if (SelectedBomFile == null) return;
+
+        var result = System.Windows.MessageBox.Show(
+            $"'{SelectedBomFile.FileName}' 파일을 영구적으로 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.",
+            "파일 삭제 확인",
+            System.Windows.MessageBoxButton.YesNo,
+            System.Windows.MessageBoxImage.Warning);
+
+        if (result == System.Windows.MessageBoxResult.Yes)
+        {
+            try
+            {
+                string path = SelectedBomFile.FullPath;
+                if (File.Exists(path)) File.Delete(path);
+                BomFiles.Remove(SelectedBomFile);
+                SelectedBomFile = null;
+                StatusText = "BOM 파일 삭제 완료.";
+            }
+            catch (Exception ex)
+            {
+                StatusText = $"삭제 오류: {ex.Message}";
+            }
+        }
+    }
+
     private BomDataResult? _currentBomData;
 
     [RelayCommand]
@@ -201,6 +262,9 @@ public partial class MainViewModel : ObservableObject
     public ObservableCollection<FileMetadata> DailyPlanFiles { get; } = new();
 
     [ObservableProperty]
+    private FileMetadata? _selectedDailyPlanFile;
+
+    [ObservableProperty]
     private DataTable? _dailyPlanDataTable;
 
     [ObservableProperty]
@@ -239,29 +303,94 @@ public partial class MainViewModel : ObservableObject
 
         if (dialog.ShowDialog() == true)
         {
-            StatusText = $"DailyPlan 로딩: {Path.GetFileName(dialog.FileName)}…";
-            IsProcessing = true;
+            await LoadDailyPlanDataAsync(dialog.FileName);
+        }
+    }
+
+    private async Task LoadDailyPlanDataAsync(string filePath)
+    {
+        StatusText = $"DailyPlan 로딩: {Path.GetFileName(filePath)}…";
+        IsProcessing = true;
+        try
+        {
+            var rawResult = await Task.Run(() => _dailyPlanService.ReadDailyPlanFile(filePath));
+            if (rawResult.IsSuccess)
+            {
+                var meta = await Task.Run(() => _dailyPlanService.ReadMetaFromFile(filePath));
+                rawResult.Meta = meta;
+
+                DailyPlanDataTable = ToDataTable(rawResult.Headers, rawResult.Rows);
+                string dateLabel = meta.IsValid ? meta.DateLabel : "날짜불명";
+                DpInfoText = $"{rawResult.Rows.Count}행 | {dateLabel} | {Path.GetFileName(filePath)}";
+                StatusText = $"DailyPlan 로드 완료: {rawResult.Rows.Count}행";
+                _currentDpData = rawResult;
+            }
+            else
+            {
+                StatusText = $"DailyPlan 오류: {rawResult.ErrorMessage}";
+            }
+        }
+        catch (Exception ex) { StatusText = $"오류: {ex.Message}"; }
+        finally { IsProcessing = false; }
+    }
+
+    [RelayCommand]
+    private async Task PreviewSelectedDailyPlanAsync()
+    {
+        if (SelectedDailyPlanFile == null) return;
+        await LoadDailyPlanDataAsync(SelectedDailyPlanFile.FullPath);
+    }
+
+    [RelayCommand]
+    private void EditSelectedDailyPlan()
+    {
+        if (SelectedDailyPlanFile == null || !File.Exists(SelectedDailyPlanFile.FullPath)) return;
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = SelectedDailyPlanFile.FullPath,
+                UseShellExecute = true
+            });
+            StatusText = $"엑셀 열기 성공: {SelectedDailyPlanFile.FileName}";
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"파일 열기 오류: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private void DeleteSelectedDailyPlan()
+    {
+        if (SelectedDailyPlanFile == null) return;
+
+        var result = System.Windows.MessageBox.Show(
+            $"'{SelectedDailyPlanFile.FileName}' 파일을 영구적으로 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.",
+            "파일 삭제 확인",
+            System.Windows.MessageBoxButton.YesNo,
+            System.Windows.MessageBoxImage.Warning);
+
+        if (result == System.Windows.MessageBoxResult.Yes)
+        {
             try
             {
-                var rawResult = await Task.Run(() => _dailyPlanService.ReadDailyPlanFile(dialog.FileName));
-                if (rawResult.IsSuccess)
+                string path = SelectedDailyPlanFile.FullPath;
+                if (File.Exists(path)) File.Delete(path);
+                DailyPlanFiles.Remove(SelectedDailyPlanFile);
+                if (_currentDpData?.FilePath == path)
                 {
-                    var meta = await Task.Run(() => _dailyPlanService.ReadMetaFromFile(dialog.FileName));
-                    rawResult.Meta = meta;
-
-                    DailyPlanDataTable = ToDataTable(rawResult.Headers, rawResult.Rows);
-                    string dateLabel = meta.IsValid ? meta.DateLabel : "날짜불명";
-                    DpInfoText = $"{rawResult.Rows.Count}행 | {dateLabel} | {Path.GetFileName(dialog.FileName)}";
-                    StatusText = $"DailyPlan 로드 완료: {rawResult.Rows.Count}행";
-                    _currentDpData = rawResult;
+                    DailyPlanDataTable = null;
+                    DpInfoText = "스캔 대기 중";
+                    _currentDpData = null;
                 }
-                else
-                {
-                    StatusText = $"DailyPlan 오류: {rawResult.ErrorMessage}";
-                }
+                SelectedDailyPlanFile = null;
+                StatusText = "DailyPlan 파일 삭제 완료.";
             }
-            catch (Exception ex) { StatusText = $"오류: {ex.Message}"; }
-            finally { IsProcessing = false; }
+            catch (Exception ex)
+            {
+                StatusText = $"삭제 오류: {ex.Message}";
+            }
         }
     }
 
@@ -299,6 +428,9 @@ public partial class MainViewModel : ObservableObject
     // ==========================================
 
     public ObservableCollection<FileMetadata> PartListFiles { get; } = new();
+
+    [ObservableProperty]
+    private FileMetadata? _selectedPartListFile;
 
     [ObservableProperty]
     private DataTable? _partListDataTable;
@@ -339,25 +471,90 @@ public partial class MainViewModel : ObservableObject
 
         if (dialog.ShowDialog() == true)
         {
-            StatusText = $"PartList 로딩: {Path.GetFileName(dialog.FileName)}…";
-            IsProcessing = true;
+            await LoadPartListDataAsync(dialog.FileName);
+        }
+    }
+
+    private async Task LoadPartListDataAsync(string filePath)
+    {
+        StatusText = $"PartList 로딩: {Path.GetFileName(filePath)}…";
+        IsProcessing = true;
+        try
+        {
+            var rawResult = await Task.Run(() => _partListService.ReadPartListFile(filePath));
+            if (rawResult.IsSuccess)
+            {
+                _currentPlData = rawResult;
+                PartListDataTable = ToDataTable(rawResult.Headers, rawResult.Rows);
+                PlInfoText = $"{rawResult.Rows.Count}행 | {Path.GetFileName(filePath)}";
+                StatusText = $"PartList 로드 완료: {rawResult.Rows.Count}행";
+            }
+            else
+            {
+                StatusText = $"PartList 오류: {rawResult.ErrorMessage}";
+            }
+        }
+        catch (Exception ex) { StatusText = $"오류: {ex.Message}"; }
+        finally { IsProcessing = false; }
+    }
+
+    [RelayCommand]
+    private async Task PreviewSelectedPartListAsync()
+    {
+        if (SelectedPartListFile == null) return;
+        await LoadPartListDataAsync(SelectedPartListFile.FullPath);
+    }
+
+    [RelayCommand]
+    private void EditSelectedPartList()
+    {
+        if (SelectedPartListFile == null || !File.Exists(SelectedPartListFile.FullPath)) return;
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = SelectedPartListFile.FullPath,
+                UseShellExecute = true
+            });
+            StatusText = $"엑셀 열기 성공: {SelectedPartListFile.FileName}";
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"파일 열기 오류: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private void DeleteSelectedPartList()
+    {
+        if (SelectedPartListFile == null) return;
+
+        var result = System.Windows.MessageBox.Show(
+            $"'{SelectedPartListFile.FileName}' 파일을 영구적으로 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.",
+            "파일 삭제 확인",
+            System.Windows.MessageBoxButton.YesNo,
+            System.Windows.MessageBoxImage.Warning);
+
+        if (result == System.Windows.MessageBoxResult.Yes)
+        {
             try
             {
-                var rawResult = await Task.Run(() => _partListService.ReadPartListFile(dialog.FileName));
-                if (rawResult.IsSuccess)
+                string path = SelectedPartListFile.FullPath;
+                if (File.Exists(path)) File.Delete(path);
+                PartListFiles.Remove(SelectedPartListFile);
+                if (_currentPlData?.FilePath == path)
                 {
-                    _currentPlData = rawResult;
-                    PartListDataTable = ToDataTable(rawResult.Headers, rawResult.Rows);
-                    PlInfoText = $"{rawResult.Rows.Count}행 | {Path.GetFileName(dialog.FileName)}";
-                    StatusText = $"PartList 로드 완료: {rawResult.Rows.Count}행";
+                    PartListDataTable = null;
+                    PlInfoText = "스캔 대기 중";
+                    _currentPlData = null;
                 }
-                else
-                {
-                    StatusText = $"PartList 오류: {rawResult.ErrorMessage}";
-                }
+                SelectedPartListFile = null;
+                StatusText = "PartList 파일 삭제 완료.";
             }
-            catch (Exception ex) { StatusText = $"오류: {ex.Message}"; }
-            finally { IsProcessing = false; }
+            catch (Exception ex)
+            {
+                StatusText = $"삭제 오류: {ex.Message}";
+            }
         }
     }
 
@@ -649,6 +846,9 @@ public partial class MainViewModel : ObservableObject
     // ==========================================
 
     [ObservableProperty]
+    private string _settingsDefaultSourcePath = string.Empty;
+
+    [ObservableProperty]
     private string _settingsSourceBom = string.Empty;
 
     [ObservableProperty]
@@ -681,6 +881,7 @@ public partial class MainViewModel : ObservableObject
         var settings = settingsService.Load();
 
         BasePath = settings.BasePath;
+        SettingsDefaultSourcePath = settings.DefaultSourcePath;
         SettingsSourceBom = settings.SourceBOM;
         SettingsSourceDailyPlan = settings.SourceDailyPlan;
         SettingsSourcePartList = settings.SourcePartList;
@@ -697,6 +898,7 @@ public partial class MainViewModel : ObservableObject
         var newSettings = new AppSettings
         {
             BasePath = this.BasePath,
+            DefaultSourcePath = this.SettingsDefaultSourcePath,
             SourceBOM = this.SettingsSourceBom,
             SourceDailyPlan = this.SettingsSourceDailyPlan,
             SourcePartList = this.SettingsSourcePartList,
@@ -730,6 +932,7 @@ public partial class MainViewModel : ObservableObject
         {
             switch (param)
             {
+                case "DefaultSource": SettingsDefaultSourcePath = dialog.FolderName; break;
                 case "SourceBOM": SettingsSourceBom = dialog.FolderName; break;
                 case "SourceDP": SettingsSourceDailyPlan = dialog.FolderName; break;
                 case "SourcePL": SettingsSourcePartList = dialog.FolderName; break;

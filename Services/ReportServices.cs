@@ -25,11 +25,26 @@ public class BomReportService
     /// </summary>
     public List<FileMetadata> ScanBomFiles(IProgress<double>? progress = null)
     {
-        var files = FileSearcher.FindFiles(_dirs.SourceBOM, "", ".xlsx");
-        var result = new List<FileMetadata>(files.Count);
+        // 1차 필터링: VBA 로직과 동일하게 파일명에 "@CVZ"가 포함된 엑셀 파일만 검색
+        var files = FileSearcher.FindFiles(_dirs.SourceBOM, "@CVZ", ".xlsx");
+        var result = new List<FileMetadata>();
         for (int i = 0; i < files.Count; i++)
         {
-            result.Add(FileMetadata.Parse(files[i]));
+            try
+            {
+                // 2차 검증(Deep Validation): C2 셀에 유효한 값이 존재하는지 확인
+                using var wb = new XLWorkbook(files[i]);
+                var ws = wb.Worksheet(1);
+                string c2Value = ws.Cell(2, 3).GetString();
+
+                if (!string.IsNullOrWhiteSpace(c2Value))
+                {
+                    var meta = FileMetadata.Parse(files[i]);
+                    meta.Status = "Validated";
+                    result.Add(meta);
+                }
+            }
+            catch { /* 열 수 없거나 잘못된 포맷인 경우 스킵 */ }
             progress?.Report((double)(i + 1) / files.Count);
         }
         return result;
@@ -114,11 +129,19 @@ public class DailyPlanService
     /// </summary>
     public List<FileMetadata> ScanDailyPlanFiles(int baseYear = 0, IProgress<double>? progress = null)
     {
-        var files = FileSearcher.FindFiles(_dirs.SourceDailyPlan, "", ".xlsx");
-        var result = new List<FileMetadata>(files.Count);
+        // 1차 필터링: VBA 로직과 동일하게 파일명에 "Excel_Export_"가 포함된 엑셀 파일만 검색
+        var files = FileSearcher.FindFiles(_dirs.SourceDailyPlan, "Excel_Export_", ".xlsx");
+        var result = new List<FileMetadata>();
         for (int i = 0; i < files.Count; i++)
         {
-            result.Add(FileMetadata.Parse(files[i], baseYear));
+            // 2차 검증(Deep Validation): 내부 로직에서 '*월' 패턴 헤더 및 수치 검사를 수행
+            var metaData = ReadMetaFromFile(files[i]);
+            if (metaData.IsValid)
+            {
+                var meta = FileMetadata.Parse(files[i], baseYear);
+                meta.Status = "Validated";
+                result.Add(meta);
+            }
             progress?.Report((double)(i + 1) / files.Count);
         }
         return result;
@@ -296,11 +319,36 @@ public class PartListService
     /// </summary>
     public List<FileMetadata> ScanPartListFiles(int baseYear = 0, IProgress<double>? progress = null)
     {
-        var files = FileSearcher.FindFiles(_dirs.SourcePartList, "", ".xlsx");
-        var result = new List<FileMetadata>(files.Count);
+        // 1차 필터링: VBA 로직과 동일하게 파일명에 "Excel_Export_"가 포함된 엑셀 파일만 검색
+        var files = FileSearcher.FindFiles(_dirs.SourcePartList, "Excel_Export_", ".xlsx");
+        var result = new List<FileMetadata>();
         for (int i = 0; i < files.Count; i++)
         {
-            result.Add(FileMetadata.Parse(files[i], baseYear));
+            try
+            {
+                using var wb = new XLWorkbook(files[i]);
+                var ws = wb.Worksheet(1);
+                bool isValid = false;
+
+                // 2차 검증(Deep Validation): Row 1에 8자리 숫자(YYYYMMDD 포맷) 헤더가 하나라도 존재하는지 파악
+                foreach (var cell in ws.Row(1).CellsUsed())
+                {
+                    string val = cell.GetString().Trim();
+                    if (val.Length == 8 && int.TryParse(val, out _))
+                    {
+                        isValid = true;
+                        break;
+                    }
+                }
+
+                if (isValid)
+                {
+                    var meta = FileMetadata.Parse(files[i], baseYear);
+                    meta.Status = "Validated";
+                    result.Add(meta);
+                }
+            }
+            catch { /* 열 수 없거나 잘못된 포맷인 경우 스킵 */ }
             progress?.Report((double)(i + 1) / files.Count);
         }
         return result;

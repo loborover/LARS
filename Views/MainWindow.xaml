@@ -2,6 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:LARS.ViewModels"
+        xmlns:views="clr-namespace:LARS.Views"
         Title="LARS — Logistics Automation Report System"
         Width="1360" Height="860"
         MinWidth="960" MinHeight="600"
@@ -40,10 +41,8 @@
                     </StackPanel>
                 </StackPanel>
 
-                <!-- 오른쪽 버튼: 매크로 에디터 + 갱신 -->
+                <!-- 오른쪽 버튼: 갱신 -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Style="{StaticResource SecondaryButton}" Content="🧩 매크로 에디터"
-                            Command="{Binding OpenMacroEditorCommand}" Margin="0,0,8,0" />
                     <Button Style="{StaticResource PrimaryButton}" Content="🔄 전체 갱신"
                             Command="{Binding RefreshAllCommand}" />
                 </StackPanel>
@@ -53,12 +52,16 @@
         <!-- ==================== 메인 콘텐츠 ==================== -->
         <TabControl Grid.Row="1" SelectedIndex="{Binding SelectedTabIndex}" Margin="0">
 
-            <!-- ===== AutoReport 탭 (BOM/DailyPlan/PartList/ItemCounter/MultiDocs 통합) ===== -->
+            <!-- ===== AutoReport 탭 ===== -->
             <TabItem Header="📊 AutoReport">
                 <TabControl Margin="4,4,4,0">
 
-                    <!-- ===== BOM 하위탭 ===== -->
-                    <TabItem Header="📋 BOM">
+                    <!-- 1. Documents 하위탭 그룹 -->
+                    <TabItem Header="📄 Documents">
+                        <TabControl Margin="4,4,4,0">
+
+                            <!-- ===== BOM 하위탭 ===== -->
+                            <TabItem Header="📋 BOM">
                 <Grid Margin="20,16">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -74,6 +77,7 @@
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                 <TextBlock Text="BOM (Bill of Materials)" FontSize="16" FontWeight="Bold"
@@ -86,25 +90,49 @@
                                     Content="📡 스캔" Command="{Binding ScanBomFilesCommand}" Margin="0,0,6,0" />
                             <Button Grid.Column="2" Style="{StaticResource SecondaryButton}"
                                     Content="📂 파일 열기" Command="{Binding OpenBomFileCommand}" Margin="0,0,6,0" />
-                            <Button Grid.Column="3" Style="{StaticResource PrimaryButton}"
+                            <Button Grid.Column="3" Style="{StaticResource SecondaryButton}"
+                                    Content="🧩 에디터" Command="{Binding OpenMacroEditorCommand}"
+                                    ToolTip="매크로 파이프라인(VME) 열기" Margin="0,0,6,0" />
+                            <Button Grid.Column="4" Style="{StaticResource PrimaryButton}"
                                     Content="📄 PDF" Command="{Binding ExportBomPdfCommand}" />
                         </Grid>
                     </Border>
 
-                    <!-- 파일 리스트 -->
-                    <Expander Grid.Row="1" Header="  스캔된 파일 목록" IsExpanded="False"
-                              Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,8">
-                        <DataGrid ItemsSource="{Binding BomFiles}" MaxHeight="150">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="파일명" Binding="{Binding FileName}" Width="*" />
-                                <DataGridTextColumn Header="상태" Binding="{Binding Status}" Width="80" />
-                            </DataGrid.Columns>
-                        </DataGrid>
-                    </Expander>
+                    <!-- 하단 레이아웃: 좌측 파일 리스트 / 중앙 스플리터 / 우측 데이터 뷰어 -->
+                    <Grid Grid.Row="1" Grid.RowSpan="2" Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="250" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
 
-                    <!-- 데이터 뷰어 -->
-                    <DataGrid Grid.Row="2" ItemsSource="{Binding BomDataTable}"
-                              AutoGenerateColumns="True" IsReadOnly="True" />
+                        <!-- 좌측: 파일 리스트 -->
+                        <Border Grid.Column="0" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="4">
+                            <DataGrid ItemsSource="{Binding BomFiles}" SelectedItem="{Binding SelectedBomFile}" Margin="0">
+                                <DataGrid.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="👁️ 오른쪽 미리보기에 띄우기" Command="{Binding PreviewSelectedBomCommand}" />
+                                        <MenuItem Header="✏️ 엑셀로 원본 열기" Command="{Binding EditSelectedBomCommand}" />
+                                        <Separator />
+                                        <MenuItem Header="🗑️ 원본 파일 완전 삭제 (물리적 삭제)" Command="{Binding DeleteSelectedBomCommand}" Foreground="Red" />
+                                    </ContextMenu>
+                                </DataGrid.ContextMenu>
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="파일명" Binding="{Binding FileName}" Width="*" />
+                                    <DataGridTextColumn Header="상태" Binding="{Binding Status}" Width="80" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Border>
+
+                        <!-- 중간: 스플리터 -->
+                        <GridSplitter Grid.Column="1" Width="4" HorizontalAlignment="Center" VerticalAlignment="Stretch" Background="Transparent" Margin="2,0"/>
+
+                        <!-- 우측: 데이터 프리뷰 -->
+                        <Border Grid.Column="2" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="4">
+                            <DataGrid ItemsSource="{Binding BomDataTable}"
+                                      AutoGenerateColumns="True" IsReadOnly="True" Margin="0" />
+                        </Border>
+                    </Grid>
                 </Grid>
                     </TabItem>
 
@@ -124,6 +152,7 @@
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                 <TextBlock Text="DailyPlan (생산 계획서)" FontSize="16" FontWeight="Bold"
@@ -136,25 +165,51 @@
                                     Content="📡 스캔" Command="{Binding ScanDailyPlanFilesCommand}" Margin="0,0,6,0" />
                             <Button Grid.Column="2" Style="{StaticResource SecondaryButton}"
                                     Content="📂 파일 열기" Command="{Binding OpenDailyPlanFileCommand}" Margin="0,0,6,0" />
-                            <Button Grid.Column="3" Style="{StaticResource PrimaryButton}"
+                            <Button Grid.Column="3" Style="{StaticResource SecondaryButton}"
+                                    Content="🧩 에디터" Command="{Binding OpenMacroEditorCommand}"
+                                    ToolTip="매크로 파이프라인(VME) 열기" Margin="0,0,6,0" />
+                            <Button Grid.Column="4" Style="{StaticResource PrimaryButton}"
                                     Content="📄 PDF" Command="{Binding ExportDpPdfCommand}" />
                         </Grid>
                     </Border>
 
-                    <Expander Grid.Row="1" Header="  스캔된 파일 목록" IsExpanded="False"
-                              Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,8">
-                        <DataGrid ItemsSource="{Binding DailyPlanFiles}" MaxHeight="150">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="파일명" Binding="{Binding FileName}" Width="*" />
-                                <DataGridTextColumn Header="날짜" Binding="{Binding DateValue, StringFormat=yyyy-MM-dd}" Width="100" />
-                                <DataGridTextColumn Header="요일" Binding="{Binding WeekdayKorean}" Width="50" />
-                                <DataGridTextColumn Header="라인" Binding="{Binding Line}" Width="60" />
-                            </DataGrid.Columns>
-                        </DataGrid>
-                    </Expander>
+                    <!-- 하단 레이아웃: 좌측 파일 리스트 / 중앙 스플리터 / 우측 데이터 뷰어 -->
+                    <Grid Grid.Row="1" Grid.RowSpan="2" Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="250" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
 
-                    <DataGrid Grid.Row="2" ItemsSource="{Binding DailyPlanDataTable}"
-                              AutoGenerateColumns="True" IsReadOnly="True" />
+                        <!-- 좌측: 파일 리스트 -->
+                        <Border Grid.Column="0" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="4">
+                            <DataGrid ItemsSource="{Binding DailyPlanFiles}" SelectedItem="{Binding SelectedDailyPlanFile}" Margin="0">
+                                <DataGrid.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="👁️ 오른쪽 미리보기에 띄우기" Command="{Binding PreviewSelectedDailyPlanCommand}" />
+                                        <MenuItem Header="✏️ 엑셀로 원본 열기" Command="{Binding EditSelectedDailyPlanCommand}" />
+                                        <Separator />
+                                        <MenuItem Header="🗑️ 원본 파일 완전 삭제 (물리적 삭제)" Command="{Binding DeleteSelectedDailyPlanCommand}" Foreground="Red" />
+                                    </ContextMenu>
+                                </DataGrid.ContextMenu>
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="파일명" Binding="{Binding FileName}" Width="*" />
+                                    <DataGridTextColumn Header="날짜" Binding="{Binding DateValue, StringFormat=yyyy-MM-dd}" Width="80" />
+                                    <DataGridTextColumn Header="요일" Binding="{Binding WeekdayKorean}" Width="40" />
+                                    <DataGridTextColumn Header="라인" Binding="{Binding Line}" Width="60" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Border>
+
+                        <!-- 중간: 스플리터 -->
+                        <GridSplitter Grid.Column="1" Width="4" HorizontalAlignment="Center" VerticalAlignment="Stretch" Background="Transparent" Margin="2,0"/>
+
+                        <!-- 우측: 데이터 프리뷰 -->
+                        <Border Grid.Column="2" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="4">
+                            <DataGrid ItemsSource="{Binding DailyPlanDataTable}"
+                                      AutoGenerateColumns="True" IsReadOnly="True" Margin="0" />
+                        </Border>
+                    </Grid>
                 </Grid>
                     </TabItem>
 
@@ -171,6 +226,7 @@
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
@@ -201,24 +257,50 @@
                                     Content="↩ 원본" Command="{Binding ResetToRawCommand}"
                                     ToolTip="정규화/필터 전 원본 데이터로 복원"
                                     Margin="0,0,6,0" />
-                            <Button Grid.Column="6" Style="{StaticResource PrimaryButton}"
+                            <Button Grid.Column="6" Style="{StaticResource SecondaryButton}"
+                                    Content="🧩 에디터" Command="{Binding OpenMacroEditorCommand}"
+                                    ToolTip="매크로 파이프라인(VME) 열기" Margin="0,0,6,0" />
+                            <Button Grid.Column="7" Style="{StaticResource PrimaryButton}"
                                     Content="📄 PDF" Command="{Binding ExportPlPdfCommand}" />
                         </Grid>
                     </Border>
 
-                    <Expander Grid.Row="1" Header="  스캔된 파일 목록" IsExpanded="False"
-                              Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,8">
-                        <DataGrid ItemsSource="{Binding PartListFiles}" MaxHeight="150">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="파일명" Binding="{Binding FileName}" Width="*" />
-                                <DataGridTextColumn Header="날짜" Binding="{Binding DateValue, StringFormat=yyyy-MM-dd}" Width="100" />
-                                <DataGridTextColumn Header="라인" Binding="{Binding Line}" Width="60" />
-                            </DataGrid.Columns>
-                        </DataGrid>
-                    </Expander>
+                    <!-- 하단 레이아웃: 좌측 파일 리스트 / 중앙 스플리터 / 우측 데이터 뷰어 -->
+                    <Grid Grid.Row="1" Grid.RowSpan="2" Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="250" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
 
-                    <DataGrid Grid.Row="2" ItemsSource="{Binding PartListDataTable}"
-                              AutoGenerateColumns="True" IsReadOnly="True" />
+                        <!-- 좌측: 파일 리스트 -->
+                        <Border Grid.Column="0" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="4">
+                            <DataGrid ItemsSource="{Binding PartListFiles}" SelectedItem="{Binding SelectedPartListFile}" Margin="0">
+                                <DataGrid.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="👁️ 오른쪽 미리보기에 띄우기" Command="{Binding PreviewSelectedPartListCommand}" />
+                                        <MenuItem Header="✏️ 엑셀로 원본 열기" Command="{Binding EditSelectedPartListCommand}" />
+                                        <Separator />
+                                        <MenuItem Header="🗑️ 원본 파일 완전 삭제 (물리적 삭제)" Command="{Binding DeleteSelectedPartListCommand}" Foreground="Red" />
+                                    </ContextMenu>
+                                </DataGrid.ContextMenu>
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="파일명" Binding="{Binding FileName}" Width="*" />
+                                    <DataGridTextColumn Header="날짜" Binding="{Binding DateValue, StringFormat=yyyy-MM-dd}" Width="80" />
+                                    <DataGridTextColumn Header="라인" Binding="{Binding Line}" Width="60" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Border>
+
+                        <!-- 중간: 스플리터 -->
+                        <GridSplitter Grid.Column="1" Width="4" HorizontalAlignment="Center" VerticalAlignment="Stretch" Background="Transparent" Margin="2,0"/>
+
+                        <!-- 우측: 데이터 프리뷰 -->
+                        <Border Grid.Column="2" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="4">
+                            <DataGrid ItemsSource="{Binding PartListDataTable}"
+                                      AutoGenerateColumns="True" IsReadOnly="True" Margin="0" />
+                        </Border>
+                    </Grid>
                 </Grid>
                     </TabItem>
 
@@ -236,6 +318,7 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                 <TextBlock Text="BD_MultiDocuments (교차 매핑 자동화)" FontSize="16" FontWeight="Bold"
@@ -246,7 +329,10 @@
                             </StackPanel>
                             <Button Grid.Column="1" Style="{StaticResource SecondaryButton}"
                                     Content="📡 결과 스캔" Command="{Binding LoadMultiDocumentsCommand}" Margin="0,0,6,0" />
-                            <Button Grid.Column="2" Style="{StaticResource PrimaryButton}"
+                            <Button Grid.Column="2" Style="{StaticResource SecondaryButton}"
+                                    Content="🧩 에디터" Command="{Binding OpenMacroEditorCommand}"
+                                    ToolTip="매크로 파이프라인(VME) 열기" Margin="0,0,6,0" />
+                            <Button Grid.Column="3" Style="{StaticResource PrimaryButton}"
                                     Content="🚀 일괄 처리 (정규화+PDF)" Command="{Binding ProcessMultiDocumentsCommand}" />
                         </Grid>
                     </Border>
@@ -278,6 +364,7 @@
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                 <TextBlock Text="ItemCounter (자재 카운터)" FontSize="16" FontWeight="Bold"
@@ -286,7 +373,10 @@
                                            FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"
                                            VerticalAlignment="Center" Margin="8,0,0,0" />
                             </StackPanel>
-                            <Button Grid.Column="1" Style="{StaticResource PrimaryButton}"
+                            <Button Grid.Column="1" Style="{StaticResource SecondaryButton}"
+                                    Content="🧩 에디터" Command="{Binding OpenMacroEditorCommand}"
+                                    ToolTip="매크로 파이프라인(VME) 열기" Margin="0,0,6,0" />
+                            <Button Grid.Column="2" Style="{StaticResource PrimaryButton}"
                                     Content="▶ 집계 실행" Command="{Binding RunItemCounterCommand}" />
                         </Grid>
                     </Border>
@@ -296,8 +386,15 @@
                 </Grid>
                     </TabItem>
 
-                    <!-- ===== Feeder 하위탭 ===== -->
-                    <TabItem Header="🔧 Feeder">
+                        </TabControl>
+                    </TabItem>
+
+                    <!-- 2. Basic info 하위탭 그룹 -->
+                    <TabItem Header="⚙️ Basic info">
+                        <TabControl Margin="4,4,4,0">
+
+                            <!-- ===== Feeder 하위탭 ===== -->
+                            <TabItem Header="🔧 Feeder">
                 <Grid Margin="20,16">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="320" />
@@ -394,6 +491,9 @@
                                  Margin="0,4,0,0" />
                     </Grid>
                 </Grid>
+                            </TabItem>
+
+                        </TabControl>
                     </TabItem>
                 </TabControl>
             </TabItem>
@@ -452,7 +552,7 @@
                     <TabItem Header="경로 관리 (고급)">
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <StackPanel Margin="20,16">
-                                <TextBlock Text="경로들을 비워둘 경우, Source(스캔)는 기본 '다운로드' 폴더를, Output(출력/시스템)은 루트 디렉토리 내부 폴더를 기본으로 사용합니다."
+                                <TextBlock Text="경로들을 비워둘 경우, Source(스캔)는 '기본 경로(또는 다운로드 폴더)'를, Output(출력)은 루트 디렉토리 내부 폴더를 기본으로 사용합니다."
                                            Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,16" FontSize="13" FontStyle="Italic" TextWrapping="Wrap"/>
 
                                 <!-- Source 경로 설정 -->
@@ -460,6 +560,19 @@
                                     <StackPanel>
                                         <TextBlock Text="📥 스캔 원본(Source) 폴더 지정" FontSize="16" FontWeight="Bold"
                                                    Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,12" />
+
+                                        <Border Background="{StaticResource SecondaryDarkBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="4" Padding="12" Margin="0,0,0,16">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="80"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="60"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="기본 경로" ToolTip="개별 문서 스캔 경로가 비어있을 때 공통으로 적용되는 전역 기본 스캔(Source) 경로입니다." VerticalAlignment="Center" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"/>
+                                                <TextBox Grid.Column="1" Text="{Binding SettingsDefaultSourcePath, Mode=TwoWay}" IsReadOnly="True" Margin="0,0,8,0" />
+                                                <Button Grid.Column="2" Content="선택" Command="{Binding BrowsePathCommand}" CommandParameter="DefaultSource" Style="{StaticResource PrimaryButton}"/>
+                                            </Grid>
+                                        </Border>
 
                                         <Grid Margin="0,0,0,8">
                                             <Grid.ColumnDefinitions>

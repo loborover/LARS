@@ -98,6 +98,16 @@ public class TestApiService : IDisposable
                     HandleScreenshot(ctx);
                     break;
 
+                case var c when c.StartsWith("/api/command/"):
+                    if (ctx.Request.HttpMethod.ToUpper() != "POST")
+                    {
+                        RespondJson(ctx, new { error = "POST method required" }, 405);
+                        break;
+                    }
+                    string cmdName = path.Substring("/api/command/".Length);
+                    HandleCommand(ctx, cmdName);
+                    break;
+
                 default:
                     RespondJson(ctx, new
                     {
@@ -115,6 +125,46 @@ public class TestApiService : IDisposable
         catch (Exception ex)
         {
             RespondJson(ctx, new { error = ex.Message }, 500);
+        }
+    }
+
+    // ==========================================
+    // 명령어 원격 실행 (RelayCommand)
+    // ==========================================
+
+    private void HandleCommand(HttpListenerContext ctx, string commandName)
+    {
+        // ViewModels.MainViewModel에서 xxxxCommand 이름의 속성을 리플렉션으로 찾습니다.
+        // IgnoreCase 처리
+        var prop = _mainVm.GetType().GetProperties()
+            .FirstOrDefault(p => p.Name.Equals(commandName, StringComparison.OrdinalIgnoreCase));
+
+        if (prop == null)
+        {
+            RespondJson(ctx, new { error = $"Command '{commandName}' not found." }, 404);
+            return;
+        }
+
+        var commandObj = prop.GetValue(_mainVm);
+        if (commandObj is System.Windows.Input.ICommand command)
+        {
+            if (command.CanExecute(null))
+            {
+                // UI 스레드에서 커맨드 실행
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    command.Execute(null);
+                });
+                RespondJson(ctx, new { success = true, command = commandName, message = "Command executed." });
+            }
+            else
+            {
+                RespondJson(ctx, new { error = "Command cannot execute right now." }, 400);
+            }
+        }
+        else
+        {
+            RespondJson(ctx, new { error = $"Property '{commandName}' is not a valid ICommand." }, 400);
         }
     }
 

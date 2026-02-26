@@ -54,6 +54,7 @@ public record AppSettings
     public string BasePath { get; init; } = string.Empty;
 
     // --- 각 소스 파일 모니터링/스캔용 명시적 경로 ---
+    public string DefaultSourcePath { get; init; } = string.Empty;
     public string SourceBOM { get; init; } = string.Empty;
     public string SourceDailyPlan { get; init; } = string.Empty;
     public string SourcePartList { get; init; } = string.Empty;

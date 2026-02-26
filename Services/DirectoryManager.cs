@@ -30,15 +30,21 @@ public class DirectoryManager
     public string BasePath => _currentSettings.BasePath;
     public string DocumentsRoot => GetRoot();
     
-    /// <summary>기본 소스 스캔 경로: OS 다운로드 폴더 (없을 경우 내문서 폴더)</summary>
+    /// <summary>기본 소스 스캔 경로: 사용자 지정 전역 경로 -> OS 다운로드 폴더 -> 내문서 폴더</summary>
     public string DefaultSourcePath
     {
         get
         {
+            // 1순위: 사용자가 지정한 전역 기본 스캔 경로
+            if (!string.IsNullOrWhiteSpace(_currentSettings.DefaultSourcePath))
+                return _currentSettings.DefaultSourcePath;
+
+            // 2순위: OS 다운로드 폴더
             string downloads = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
             if (Directory.Exists(downloads))
                 return downloads;
             
+            // 3순위: OS 내문서 폴더
             return Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
         }
     }
