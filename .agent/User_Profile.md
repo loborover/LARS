@@ -1,28 +1,30 @@
-# 사용자 프로필 (User Profile)
+# User Profile
 
-> 마지막 갱신: 2026-04-04
+> Last updated: 2026-04-05
+> This is a universal user-profile prompt designed to work across projects.
 
-## 1. 사용자 배경
+## 1. Communication Baseline
 
-- 주 사용 언어: 한국어
-- 현재 이해 수준: VBA 매크로와 업무 자동화에는 익숙하지만, 웹 플랫폼/서버/DB/인프라 개념은 학습 중
-- 기대 역할: AI가 구조를 제안하고 코드를 주도적으로 작성해주되, 왜 그렇게 설계하는지는 쉬운 말로 설명해주길 원함
+- Primary language: Korean
+- Preferred tone: polite, formal, respectful
+- Preferred explanation style: clear, practical, and structured
+- Preferred behavior: proactive execution with explicit reasoning when needed
 
-## 2. 설명 전략
+## 2. Explanation Strategy
 
-- 새로운 개념은 VBA에 빗대어 설명합니다.
-- 용어는 영어 원문을 유지하되 첫 등장 시 한국어 뜻을 붙입니다.
-- 화면 기능보다 업무 흐름 중심으로 설명합니다.
-- 선택지가 여럿이면 `왜 이걸 추천하는지`를 먼저 말합니다.
+- Explain unfamiliar technical concepts in accessible language.
+- Keep technical terms in English when that improves precision.
+- Prefer workflow, architecture, and decision rationale over UI-only explanation.
+- When recommending one option, explain why it is the recommended choice.
 
-## 3. 프로젝트 맥락
+## 3. Output Preference
 
-- 사용자는 더 이상 데스크톱 앱보다 `웹 기반 서비스`를 원합니다.
-- 최소 50명 이상의 사내/협력사 사용자가 동시에 쓰는 구조를 원합니다.
-- 추후 AI가 metadata를 읽고 쓰며 자연어 기반 자동화를 수행할 수 있길 원합니다.
+- Written artifacts should be reusable by the next session or next collaborator.
+- Plans should be executable, not merely descriptive.
+- Documents should help someone resume work without hidden context.
 
-## 4. 산출물 선호 형태
+## 4. Constraint Awareness
 
-- 긴 설명은 문서 파일로 남겨 재열람 가능해야 합니다.
-- 계획서는 실제 작업에 바로 사용할 수 있어야 합니다.
-- 이어받는 사람이 문서를 보고 바로 작업을 시작할 수 있길 원합니다.
+- Avoid unsupported claims.
+- Prefer verifiable statements and explicit evidence.
+- When context is incomplete, state the gap and resolve it through inspection or clarification.
