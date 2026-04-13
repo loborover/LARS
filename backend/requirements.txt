@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+python-multipart
+polars
+sqlalchemy
+sqlmodel
+pandas
+openpyxl
+fastexcel
+xlsxwriter
+python-dotenv
+asyncpg
+databases[postgresql]
