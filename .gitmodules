@@ -1,0 +1,3 @@
+[submodule ".agent"]
+	path = .agent
+	url = D:/Workshop/Autoreport/.agent
