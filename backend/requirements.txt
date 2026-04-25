@@ -1,13 +1,38 @@
-fastapi
-uvicorn
+# Web
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
 python-multipart
-polars
-sqlalchemy
-sqlmodel
-pandas
-openpyxl
+
+# Data
+polars>=1.0.0
 fastexcel
+openpyxl
 xlsxwriter
-python-dotenv
+
+# DB
+sqlmodel>=0.0.21
+alembic>=1.13.0
 asyncpg
-databases[postgresql]
+databases
+psycopg2-binary
+
+# Cache / Queue
+redis>=5.0.0
+celery>=5.4.0
+
+# Auth
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+
+# AI
+faster-whisper>=1.0.0
+httpx>=0.27.0
+
+# Config
+python-dotenv>=1.0.0
+
+# Dev
+pytest
+pytest-asyncio
+httpx
+pydantic-settings
