@@ -12,10 +12,18 @@ async_session = async_sessionmaker(async_engine, class_=AsyncSession, expire_on_
 sync_db_url = settings.DATABASE_URL.replace("postgresql+asyncpg", "postgresql")
 sync_engine = create_engine(sync_db_url, pool_pre_ping=True)
 
+from contextlib import asynccontextmanager
+
 async def get_session() -> AsyncSession:
     """
     FastAPI dependency for database session.
     """
+    async with async_session() as session:
+        yield session
+
+@asynccontextmanager
+async def get_session_context():
+    """APScheduler 등 FastAPI 의존성 주입 외부에서 사용할 세션 컨텍스트"""
     async with async_session() as session:
         yield session
 

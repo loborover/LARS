@@ -1,3 +1,4 @@
+from typing import List, Tuple, Dict, Any, Optional
 import polars as pl
 import os
 import re
@@ -105,7 +106,7 @@ def parse_excel(file_path: str) -> pl.DataFrame:
     if "lot_number" not in df.columns:
         df = df.with_columns(pl.lit("N/A").alias("lot_number"))
         
-    # Return matched API expected signature: tuple[str, str, df] previously, but now instructions say return df only?
+    # Return matched API expected signature: Tuple[str, str, df] previously, but now instructions say return df only?
     # "두 포맷 모두 동일한 컬럼 구조 반환 (daily_qty_json은 CSV에만 있음)."
     # Also we had parse return tuple. Let's adapt route if needed or adapt here.
     return df

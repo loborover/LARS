@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -c \"import openpyxl; print\\('openpyxl ok'\\)\")",
+      "Bash(pip install *)",
+      "Bash(docker compose *)",
+      "Bash(docker-compose ps *)",
+      "Bash(docker --version)",
+      "Bash(pg_isready -h localhost)",
+      "Bash(psql --version)",
+      "Bash(redis-cli ping *)",
+      "Bash(redis-server --version)"
+    ]
+  }
+}

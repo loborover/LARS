@@ -7,7 +7,7 @@ services:
       POSTGRES_USER: lars
       POSTGRES_PASSWORD: lars_secret
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
@@ -16,20 +16,5 @@ services:
     ports:
       - "6379:6379"
 
-  ollama:
-    image: ollama/ollama:latest
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_data:/root/.ollama
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: 1
-    #           capabilities: [gpu]
-
 volumes:
   postgres_data:
-  ollama_data:

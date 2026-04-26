@@ -38,5 +38,6 @@ class DailyPlanLot(SQLModel, table=True):
     output_qty: int = Field(default=0)
     planned_start: Optional[datetime] = None
     sort_order: int = Field(default=0)
+    daily_qty_json: Optional[str] = Field(default=None)
     import_batch_id: Optional[int] = None
     created_at: Optional[datetime] = Field(default_factory=datetime.utcnow)

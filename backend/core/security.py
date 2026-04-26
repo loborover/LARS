@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from typing import Optional
 from passlib.context import CryptContext
 from jose import jwt, JWTError
 from fastapi import HTTPException, status
@@ -15,7 +16,7 @@ def verify_password(plain: str, hashed: str) -> bool:
     """Verify a plain password against a hashed password."""
     return pwd_context.verify(plain, hashed)
 
-def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     """Create a JWT access token."""
     to_encode = data.copy()
     if expires_delta:

@@ -1,0 +1,34 @@
+# LARS AI Service — AI PC(192.168.0.100)에서 실행
+# 사전 요건: Docker Desktop + NVIDIA Container Toolkit 설치, Ollama 별도 실행
+version: "3.9"
+
+services:
+  lars-ai:
+    build: ./lars_ai_service
+    container_name: lars-ai-service
+    ports:
+      - "8088:8088"
+    environment:
+      - OLLAMA_URL=http://host.docker.internal:11434
+      - WHISPER_MODEL=large-v3
+      - PIPER_VOICE=ko_KR-kss-medium
+    volumes:
+      - piper_models:/root/.local/share/piper
+      - whisper_models:/root/.cache/huggingface
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8088/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  piper_models:
+  whisper_models:

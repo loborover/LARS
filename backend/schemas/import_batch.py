@@ -31,3 +31,17 @@ class PreviewResponse(BaseModel):
     valid_rows: int
     invalid_rows: int
     preview: List[PreviewRow]
+
+class BatchUploadResult(BaseModel):
+    batch_id: int
+    filename: str
+    status: str
+
+class MultiUploadResponse(BaseModel):
+    batches: List[BatchUploadResult]
+
+class MultiPreviewResponse(BaseModel):
+    previews: List[PreviewResponse]
+
+class MultiProcessResponse(BaseModel):
+    results: List[BatchRead]

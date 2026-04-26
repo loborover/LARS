@@ -20,7 +20,7 @@ async def get_bom_tree(session: AsyncSession, model_code: str) -> Optional[BomTr
     items = result_items.scalars().all()
     
     # Note: Flat list returned as requested, tree conversion can be done in frontend or service
-    # For now returning flat list per instructions ("items: list[BomItemRead] # flat list (트리 변환은 프론트엔드 또는 서비스에서)")
+    # For now returning flat list per instructions ("items: List[BomItemRead] # flat list (트리 변환은 프론트엔드 또는 서비스에서)")
     item_reads = [BomItemRead(
         id=item.id,
         level=item.level,
@@ -80,17 +80,18 @@ async def list_models(session: AsyncSession, search: Optional[str] = None, is_ac
 async def import_from_df(session: AsyncSession, df: pl.DataFrame, batch_id: int) -> int:
     """
     BOM DataFrame을 DB에 upsert.
+    PK를 보존하기 위해 delete+insert 대신 개별 upsert 수행.
     """
-    # Assuming dataframe is for a single model as per parser
+    from sqlalchemy import delete
     model_codes = df["model_code"].unique().to_list()
-    total_inserted = 0
-    
+    total_upserted = 0
+
     for mc in model_codes:
-        # Get or create BomModel
+        # BomModel upsert
         stmt = select(BomModel).where(BomModel.model_code == mc)
         res = await session.execute(stmt)
         bom_model = res.scalar_one_or_none()
-        
+
         if not bom_model:
             bom_model = BomModel(model_code=mc, import_batch_id=batch_id)
             session.add(bom_model)
@@ -98,40 +99,59 @@ async def import_from_df(session: AsyncSession, df: pl.DataFrame, batch_id: int)
             await session.refresh(bom_model)
         else:
             bom_model.import_batch_id = batch_id
-            
-        # Delete existing items for this model (full replace on import)
-        # Assuming typical import replaces the whole BOM or we can UPSERT.
-        # Requirements: "bom_items는 model_id + sort_order 기준으로 upsert"
-        # We will fetch existing, and replace them or just delete all and insert.
-        # "Delete existing" is safer to maintain exact BOM if sort_order is used for identity?
-        # The prompt says: "bom_items는 model_id + sort_order 기준으로 upsert"
-        
-        # Here we do a simple replace-all for the model for simplicity if upsert is complex, 
-        # or we just delete and re-insert for exact match.
-        from sqlalchemy import delete
-        await session.execute(delete(BomItem).where(BomItem.model_id == bom_model.id))
-        
-        # Insert items
+            await session.flush()
+
         model_df = df.filter(pl.col("model_code") == mc)
-        items_to_add = []
+
+        # 기존 items를 {sort_order: BomItem} 딕셔너리로 인덱싱
+        existing_stmt = select(BomItem).where(BomItem.model_id == bom_model.id)
+        existing_res = await session.execute(existing_stmt)
+        existing_items: dict[int, BomItem] = {
+            item.sort_order: item for item in existing_res.scalars().all()
+        }
+
+        incoming_sort_orders = set()
         for row in model_df.iter_rows(named=True):
-            item = BomItem(
-                model_id=bom_model.id,
-                level=row["level"],
-                part_number=row["part_number"],
-                description=row["description"],
-                qty=row["qty"],
-                uom=row["uom"],
-                vendor_raw=row["vendor_raw"],
-                supply_type=row["supply_type"],
-                path=row["path"],
-                sort_order=row["sort_order"],
-                import_batch_id=batch_id
+            so = row["sort_order"]
+            incoming_sort_orders.add(so)
+            if so in existing_items:
+                # UPDATE: PK 유지
+                item = existing_items[so]
+                item.level = row["level"]
+                item.part_number = row["part_number"]
+                item.description = row["description"]
+                item.qty = row["qty"]
+                item.uom = row["uom"]
+                item.vendor_raw = row["vendor_raw"]
+                item.supply_type = row["supply_type"]
+                item.path = row["path"]
+                item.import_batch_id = batch_id
+            else:
+                # INSERT
+                session.add(BomItem(
+                    model_id=bom_model.id,
+                    level=row["level"],
+                    part_number=row["part_number"],
+                    description=row["description"],
+                    qty=row["qty"],
+                    uom=row["uom"],
+                    vendor_raw=row["vendor_raw"],
+                    supply_type=row["supply_type"],
+                    path=row["path"],
+                    sort_order=so,
+                    import_batch_id=batch_id,
+                ))
+            total_upserted += 1
+
+        # 삭제된 rows 정리 (import에 없는 sort_order 제거)
+        obsolete = set(existing_items.keys()) - incoming_sort_orders
+        if obsolete:
+            await session.execute(
+                delete(BomItem).where(
+                    BomItem.model_id == bom_model.id,
+                    BomItem.sort_order.in_(list(obsolete))
+                )
             )
-            items_to_add.append(item)
-        
-        session.add_all(items_to_add)
-        total_inserted += len(items_to_add)
-        
+
     await session.commit()
-    return total_inserted
+    return total_upserted

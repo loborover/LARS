@@ -1,3 +1,4 @@
+from typing import List, Tuple, Dict, Any, Optional
 import re
 import os
 import polars as pl
@@ -6,7 +7,7 @@ from pathlib import Path
 class ParseError(Exception):
     pass
 
-def _extract_model_info(file_path: str) -> tuple[str, str]:
+def _extract_model_info(file_path: str) -> Tuple[str, str]:
     """
     파일명에서 (model_code, suffix) 추출.
     'LSGL6335X.ARSELGA@CVZ.EKHQ 1.0.xlsx' → ('LSGL6335X', 'ARSELGA')
@@ -35,7 +36,7 @@ def _parse_level(lvl_str: str) -> int:
     # This correctly parses '0', '.1', '..2', etc.
     return len(lvl_str) - len(lvl_str.lstrip('.'))
 
-def _compute_paths(levels: list[int]) -> list[str]:
+def _compute_paths(levels: List[int]) -> List[str]:
     """
     레벨 배열에서 materialized path 배열을 계산한다.
     예: [0, 1, 2, 2, 1, 2] → ['0', '0.1', '0.1.2', '0.1.3', '0.4', '0.4.5']
