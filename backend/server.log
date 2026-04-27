@@ -8925,3 +8925,19 @@ INFO:     127.0.0.1:56356 - "POST /api/v1/ai/chat HTTP/1.1" 503 Service Unavaila
 INFO:     127.0.0.1:56372 - "GET /api/v1/admin/ai-config HTTP/1.1" 200 OK
 INFO:     127.0.0.1:56374 - "GET /api/v1/admin/users HTTP/1.1" 200 OK
 INFO:     127.0.0.1:56378 - "POST /api/v1/admin/ai-config/test HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56518 - "GET /api/v1/admin/ai-config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56516 - "GET /api/v1/admin/users HTTP/1.1" 200 OK
+[PSI Monitor] 체크 시작: 2026-04-27
+[PSI Monitor] 부족 항목 없음
+INFO:     127.0.0.1:56540 - "POST /api/v1/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56544 - "GET /api/v1/auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56550 - "WebSocket /ws/dashboard" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:56552 - "GET /api/v1/dashboard/summary HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56566 - "GET /api/v1/dashboard/summary HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     connection closed
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [27004]
+INFO:     Stopping reloader process [26962]
