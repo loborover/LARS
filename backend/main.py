@@ -17,11 +17,16 @@ try:
 except ImportError:
     ParseError = None
 
+from core.redis_client import get_redis, close_redis
+
 settings = get_settings()
 scheduler = AsyncIOScheduler(timezone=settings.SCHEDULER_TIMEZONE)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Redis 시작
+    await get_redis()
+
     try:
         async with async_engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
@@ -42,9 +47,10 @@ async def lifespan(app: FastAPI):
 
     yield
 
+    # 스케줄러 및 Redis 종료
     scheduler.shutdown()
-    print("[LARS] 스케줄러 종료")
-
+    await close_redis()
+    print("[LARS] 스케줄러 및 Redis 종료")
 app = FastAPI(title="LARS Platform API", lifespan=lifespan)
 
 # 전역 예외 핸들러

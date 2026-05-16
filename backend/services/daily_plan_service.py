@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 from models.daily_plan import DailyPlan, DailyPlanLot, ProductionLine
 from models.bom import BomModel
+from models.part_list import PartListSnapshot
 
 async def import_from_df(session: AsyncSession, df: pl.DataFrame, batch_id: int) -> int:
     """
@@ -45,6 +46,12 @@ async def import_from_df(session: AsyncSession, df: pl.DataFrame, batch_id: int)
             
         # 3. Delete existing DailyPlanLots
         from sqlalchemy import delete
+        # 3-1. 먼저 FK 참조 레코드(part_list_snapshots) 삭제
+        lot_ids_subq = select(DailyPlanLot.id).where(DailyPlanLot.plan_id == plan.id)
+        await session.execute(
+            delete(PartListSnapshot).where(PartListSnapshot.lot_id.in_(lot_ids_subq))
+        )
+        # 3-2. 그 다음 lots 삭제
         await session.execute(delete(DailyPlanLot).where(DailyPlanLot.plan_id == plan.id))
         
         # Insert lots
@@ -102,8 +109,6 @@ async def list_plans(
     result = []
     for plan, line in rows:
         # Count lots
-        count_stmt = select(pl.col(DailyPlanLot.id).count()).where(DailyPlanLot.plan_id == plan.id)
-        # Using sqlmodel func.count
         from sqlalchemy import func
         count_stmt = select(func.count(DailyPlanLot.id)).where(DailyPlanLot.plan_id == plan.id)
         c_res = await session.execute(count_stmt)

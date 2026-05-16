@@ -1,12 +1,16 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Body
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List
+from typing import List, Optional
 from datetime import date
 from core.database import get_session
 from core.deps import get_current_user, require_role
 from models.user import User
 from services import psi_service
-from schemas.psi import PsiMatrixResponse, PsiCellRead, PsiCellUpdate, PsiShortageItem
+from schemas.psi import (
+    PsiMatrixResponse, PsiCellRead, PsiCellUpdate, PsiShortageItem,
+    PsiRowFull, PsiFilterParams, PsiInventoryUpdate, PsiPickUpdate
+)
+from schemas.item_master import ItemMasterRead
 
 router = APIRouter(dependencies=[Depends(require_role("internal", "manager", "admin"))])
 
@@ -17,6 +21,65 @@ async def get_psi_matrix(
     session: AsyncSession = Depends(get_session)
 ):
     return await psi_service.get_matrix(session, date_from, date_to)
+
+# --- Phase 5 New Endpoints ---
+
+@router.get("/matrix", response_model=List[PsiRowFull])
+async def get_psi_matrix_full(
+    expeditor_user_id: Optional[int] = Query(None),
+    supply_type: Optional[str] = Query(None),
+    level: Optional[int] = Query(None),
+    model_code: Optional[str] = Query(None),
+    date_from: date = Query(default_factory=date.today),
+    session: AsyncSession = Depends(get_session)
+):
+    params = PsiFilterParams(
+        expeditor_user_id=expeditor_user_id,
+        supply_type=supply_type,
+        level=level,
+        model_code=model_code,
+        date_from=date_from
+    )
+    return await psi_service.build_psi_full_matrix(session, params)
+
+@router.put("/item/{item_id}/inventory", response_model=ItemMasterRead)
+async def update_item_inventory(
+    item_id: int,
+    data: PsiInventoryUpdate,
+    session: AsyncSession = Depends(get_session)
+):
+    item = await psi_service.update_inventory(session, item_id, data.inventory_qty, data.defect_qty)
+    return item
+
+@router.patch("/item/{item_id}/pick", response_model=ItemMasterRead)
+async def toggle_item_pick(
+    item_id: int,
+    data: PsiPickUpdate,
+    session: AsyncSession = Depends(get_session)
+):
+    item = await psi_service.toggle_pick(session, item_id, data.is_picked)
+    return item
+
+@router.get("/models", response_model=List[str])
+async def get_active_models(
+    session: AsyncSession = Depends(get_session)
+):
+    return await psi_service.get_active_models(session)
+
+@router.post("/advance-day")
+async def advance_day(
+    session: AsyncSession = Depends(get_session)
+):
+    return await psi_service.advance_day(session, date.today())
+
+@router.post("/one-click")
+async def one_click_solution(
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    return await psi_service.one_click_solution(session, current_user.id)
+
+# --- Legacy / Others ---
 
 @router.put("/{item_id}/{psi_date}", response_model=PsiCellRead)
 async def update_psi_cell(

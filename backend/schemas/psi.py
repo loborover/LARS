@@ -5,12 +5,12 @@ from datetime import date
 class PsiCellRead(BaseModel):
     required_qty: float
     available_qty: Optional[float]
-    shortage_qty: float  # 서비스에서 계산: (available_qty or 0) - required_qty
+    shortage_qty: float
 
 class PsiMatrixResponse(BaseModel):
-    dates: List[str]  # "YYYY-MM-DD" 형식
-    items: List[dict]  # {"id": int, "part_number": str, "description": str}
-    cells: Dict[str, PsiCellRead]  # key: "{item_id}_{YYYY-MM-DD}"
+    dates: List[str]
+    items: List[dict]
+    cells: Dict[str, PsiCellRead]
 
 class PsiCellUpdate(BaseModel):
     available_qty: float
@@ -24,3 +24,43 @@ class PsiShortageItem(BaseModel):
     required_qty: float
     available_qty: Optional[float]
     shortage_qty: float
+
+# --- Phase 5 New Schemas ---
+
+class DateHeader(BaseModel):
+    label: str = "" # "D-Day", "D+1", etc.
+    date: str          # "2026-05-16"
+    week: int          # ISO week number
+
+class PsiRowFull(BaseModel):
+    item_id: int
+    part_number: str
+    description: str
+    level: int
+    supply_type: Optional[str]
+    uom: str
+    vendor_raw: Optional[str]
+    lower_vendor_raw: Optional[str]
+    tech_spec: Optional[str]
+    
+    inventory_qty: float
+    defect_qty: float
+    is_picked: bool
+    
+    daily_demand: Dict[str, float]
+    date_headers: List[DateHeader]
+    expeditor_name: Optional[str]
+
+class PsiFilterParams(BaseModel):
+    expeditor_user_id: Optional[int] = None
+    supply_type: Optional[str] = None
+    level: Optional[int] = None
+    model_code: Optional[str] = None
+    date_from: date = date.today()
+
+class PsiInventoryUpdate(BaseModel):
+    inventory_qty: float
+    defect_qty: float
+
+class PsiPickUpdate(BaseModel):
+    is_picked: bool

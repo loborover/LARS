@@ -11,6 +11,10 @@ class ItemMaster(SQLModel, table=True):
     part_number: str = Field(unique=True, index=True)
     vendor_id: Optional[int] = Field(default=None, foreign_key="vendors.id")
     vendor_raw: Optional[str] = None
+    lower_vendor_raw: Optional[str] = None
+    inventory_qty: float = Field(default=0.0)
+    defect_qty: float = Field(default=0.0)
+    is_picked: bool = Field(default=False)
     tracking_user_id: Optional[int] = Field(default=None, foreign_key="users.id", index=True)
     is_active: bool = Field(default=True)
     import_batch_id: Optional[int] = None

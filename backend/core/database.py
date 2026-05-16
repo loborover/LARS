@@ -6,6 +6,7 @@ settings = get_settings()
 
 # Async Engine (for FastAPI)
 async_engine = create_async_engine(settings.DATABASE_URL, pool_pre_ping=True)
+engine = async_engine # 지시서 호환성을 위한 alias
 async_session = async_sessionmaker(async_engine, class_=AsyncSession, expire_on_commit=False)
 
 # Sync Engine (for Alembic and synchronous scripts)

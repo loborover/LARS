@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 
 class ItemMasterRead(BaseModel):
     id: int
@@ -7,6 +7,12 @@ class ItemMasterRead(BaseModel):
     description: str
     part_number: str
     vendor_raw: Optional[str]
+    vendor_name: Optional[str] = None
+    lower_vendor_raw: Optional[str]
+    lower_vendor_name: Optional[str] = None
+    inventory_qty: float
+    defect_qty: float
+    is_picked: bool
     tracking_user_id: Optional[int]
     is_active: bool
 
@@ -23,7 +29,7 @@ class ItemMasterUpdate(BaseModel):
 
 class ItemBomUsage(BaseModel):
     model_code: str
-    description: Optional[str]
-    qty: float
-    level: int
-    path: str
+    model_description: Optional[str]
+    bom_qty: float
+    paths: List[str]
+    levels: List[int]

@@ -1,12 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
-from typing import List
+from typing import List, Dict, Any
 import os
 import shutil
 from datetime import datetime
 from core.database import get_session
 from core.deps import get_current_user, require_role
+from core.config import get_settings
 from models.user import User
 from models.import_batch import ImportBatch
 from schemas.import_batch import (
@@ -14,11 +15,41 @@ from schemas.import_batch import (
     BatchUploadResult, MultiUploadResponse, MultiPreviewResponse, MultiProcessResponse
 )
 from parsers import bom_parser, daily_plan_parser, validator
-from services import bom_service, item_master_service
+from services import bom_service, item_master_service, folder_import_service
 
 router = APIRouter(dependencies=[Depends(require_role("manager", "admin"))])
 
 UPLOAD_DIR = "data/raw"
+settings = get_settings()
+
+@router.post("/folder/bom")
+async def import_folder_bom(
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+) -> Dict[str, Any]:
+    path = settings.BOMDB_PATH
+    if not path:
+        raise HTTPException(status_code=400, detail="BOMDB_PATH not configured")
+    result = await folder_import_service.scan_and_import_folder(session, path, "bom", current_user.id)
+    return result
+
+@router.post("/folder/dp")
+async def import_folder_dp(
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+) -> Dict[str, Any]:
+    path = settings.DPDB_PATH
+    if not path:
+        raise HTTPException(status_code=400, detail="DPDB_PATH not configured")
+    result = await folder_import_service.scan_and_import_folder(session, path, "dp", current_user.id)
+    
+    # DP Import 후 PSI required_qty 재계산을 트리거
+    if result.get("success", 0) > 0:
+        from services import psi_service
+        # recompute_all 호출 (나중에 psi_service에 구현할 메서드)
+        await psi_service.recompute_all(session)
+        
+    return result
 
 @router.post("/upload")
 async def upload_file(

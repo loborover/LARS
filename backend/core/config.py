@@ -39,6 +39,10 @@ class Settings(BaseSettings):
     SCHEDULER_TIMEZONE: str = "Asia/Seoul"
     PSI_MONITOR_INTERVAL_MINUTES: int = 15
 
+    # 폴더 기반 Import 경로 설정
+    BOMDB_PATH: str = "/test/AutoReport/BOMDB"
+    DPDB_PATH: str = "/test/AutoReport/DPDB"
+
     class Config:
         env_file = ".env"
 

@@ -92,6 +92,106 @@
 ---
 
 ---
+- Date: 2026-05-16
+- Role: Coder
+- Action: Phase 5 완료 — PSI 전면 재설계 (실무 Expeditor 구조 이식)
+- Reason: 실제 업무 PSI 시트 구조(품목당 4행, 담당자 마킹, 재고/불량 직접 관리)와 LARS 기능 간 Gap 해소
+- Result: DB 스키마 확장(inventory, defect, is_picked), Polars 기반 고성능 PSI 매트릭스 API, React 2행 블록 테이블 UI 구현, TS 오류 0건
+- Ref: LARS_Project/Phase5_Coder_Instructions.md, LARS_Project/Phase5_Coder_Report.md
+---
+
+---
+
+- Date: 2026-05-16
+- Role: Chief
+- Action: Phase6_Coder_Instructions.md 작성 — 일일 운영 자동화 (Advance_Day + One_Click_Solution)
+- Reason: VBA Expeditor_DayShift.bas / Expeditor_PSI.bas 분석으로 매일 아침 4단계 워크플로우 확인, BOMDB(196개)/DPDB(29개) 실데이터 폴더 활용 가능 확인
+- Result: 폴더 기반 Import API, Advance_Day API, One_Click_Solution API(5단계), Dashboard 하루시작 버튼 설계 완료
+- Ref: LARS_Project/Phase6_Coder_Instructions.md
+---
+
+---
+- Date: 2026-05-16
+- Role: Chief
+- Action: Phase 5 서비스 적용 — 백엔드 재시작 + Alembic 003 마이그레이션 적용
+- Reason: Phase 5 코드 완료 후 실행 중인 서비스에 미반영 상태였음
+- Result: 마이그레이션 head(cd7af37a0e4e), 백엔드/프론트엔드 재기동 완료
+- Ref: (없음)
+---
+
+---
+- Date: 2026-05-16
+- Role: Coder
+- Action: Phase 7 완료 — ItemMaster 강화 (Redis 캐싱, 비동기 Rebuild, 업체명 파싱)
+- Reason: 대규모 품목 데이터(9,000건+) 조회 성능 최적화 및 실무 중심의 가독성/사용성 향상
+- Result: Redis 전역 캐싱 도입, Background Task 기반 비동기 재구성, 업체명 정제 파싱 로직, BOM 사용처 역조회 모달 구현 완료
+- Ref: LARS_Project/Phase7_Coder_Instructions.md, LARS_Project/Phase7_Coder_Report.md
+---
+
+---
+- Date: 2026-05-16
+- Role: Coder
+- Action: Phase 6.1 완료 — DP Import FK 버그 수정 및 에러 처리 강화
+- Reason: Phase 6 폴더 임포트 시 발생한 FK 위반 오류 해결 및 비표준 파일에 대한 피드백 개선
+- Result: daily_plan_service에서 선행 레코드 삭제 로직 추가, daily_plan_parser에서 형식 감지 로직 보강, 6개 파일 재임포트 성공 확인
+- Ref: LARS_Project/Phase6_1_Coder_Instructions.md, LARS_Project/Phase6_1_Coder_Report.md
+---
+
+---
+- Date: 2026-05-16
+- Role: Chief
+- Action: Phase5_Coder_Instructions.md 작성 — PSI 전면 재설계 지시서
+- Reason: Expeditor_Public.xlsb 분석 결과 현재 LARS PSI와 실제 업무 PSI 간 구조적 Gap 확인
+- Result: 담당자별 필터, D-Day 상대 날짜, 2차협력사, 재고/불량수량, is_picked 기능 설계 완료
+- Ref: LARS_Project/Phase5_Coder_Instructions.md
+---
+
+---
+- Date: 2026-05-16
+- Role: Coder
+- Action: Phase 6 완료 — 일일 운영 자동화 (Advance_Day + One_Click_Solution)
+- Reason: 수동 데이터 취합 및 재계산 과정(BOM/DP 취합, 재고 전진, 소요량 재계산, 부족분 티켓 생성)을 단일 API로 통합 자동화
+- Result: folder_import_service 구현, advance_day 및 one_click_solution API 작성, 대시보드 One-Click 버튼 추가, 빌드 검증 성공
+- Ref: LARS_Project/Phase6_Coder_Instructions.md, LARS_Project/Phase6_Coder_Report.md
+---
+
+---
+- Date: 2026-05-16
+- Role: Chief
+- Action: LARS_Consolidated_Report.md 작성 — Phase 1~4.1 전체 보고서 압축 통합
+- Reason: 세션 간 컨텍스트 인계 효율화 및 보고서 파편화 해소
+- Result: 단일 통합 보고서 생성 (현황/설계결정/잔여과제/기술부채 포함)
+- Ref: LARS_Project/LARS_Consolidated_Report.md
+---
+
+---
+
+- Date: 2026-05-16
+- Role: Chief
+- Action: Phase 8 Coder 지시서 작성 + DP API 버그 직접 수정 — Daily Plan 뷰어 재설계
+- Reason: list_plans()의 pl.col(InstrumentedAttribute) TypeError 버그로 DP 목록 전체 500 오류. UI도 2-panel 클릭 구조로 실무 불가 판단
+- Result: daily_plan_service.py 오류 1줄 직접 제거 (DP 목록 API 정상화), 날짜 기준 /dp/daily + /dp/dates API 설계, 웹 뷰어/인쇄 뷰어 탭 UI 설계 완료
+- Ref: LARS_Project/Phase8_Coder_Instructions.md
+
+---
+
+- Date: 2026-05-16
+- Role: Chief
+- Action: Phase 7 Coder 지시서 작성 — ItemMaster 강화 (업체명 파싱 + Redis 캐싱 + Background Rebuild + BOM 역조회)
+- Reason: vendor_raw의 EKHQ_업체명_코드 형식 파싱 요청, Redis 캐싱 상시화, BOM 갱신 시에만 조건부 Background rebuild, 사용처 역조회 UI 구현 필요
+- Result: 7개 Task 설계 완료 (vendor 파싱 regex, Redis cache-aside, should_rebuild 조건 로직, background engine-scoped session, BOM Polars 집계, Progress UI 폴링)
+- Ref: LARS_Project/Phase7_Coder_Instructions.md
+
+---
+
+- Date: 2026-05-16
+- Role: Chief
+- Action: Phase 6.1 버그 분석 및 Coder 지시서 작성 — DP Import FK 제약 위반 수정
+- Reason: Phase 6 완료 후 `POST /api/v1/import/folder/dp` 실행 시 7개 파일 전부 실패 확인. 원인 분석: `daily_plan_service.py`가 `daily_plan_lots` DELETE 시 `part_list_snapshots`의 FK 참조 제거를 누락
+- Result: 버그 2종 특정 (Critical: FK 위반 / Minor: 비표준 CSV 형식), Phase6_1_Coder_Instructions.md 작성 완료
+- Ref: LARS_Project/Phase6_1_Coder_Instructions.md
+
+---
 
 ## 현재 시스템 상태 (2026-04-27 기준)
 

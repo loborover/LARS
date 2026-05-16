@@ -135,15 +135,24 @@ def parse_csv(file_path: str) -> pl.DataFrame:
         elif re.match(r"\d{2}/\d{2}", c.strip()):
             date_cols.append(c)
             
-    df = df_raw.rename(col_map)
+    df_raw = df_raw.rename(col_map)
     
+    # 1. 필수 컬럼 체크 (지시서: "Model" 또는 "Model.Suffix" 중 하나라도 있어야 함)
+    # 현재 col_map 로직에서 'model' -> 'model_code'로 변환됨
+    if "model_code" not in df_raw.columns:
+        raise ParseError("CSV missing required column: model_code. Use English ERP export format.")
+
+    # 2. 비표준 형식 감지 (한국어 날짜 헤더 등)
+    # 날짜 컬럼(MM/DD)이 하나도 감지되지 않으면 비표준 형식으로 간주
+    if not date_cols:
+        raise ParseError("Unsupported CSV format: No date headers (MM/DD) detected. Use English ERP export format.")
+
     req_cols = ["line_code", "wo_number", "model_code", "planned_qty", "planned_start_str"]
     for rc in req_cols:
-        if rc not in df.columns:
-            raise ParseError(f"CSV missing required column: {rc}")
+        if rc not in df_raw.columns:
+            raise ParseError(f"CSV missing required column: {rc}. Use English ERP export format.")
             
-    # Filter rows: empty demand id or 'Sub-total' rows
-    df = df.filter(pl.col("wo_number").is_not_null() & (pl.col("wo_number").cast(pl.Utf8).str.strip_chars() != ""))
+    df = df_raw.filter(pl.col("wo_number").is_not_null() & (pl.col("wo_number").cast(pl.Utf8).str.strip_chars() != ""))
     
     # Process dates
     df = df.with_columns([
