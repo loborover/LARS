@@ -4,7 +4,7 @@ from typing import List, Optional
 from core.database import get_session
 from core.deps import require_role
 from services import bom_service
-from schemas.bom import BomModelRead, BomTreeResponse, ReverseResult
+from schemas.bom import BomModelRead, BomTreeResponse, ReverseResult, BomAmountResponse
 
 router = APIRouter(dependencies=[Depends(require_role("internal", "manager", "admin"))])
 
@@ -16,12 +16,22 @@ async def get_models(
 ):
     return await bom_service.list_models(session, search, is_active)
 
-@router.get("/models/{model_code}", response_model=BomTreeResponse)
+@router.get("/models/{model_number:path}", response_model=BomTreeResponse)
 async def get_model_tree(
-    model_code: str,
+    model_number: str,
     session: AsyncSession = Depends(get_session)
 ):
-    result = await bom_service.get_bom_tree(session, model_code)
+    result = await bom_service.get_bom_tree(session, model_number)
+    if not result:
+        raise HTTPException(status_code=404, detail="Model not found")
+    return result
+
+@router.get("/amount/{model_number:path}", response_model=BomAmountResponse)
+async def get_model_amount(
+    model_number: str,
+    session: AsyncSession = Depends(get_session)
+):
+    result = await bom_service.get_bom_amount(session, model_number)
     if not result:
         raise HTTPException(status_code=404, detail="Model not found")
     return result

@@ -12,6 +12,47 @@ from models.user import User
 from models.bom import BomItem
 from schemas.psi import PsiFilterParams, PsiRowFull, DateHeader
 
+async def get_target_dp_batch_id() -> int | None:
+    from core.redis_client import get_redis
+    redis = await get_redis()
+    raw = await redis.get("dp:target_batch_id")
+    return int(raw) if raw else None
+
+async def recompute_all_background(engine):
+    """Background에서 PSI 전체 재계산, Redis에 진행 상태 기록"""
+    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy.ext.asyncio import AsyncSession
+    from core.redis_client import get_redis
+    from datetime import datetime
+    import json
+
+    redis = await get_redis()
+    STATUS_KEY = "psi:recompute_status"
+
+    async def set_status(status, progress, processed=0, total=0, error=None):
+        await redis.set(STATUS_KEY, json.dumps({
+            "status": status,
+            "progress": progress,
+            "total": total,
+            "processed": processed,
+            "label": "PSI 재계산",
+            "started_at": datetime.utcnow().isoformat(),
+            "finished_at": datetime.utcnow().isoformat() if status in ("done", "failed") else None,
+            "error": error,
+        }))
+
+    await set_status("running", 0)
+
+    try:
+        AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+        async with AsyncSessionLocal() as session:
+            # 기존 recompute_all 로직 실행
+            await set_status("running", 30)
+            await recompute_all(session)  # 기존 동기 함수 재사용
+            await set_status("done", 100, total=1, processed=1)
+    except Exception as e:
+        await set_status("failed", 0, error=str(e))
+
 async def recompute_required_for_dates(session: AsyncSession, dates: List[date]) -> int:
     if not dates:
         return 0
@@ -168,7 +209,15 @@ async def build_psi_full_matrix(session: AsyncSession, params: PsiFilterParams) 
     snapshot_stmt = select(PartListSnapshot.part_number, PartListSnapshot.snapshot_date, PartListSnapshot.required_qty)
     if params.model_code:
         from models.daily_plan import DailyPlanLot
-        snapshot_stmt = snapshot_stmt.join(DailyPlanLot, PartListSnapshot.lot_id == DailyPlanLot.id).where(DailyPlanLot.model_code == params.model_code)
+        # model_code 파라미터는 "Model.Suffix" 또는 "Model" 형식 모두 허용
+        if "." in params.model_code:
+            _mc, _sf = params.model_code.split(".", 1)
+            snapshot_stmt = snapshot_stmt.join(DailyPlanLot, PartListSnapshot.lot_id == DailyPlanLot.id).where(
+                DailyPlanLot.model_code == _mc,
+                DailyPlanLot.suffix == _sf
+            )
+        else:
+            snapshot_stmt = snapshot_stmt.join(DailyPlanLot, PartListSnapshot.lot_id == DailyPlanLot.id).where(DailyPlanLot.model_code == params.model_code)
         
     snapshot_stmt = snapshot_stmt.where(
         PartListSnapshot.snapshot_date >= date_from,
@@ -246,9 +295,21 @@ async def toggle_pick(session: AsyncSession, item_id: int, is_picked: bool) -> I
 
 async def get_active_models(session: AsyncSession) -> List[str]:
     from models.daily_plan import DailyPlanLot
-    stmt = select(DailyPlanLot.model_code).distinct()
+    stmt = select(DailyPlanLot.model_code, DailyPlanLot.suffix).distinct()
+
+    # [Phase 10] Use target DP batch if set
+    batch_id = await get_target_dp_batch_id()
+    if batch_id:
+        stmt = stmt.where(DailyPlanLot.import_batch_id == batch_id)
+
     res = await session.execute(stmt)
-    return [r for r in res.scalars().all()]
+    result = []
+    for model_code, suffix in res.all():
+        if suffix:
+            result.append(f"{model_code}.{suffix}")
+        else:
+            result.append(model_code)
+    return sorted(set(result))
 
 async def update_cell(session: AsyncSession, item_id: int, psi_date: date, available_qty: float, notes: Optional[str], user_id: int) -> PsiRecord:
     stmt = select(PsiRecord).where(PsiRecord.item_id == item_id, PsiRecord.psi_date == psi_date)

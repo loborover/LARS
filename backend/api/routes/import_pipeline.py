@@ -1,11 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 from typing import List, Dict, Any
 import os
 import shutil
 from datetime import datetime
-from core.database import get_session
+from core.database import get_session, engine
 from core.deps import get_current_user, require_role
 from core.config import get_settings
 from models.user import User
@@ -15,7 +15,7 @@ from schemas.import_batch import (
     BatchUploadResult, MultiUploadResponse, MultiPreviewResponse, MultiProcessResponse
 )
 from parsers import bom_parser, daily_plan_parser, validator
-from services import bom_service, item_master_service, folder_import_service
+from services import bom_service, item_master_service, folder_import_service, psi_service, daily_plan_service, part_list_service
 
 router = APIRouter(dependencies=[Depends(require_role("manager", "admin"))])
 
@@ -24,6 +24,7 @@ settings = get_settings()
 
 @router.post("/folder/bom")
 async def import_folder_bom(
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ) -> Dict[str, Any]:
@@ -31,10 +32,13 @@ async def import_folder_bom(
     if not path:
         raise HTTPException(status_code=400, detail="BOMDB_PATH not configured")
     result = await folder_import_service.scan_and_import_folder(session, path, "bom", current_user.id)
+    if result.get("success", 0) > 0:
+        background_tasks.add_task(item_master_service.rebuild_from_bom_background, engine)
     return result
 
 @router.post("/folder/dp")
 async def import_folder_dp(
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ) -> Dict[str, Any]:
@@ -43,11 +47,8 @@ async def import_folder_dp(
         raise HTTPException(status_code=400, detail="DPDB_PATH not configured")
     result = await folder_import_service.scan_and_import_folder(session, path, "dp", current_user.id)
     
-    # DP Import 후 PSI required_qty 재계산을 트리거
     if result.get("success", 0) > 0:
-        from services import psi_service
-        # recompute_all 호출 (나중에 psi_service에 구현할 메서드)
-        await psi_service.recompute_all(session)
+        background_tasks.add_task(psi_service.recompute_all_background, engine)
         
     return result
 
@@ -74,7 +75,8 @@ async def upload_file(
         source_name=filename,
         target_table=target_table,
         status="pending",
-        started_by=current_user.id
+        started_by=current_user.id,
+        data_source="local"
     )
     session.add(batch)
     await session.commit()
@@ -133,6 +135,7 @@ async def preview_batch(
 @router.post("/batches/{batch_id}/process", response_model=BatchRead)
 async def process_batch(
     batch_id: int,
+    background_tasks: BackgroundTasks,
     session: AsyncSession = Depends(get_session)
 ):
     stmt = select(ImportBatch).where(ImportBatch.id == batch_id)
@@ -162,8 +165,8 @@ async def process_batch(
             inserted = await bom_service.import_from_df(session, df, batch.id)
             batch.records_inserted = inserted
             
-            # IT 자동 갱신
-            await item_master_service.rebuild_from_bom(session)
+            # Background IT Rebuild
+            background_tasks.add_task(item_master_service.rebuild_from_bom_background, engine)
             
         elif batch.target_table == "daily_plan":
             df = daily_plan_parser.parse(file_path)
@@ -171,20 +174,20 @@ async def process_batch(
             if not val_res.is_valid:
                 raise Exception(f"Validation failed: {val_res.errors[0].message if val_res.errors else 'unknown'}")
             
-            from services import daily_plan_service, part_list_service
             inserted = await daily_plan_service.import_from_df(session, df, batch.id)
             batch.records_inserted = inserted
             
-            # PL 재계산 트리거
+            # Background PL & PSI Recompute
             dates = await daily_plan_service.get_dates_in_df(df)
-            await part_list_service.recompute_for_dates(session, dates, batch.id)
+            background_tasks.add_task(part_list_service.recompute_background, engine, dates, batch.id)
+            background_tasks.add_task(psi_service.recompute_all_background, engine)
         
         batch.status = "success"
         batch.finished_at = datetime.utcnow()
     except Exception as e:
         batch.status = "failed"
         batch.error_log = {"error": str(e)}
-        batch.records_failed = 0 # Not counting precisely yet
+        batch.records_failed = 0 
 
     session.add(batch)
     await session.commit()
@@ -236,7 +239,8 @@ async def upload_multi_files(
             source_name=filename,
             target_table=target_table,
             status="pending",
-            started_by=current_user.id
+            started_by=current_user.id,
+            data_source="local"
         )
         session.add(batch)
         await session.commit()
@@ -300,12 +304,13 @@ async def preview_multi_batch(
 @router.post("/batches/process-multi", response_model=MultiProcessResponse)
 async def process_multi_batch(
     batch_ids: list[int],
+    background_tasks: BackgroundTasks,
     session: AsyncSession = Depends(get_session)
 ):
     results = []
     for batch_id in batch_ids:
         try:
-            result = await process_batch(batch_id, session)
+            result = await process_batch(batch_id, background_tasks, session)
             results.append(result)
         except Exception as e:
             # Fetch the batch to return a failed state

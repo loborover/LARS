@@ -67,8 +67,10 @@ async def scan_and_import_folder(
             source_name=filename,
             target_table="bom" if file_type == "bom" else "daily_plan",
             status="processing",
-            started_by=user_id
+            started_by=user_id,
+            data_source="local",
         )
+
         session.add(batch)
         await session.commit()
         await session.refresh(batch)
@@ -104,19 +106,6 @@ async def scan_and_import_folder(
             file_results.append({"filename": filename, "status": "failed", "message": str(e)})
             session.add(batch)
             await session.commit()
-
-    # 사후 작업 (전체 파일 일괄 처리 후 1회만 수행)
-    if success > 0:
-        if file_type == "bom":
-            await item_master_service.rebuild_from_bom(session)
-        elif file_type == "dp":
-            # 전체 DP 스냅샷 날짜 추출 (간단히 처리하기 위해 재계산)
-            # 여기서는 One-Click에서 재계산하도록 안내하므로, DP 임포트 자체에서는 
-            # 재계산하지 않거나, 전체 재계산을 트리거할 수 있습니다.
-            # 지시서: DP Import 완료 후 PSI required_qty 재계산 트리거
-            # 하지만 여러 파일 임포트 시 너무 빈번할 수 있으므로 여기서 전체 재계산
-            # 대신 DPDB Import API 밖의 컨트롤러나 여기서 recompute_all을 호출하도록 합니다.
-            pass
 
     return {
         "total": total,

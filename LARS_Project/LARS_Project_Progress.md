@@ -193,53 +193,183 @@
 
 ---
 
-## 현재 시스템 상태 (2026-04-27 기준)
+- Date: 2026-05-16
+- Role: Coder
+- Action: Phase 8 완료 — Daily Plan 뷰어 재설계 (웹 뷰어 + 인쇄 뷰어)
+- Reason: 날짜 기반 조회 및 인쇄 최적화 레이아웃 도입으로 생산 현장 실무 대응력 강화
+- Result: /dp/daily, /dp/dates API 구현, 탭 구조의 웹/인쇄 뷰어 프론트엔드 전면 개편, 빌드 및 TS 검증 완료
+- Ref: LARS_Project/Phase8_Coder_Report.md
+
+---
+
+- Date: 2026-05-16
+- Role: Coder
+- Action: Phase 9 완료 — BOM Suffix 통합, 백그라운드 모니터 및 UI 고도화
+- Reason: 모델 식별 체계 정밀화 및 사용자 경험(UX) 강화를 통한 시스템 완성도 제고
+- Result: BomModel 복합키(Model+Suffix) 적용, 사이드바 진행 상태 모니터 UI 추가, Sticky 레이아웃 및 튜토리얼 시스템 전면 도입
+- Ref: LARS_Project/Phase9_Coder_Report.md
+
+---
+
+- Date: 2026-05-16
+- Role: Coder
+- Action: Phase 10 완료 — DP Viewer 전면 재설계 (Batch 기반 Flat View)
+- Reason: "Excel 시트처럼 Raw 데이터를 보고 싶다"는 사용자 요구사항 반영 및 시스템 전체의 기준 DP(Target) 관리 기능 도입
+- Result: /dp/batches, /dp/lots-raw 등 API 4종 구현, 2-Panel 방식의 프론트엔드 UI 전면 개편, PSI/PartList 연동 완료
+- Ref: LARS_Project/Phase10_Coder_Report.md
+
+---
+
+- Date: 2026-05-16
+- Role: Coder
+- Action: Phase 11 완료 — Import 자동 후처리 및 통합 Background Monitor
+- Reason: 임포트 후처리 과정의 블로킹 현상 제거 및 다중 백그라운드 작업 가시성 확보
+- Result: 통합 Status API 구현, 모든 후처리 로직 비동기(BackgroundTasks) 전환, 멀티 태스크 지원 모니터 UI 업그레이드
+- Ref: LARS_Project/Phase11_Coder_Report.md
+
+---
+
+- Date: 2026-05-16
+- Role: Coder
+- Action: Phase 12 완료 — BOM List 그룹핑 및 트리 뷰어 개선
+- Reason: 복합 모델(Model+Suffix) 체계의 가독성 향상 및 대규모 BOM 데이터 탐색 편의성 제공
+- Result: BOM 목록 모델 그룹화 및 Variant 접기 기능, 계층 트리 구조 빌드 및 인터랙티브 토글 뷰어 구현 완료
+- Ref: LARS_Project/Phase12_Coder_Report.md
+
+---
+
+- Date: 2026-05-16
+- Role: Coder
+- Action: Phase 13 완료 — ItemMaster 분리 및 범용 컬럼 필터 도입
+- Reason: 품목 관리 체계 구체화 및 전사 데이터 테이블의 탐색 편의성(Searchability) 대폭 강화
+- Result: ItemMaster 구매품/사내생산품 탭 분리, useColumnFilter 훅 및 FilterableHeader 컴포넌트 기반 범용 필터 시스템 전 페이지 적용 완료
+- Ref: LARS_Project/Phase13_Coder_Report.md
+
+---
+
+- Date: 2026-05-16
+- Role: Coder
+- Action: Phase 14 완료 — 사이드바 접기/펼치기 및 유저 관리 강화
+- Reason: 화면 공간 효율성 증대 및 실무 조직 체계에 맞는 사용자 정보 관리 기반 구축
+- Result: 접힘 모드(아이콘+툴팁) 사이드바 구현, User 모델 프로필 필드 확장, 내 프로필 페이지 및 Admin 인라인 편집 기능 추가
+- Ref: LARS_Project/Phase14_Coder_Report.md
+
+---
+
+- Date: 2026-05-16
+- Role: Coder
+- Action: Phase 15 완료 — DP 구조 수정 및 시스템 상태 표시줄 도입
+- Reason: 사용자 반복 지적 사항(Line/Suffix 누락) 해결 및 시스템 가동 상태 상시 시각화
+- Result: DailyPlanLot suffix 컬럼 추가, /dp/lots-raw API Line 조인 및 모델명 보정, SystemStatusBar(DB/AI/Time) 구현 및 사이드바 통합 완료
+- Ref: LARS_Project/Phase15_Coder_Report.md
+
+---
+
+- Date: 2026-05-16
+- Role: Coder
+- Action: Phase Remediation 완료 — 긴급 감사 지적 사항 보완
+- Reason: Phase 14 누락 파일 생성, 서비스 미재시동으로 인한 API 미로드 해결 및 사용자 의도에 따른 UI 보정
+- Result: ProfilePage, users API, Admin 인라인 편집 보완 완료. 백엔드/프론트엔드 전면 재기동 및 전수 검증 성공. ItemMaster 기본탭 '사내생산품'으로 변경
+- Ref: LARS_Project/Phase_Remediation_Report.md
+
+---
+
+- Date: 2026-05-16
+- Role: Coder
+- Action: Phase 16 완료 — DP Print Format View 구현
+- Reason: 생산 현장 엑셀 양식과 동일한 웹 뷰 제공 및 필터링 기반 인쇄 편의성 강화
+- Result: /dp/lots-raw 실적 데이터 추가, DailyPlanPrintView 컴포넌트 개발, 탭 전환 UI 및 A3 Landscape 인쇄 최적화 완료
+- Ref: LARS_Project/Phase16_Coder_Report.md
+
+---
+
+- Date: 2026-05-17
+- Role: Coder
+- Action: Phase 17 완료 — BOM Substitute Fix + BOM Amount View 구현
+- Reason: 대체품(S) 렌더링 버그 수정 및 BOM 계층 구조 전개 기반의 실제 소요량 산출 기능 제공
+- Result: buildTree 알고리즘 수정, /api/v1/bom/amount API 구현, BOMAmountView 탭 및 테이블 UI 추가 완료
+- Ref: LARS_Project/Phase17_Coder_Report.md
+
+---
+
+- Date: 2026-05-17
+- Role: Coder
+- Action: Phase 18 완료 — DP Batch 삭제 및 출처 관리
+- Reason: 생산 계획 데이터의 불필요한 이력 제거 기능 제공 및 데이터 신뢰도(출처) 시각화
+- Result: import_batches 테이블 data_source 컬럼 추가, 배치 삭제 API 구현, 프론트엔드 삭제 UX 및 출처 태그 시스템 적용 완료
+- Ref: LARS_Project/Phase18_Coder_Report.md
+
+---
+
+## 현재 시스템 상태 (2026-05-17 기준)
+
+### 서버 프로세스
+| 서버 | 명령 | 포트 |
+|---|---|---|
+| 백엔드 | `venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000` | 8000 |
+| 프론트엔드 | `npx vite preview --port 3000 --host 0.0.0.0` | 3000 |
 
 ### 백엔드 (backend/)
 | 구분 | 상태 |
 |---|---|
-| FastAPI 서버 | 구현 완료 (uvicorn --host 0.0.0.0 --port 8000) |
-| PostgreSQL 16 + pgvector | Docker Compose 구성 완료 |
-| Alembic 마이그레이션 | 002까지 적용 완료 |
+| FastAPI + uvicorn | 정상 가동 |
+| PostgreSQL 16 + pgvector | 정상 |
+| Alembic 마이그레이션 | `f1a8e1b9`(data_source) 포함 최신 적용 |
 | JWT Auth | 완료 (admin@lars.local / admin1234) |
-| BOM/DP/PL/IT/PSI/효율/WIP API | 전체 완료 |
-| Import 파이프라인 | 단일 + 다중 파일 완료 |
-| AI Chat/STT/TTS API | 완료 (AI_MODE 환경변수 제어) |
-| Ticket CRUD | 완료 |
-| PSI 백그라운드 모니터 | 완료 (APScheduler 15분 간격) |
-| lars_ai_service/ | 완료 (AI PC 별도 배포용) |
+| BOM API (`/api/v1/bom/`) | Tree + Amount View + Reverse Lookup |
+| DP API (`/api/v1/dp/`) | Batch 목록/조회/삭제, Target 관리 |
+| PSI API (`/api/v1/psi/`) | Model.Suffix 기반 매트릭스 |
+| ItemMaster API | Redis 캐싱, Background rebuild |
+| Import 파이프라인 | 폴더 스캔 + 파일 업로드 (data_source 태그) |
+| AI Chat/STT/TTS | 완료 (AI_MODE 환경변수 제어) |
 
 ### 프론트엔드 (.WebUI/)
 | 구분 | 상태 |
 |---|---|
-| React SPA (14페이지) | 전체 구현 완료 |
-| Vite Proxy (이식성) | 완료 (localhost 하드코딩 제거) |
-| JWT 인증 흐름 | 완료 (Axios 인터셉터, 자동 refresh) |
-| AutoReport 탭 구조 | 완료 (아코디언 사이드바) |
-| PSI 매트릭스 인라인 편집 | 완료 |
-| BOM Tree 계층 시각화 | 완료 |
-| Multi-file Import + Progress Bar | 완료 |
-| AI Chat + 음성 입력 | 완료 |
-| TypeScript 오류 | 0건 확인됨 |
+| React SPA | 전체 구현 완료, TypeScript 오류 0건 |
+| BOM 상세 | Tree View + Amount View 토글 |
+| BOM 대체품 렌더링 | 수정 완료 (본부품 직하단 siblings로 표시) |
+| DP Viewer | Batch 목록 + Raw Table + Print View |
+| DP Batch 관리 | 삭제(cascade) + Local/ERP 출처 태그 |
+| DP → BOM 링크 | Model.Suffix 더블클릭 → BOM 상세 이동 |
+| PSI 매트릭스 | 인라인 편집, Model.Suffix 필터 |
+| 사이드바 | 접기/펼치기, SystemStatusBar |
+| 유저 관리 | 프로필 페이지 + Admin 인라인 편집 |
 
-### 미완료 / 잔여 과제
+### 실데이터 현황
+| 테이블 | 수량 |
+|---|---|
+| BOM 모델 | 196개 |
+| ItemMaster (활성) | 9,993개 |
+| PSI 모델 | 126개 (Model.Suffix 형식) |
+| DP 배치 | 5개 (Target: id 629, 2026-05-14~06-13) |
+
+### 미완료 / 다음 과제
 | 항목 | 우선도 | 비고 |
 |---|---|---|
-| pytest 단위 테스트 | High | bom_parser, daily_plan_parser 복잡 로직 미검증 |
-| Celery 비동기 Import | Medium | Phase 4.1 보고서 권고 (현재 동기 처리) |
-| Redis 캐싱 (BOM 트리) | Medium | 아키텍처 설계됨, 미구현 |
-| 파트너 사용자 권한 격리 | Medium | New_LARS_Project.md Phase 4 목표 미구현 |
-| Cloud LLM 역할 (report_generator, data_analyst) | Low | AI_MODE=cloud 시 수동 구성 필요 |
-| 음성/전화 통합 (PJSIP/SIP.js) | Low | New_LARS_Project.md 섹션 10 미구현 |
-| 부하 테스트 (PSI 동시 50명) | Low | 운영 전 검증 필요 |
+| DP × BOM Amount → 일일 자재소요량(Daily PSI) | **High** | Phase 17 Amount 기반 완비, 조인 로직 미구현 |
+| ERP 연동 import 엔드포인트 | High | data_source="erp" 태그 체계 완비, API 미구현 |
+| pytest 단위 테스트 | Medium | bom_parser, psi_service 복잡 로직 미검증 |
+| PSI 재계산 실데이터 정확도 검증 | Medium | Model.Suffix 보정 후 대조 필요 |
+| 파트너 사용자 권한 격리 | Medium | RBAC 구현됨, partner 페이지 격리 미구현 |
+| Cloud LLM 역할 구성 | Low | AI_MODE=cloud 수동 설정 필요 |
+| 음성/전화 통합 (SIP.js) | Low | 미착수 |
 
 ---
 
 ## 주요 설계 결정 기록
 
-1. **Polars 전용**: 모든 DataFrame 연산에 Pandas 사용 금지 (New_LARS_Project.md 원칙 5)
-2. **AI_MODE 4단계**: disabled / local / internal / cloud — .env 환경변수 하나로 전환
-3. **BOM upsert**: delete+insert 폐기 → sort_order 기준 PK 보존 update/insert/delete
-4. **ItemMaster 자동화**: 수동 Import 제거 → BOM Import 시 rebuild_from_bom() 자동 트리거
-5. **lars_ai_service 분리**: NAS(저사양)와 AI PC(RTX 4090)를 HTTP로 분리, GPU 추론 전담
-6. **Vite Proxy**: 원격 브라우저 접속 시 IP 하드코딩 없이 상대경로(/api/v1)로 처리
+1. **ModelNumber = Model.Suffix** — `LSGL6335X.ARSELGA` 형식이 BOM/DP/PSI 전체의 고유 키. bare model_code 단독 사용 금지
+2. **Polars 전용** — 모든 DataFrame 연산에서 Pandas 사용 금지
+3. **AI_MODE 4단계** — disabled / local / internal / cloud (.env 하나로 전환)
+4. **BOM upsert** — delete+insert 폐기 → sort_order 기준 PK 보존 update/insert/delete
+5. **is_active 패턴** — FK 참조 레코드(item_master 등) DELETE 불가 → is_active=False
+6. **ItemMaster 완제품 제외** — `@CVZ.EKHQ` suffix 부품은 rebuild 시 is_active=False (자재관리 대상 아님)
+7. **BOM 대체품(level=-1)** — tree 노드 아님, pathToNode Map으로 본부품 substitutes[]에 연결
+8. **data_source 태그** — import_batches.data_source: "local"(수동) / "erp"(ERP연동, 향후)
+9. **lars_ai_service 분리** — NAS(저사양)와 AI PC(RTX 4090)를 HTTP로 분리, GPU 추론 전담
+10. **Vite Proxy** — 원격 접속 시 상대경로(/api/v1) 사용, IP 하드코딩 없음
+
+---
+
+> 상세 내용: `LARS_Project/LARS_Consolidated_Report.md` 참조

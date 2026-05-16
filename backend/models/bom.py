@@ -1,18 +1,23 @@
 from datetime import datetime
 from typing import Optional
-from sqlmodel import SQLModel, Field, Index
+from sqlmodel import SQLModel, Field, Index, UniqueConstraint
 
 class BomModel(SQLModel, table=True):
     __tablename__ = "bom_models"
     
     id: Optional[int] = Field(default=None, primary_key=True)
-    model_code: str = Field(unique=True, index=True)
+    model_code: str = Field(index=True)
+    suffix: str = Field(default="", index=True)
     description: Optional[str] = None
     version: str = Field(default="1.0")
     is_active: bool = Field(default=True)
     import_batch_id: Optional[int] = None
     created_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("model_code", "suffix", name="uq_bom_models_code_suffix"),
+    )
 
 class BomItem(SQLModel, table=True):
     __tablename__ = "bom_items"

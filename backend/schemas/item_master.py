@@ -28,7 +28,7 @@ class ItemMasterUpdate(BaseModel):
     is_active: Optional[bool] = None
 
 class ItemBomUsage(BaseModel):
-    model_code: str
+    model_number: str
     model_description: Optional[str]
     bom_qty: float
     paths: List[str]

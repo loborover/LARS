@@ -32,6 +32,7 @@ class DailyPlanLot(SQLModel, table=True):
     wo_number: Optional[str] = None
     model_id: Optional[int] = Field(default=None, foreign_key="bom_models.id")
     model_code: str = Field(index=True)
+    suffix: Optional[str] = Field(default=None)          # ← 신규: DP 파일에서 직접 파싱된 suffix
     lot_number: str
     planned_qty: int = Field(default=0)
     input_qty: int = Field(default=0)

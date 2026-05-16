@@ -1,11 +1,13 @@
 from typing import Optional, List
 from datetime import date
+import json
 import polars as pl
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 from models.daily_plan import DailyPlan, DailyPlanLot, ProductionLine
 from models.bom import BomModel
 from models.part_list import PartListSnapshot
+from schemas.daily_plan import DailyLotView, DailyLineView, DailyPlanViewResponse
 
 async def import_from_df(session: AsyncSession, df: pl.DataFrame, batch_id: int) -> int:
     """
@@ -58,7 +60,12 @@ async def import_from_df(session: AsyncSession, df: pl.DataFrame, batch_id: int)
         lots_to_add = []
         for row in group_df.iter_rows(named=True):
             # Resolve model_id if BOM exists
-            stmt = select(BomModel).where(BomModel.model_code == row["model_code"])
+            sf = row.get("suffix") or ""
+            if sf:
+                stmt = select(BomModel).where(BomModel.model_code == row["model_code"], BomModel.suffix == sf)
+            else:
+                stmt = select(BomModel).where(BomModel.model_code == row["model_code"])
+            
             res = await session.execute(stmt)
             bom_model = res.scalar_one_or_none()
             
@@ -67,6 +74,7 @@ async def import_from_df(session: AsyncSession, df: pl.DataFrame, batch_id: int)
                 wo_number=row.get("wo_number"),
                 model_id=bom_model.id if bom_model else None,
                 model_code=row["model_code"],
+                suffix=row.get("suffix") or "",          # ← 신규: DP 파일의 suffix 직접 저장
                 lot_number=row.get("lot_number", "N/A"),
                 planned_qty=row["planned_qty"],
                 input_qty=row.get("input_qty", 0),
@@ -137,3 +145,71 @@ async def get_dates_in_df(df: pl.DataFrame) -> List[date]:
     unique_dates = df["plan_date"].unique().to_list()
     # convert to python datetime.date
     return [d if isinstance(d, date) else d.date() for d in unique_dates if d is not None]
+
+async def get_daily_view(
+    session: AsyncSession, 
+    target_date: date, 
+    line_code: Optional[str] = None
+) -> DailyPlanViewResponse:
+    """
+    날짜 기준 일일 생산계획 집계 뷰 반환.
+    """
+    # 1. date 파라미터로 daily_plans 조회 (ProductionLine JOIN)
+    stmt = select(DailyPlan, ProductionLine).join(ProductionLine).where(DailyPlan.plan_date == target_date)
+    
+    if line_code:
+        stmt = stmt.where(ProductionLine.code == line_code)
+    
+    res = await session.execute(stmt)
+    plans_lines = res.all() # List[Tuple[DailyPlan, ProductionLine]]
+    
+    line_views = []
+    total_qty = 0.0
+    
+    for plan, line in plans_lines:
+        # line_code='DUMMY' 는 필터링하여 미표시 권장
+        if line.code == 'DUMMY':
+            continue
+            
+        # 2. 해당 plan의 daily_plan_lots 로드
+        stmt_lots = select(DailyPlanLot).where(DailyPlanLot.plan_id == plan.id).order_by(DailyPlanLot.sort_order)
+        res_lots = await session.execute(stmt_lots)
+        lots = res_lots.scalars().all()
+        
+        lot_views = []
+        line_daily_qty = 0.0
+        
+        for lot in lots:
+            # 4. 각 lot의 daily_qty_json 파싱
+            qty_map = json.loads(lot.daily_qty_json or '{}')
+            daily_qty = qty_map.get(str(target_date), 0.0)
+            
+            # 5. daily_qty == 0인 lot 제외
+            if daily_qty == 0:
+                continue
+            
+            lot_views.append(DailyLotView(
+                wo_number=lot.wo_number,
+                model_code=lot.model_code,
+                lot_number=lot.lot_number,
+                daily_qty=daily_qty,
+                planned_qty=lot.planned_qty,
+                output_qty=lot.output_qty,
+                sort_order=lot.sort_order
+            ))
+            line_daily_qty += daily_qty
+            
+        if lot_views:
+            line_views.append(DailyLineView(
+                line_code=line.code,
+                line_name=line.name,
+                lots=lot_views,
+                total_daily_qty=line_daily_qty
+            ))
+            total_qty += line_daily_qty
+            
+    return DailyPlanViewResponse(
+        date=target_date.isoformat(),
+        lines=line_views,
+        total_qty=total_qty
+    )

@@ -8,18 +8,10 @@ from core.deps import require_role
 from core.security import hash_password
 from models.user import User
 from models.vendor import Vendor
+from schemas.user import UserCreate, UserAdminUpdate
+from datetime import datetime
 
 router = APIRouter(dependencies=[Depends(require_role("admin"))])
-
-class UserCreate(BaseModel):
-    email: str
-    display_name: str
-    role: str
-    password: str
-
-class UserUpdate(BaseModel):
-    role: str
-    is_active: bool
 
 class VendorCreate(BaseModel):
     code: str
@@ -27,7 +19,7 @@ class VendorCreate(BaseModel):
 
 @router.get("/users")
 async def get_users(session: AsyncSession = Depends(get_session)) -> List[Dict[str, Any]]:
-    stmt = select(User)
+    stmt = select(User).order_by(User.id)
     res = await session.execute(stmt)
     users = res.scalars().all()
     return [
@@ -36,7 +28,13 @@ async def get_users(session: AsyncSession = Depends(get_session)) -> List[Dict[s
             "email": u.email,
             "display_name": u.display_name,
             "role": u.role,
-            "is_active": u.is_active
+            "is_active": u.is_active,
+            "phone": u.phone,
+            "company": u.company,
+            "department": u.department,
+            "rank": u.rank,
+            "position": u.position,
+            "created_at": u.created_at.isoformat() if u.created_at else None
         } for u in users
     ]
 
@@ -51,7 +49,12 @@ async def create_user(data: UserCreate, session: AsyncSession = Depends(get_sess
         email=data.email,
         display_name=data.display_name,
         role=data.role,
-        hashed_pw=hash_password(data.password)
+        hashed_pw=hash_password(data.password),
+        phone=data.phone,
+        company=data.company,
+        department=data.department,
+        rank=data.rank,
+        position=data.position
     )
     session.add(user)
     await session.commit()
@@ -66,7 +69,7 @@ async def create_user(data: UserCreate, session: AsyncSession = Depends(get_sess
     }
 
 @router.put("/users/{user_id}")
-async def update_user(user_id: int, data: UserUpdate, session: AsyncSession = Depends(get_session)) -> Dict[str, Any]:
+async def update_user(user_id: int, data: UserAdminUpdate, session: AsyncSession = Depends(get_session)) -> Dict[str, Any]:
     stmt = select(User).where(User.id == user_id)
     res = await session.execute(stmt)
     user = res.scalar_one_or_none()
@@ -74,8 +77,11 @@ async def update_user(user_id: int, data: UserUpdate, session: AsyncSession = De
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
         
-    user.role = data.role
-    user.is_active = data.is_active
+    for field, value in data.model_dump(exclude_none=True).items():
+        setattr(user, field, value)
+    
+    user.updated_at = datetime.utcnow()
+    session.add(user)
     await session.commit()
     await session.refresh(user)
     
@@ -86,6 +92,25 @@ async def update_user(user_id: int, data: UserUpdate, session: AsyncSession = De
         "role": user.role,
         "is_active": user.is_active
     }
+
+@router.post("/users/{user_id}/reset-password")
+async def admin_reset_password(
+    user_id: int,
+    new_password: str,
+    session: AsyncSession = Depends(get_session)
+):
+    stmt = select(User).where(User.id == user_id)
+    res = await session.execute(stmt)
+    user = res.scalar_one_or_none()
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    user.hashed_pw = hash_password(new_password)
+    user.updated_at = datetime.utcnow()
+    session.add(user)
+    await session.commit()
+    return {"message": "비밀번호가 초기화되었습니다"}
 
 @router.get("/vendors")
 async def get_vendors(session: AsyncSession = Depends(get_session)) -> List[Dict[str, Any]]:

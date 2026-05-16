@@ -127,7 +127,10 @@ async def rebuild_from_bom(session: AsyncSession) -> int:
         BomItem.description,
         BomItem.vendor_raw,
         BomItem.level
-    ).distinct(BomItem.part_number).where(BomItem.part_number != None)
+    ).distinct(BomItem.part_number).where(
+        BomItem.part_number != None,
+        BomItem.part_number.notlike('%@CVZ.EKHQ%')
+    )
 
     res = await session.execute(stmt)
     bom_items_data = res.all()
@@ -208,7 +211,10 @@ async def rebuild_from_bom_background(engine):
     try:
         async with AsyncSessionLocal() as session:
             stmt = select(BomItem.part_number, BomItem.description, BomItem.vendor_raw, BomItem.level)\
-                .distinct(BomItem.part_number).where(BomItem.part_number != None)
+                .distinct(BomItem.part_number).where(
+                    BomItem.part_number != None,
+                    BomItem.part_number.notlike('%@CVZ.EKHQ%')
+                )
             res = await session.execute(stmt)
             bom_items_data = res.all()
             total = len(bom_items_data)
@@ -272,7 +278,7 @@ async def get_bom_usage(session: AsyncSession, item_id: int) -> List[ItemBomUsag
     if not item: return []
 
     stmt = (
-        select(BomModel.model_code, BomItem.description, BomItem.qty, BomItem.level, BomItem.path)
+        select(BomModel.model_code, BomModel.suffix, BomItem.description, BomItem.qty, BomItem.level, BomItem.path)
         .join(BomItem, BomModel.id == BomItem.model_id)
         .where(BomItem.part_number == item.part_number)
     )
@@ -281,12 +287,14 @@ async def get_bom_usage(session: AsyncSession, item_id: int) -> List[ItemBomUsag
     if not rows: return []
 
     df = pl.DataFrame(
-        [(r.model_code, r.description, float(r.qty), r.level, r.path) for r in rows],
-        schema=["model_code", "model_description", "qty", "level", "path"],
+        [(f"{r.model_code}.{r.suffix}" if r.suffix else r.model_code,
+          r.description, float(r.qty), r.level, r.path)
+         for r in rows],
+        schema=["model_number", "model_description", "qty", "level", "path"],
         orient="row"
     )
     grouped = (
-        df.group_by("model_code")
+        df.group_by("model_number")
         .agg([
             pl.col("qty").sum().alias("bom_qty"),
             pl.col("path").alias("paths"),

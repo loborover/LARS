@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from api.routes import auth, bom, import_pipeline, dp, pl, items, psi, efficiency, wip, dashboard, admin, ai, tickets
+from api.routes import auth, bom, import_pipeline, dp, pl, items, psi, efficiency, wip, dashboard, admin, ai, tickets, background, users, health
 from api.routes.ws import router as ws_router
 
 router = APIRouter(prefix="/api/v1")
@@ -16,3 +16,6 @@ router.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"])
 router.include_router(admin.router, prefix="/admin", tags=["admin"])
 router.include_router(ai.router, tags=["ai"])
 router.include_router(tickets.router, prefix="/tickets", tags=["tickets"])
+router.include_router(background.router, prefix="/background", tags=["background"])
+router.include_router(users.router, tags=["users"])
+router.include_router(health.router, prefix="/health", tags=["health"])

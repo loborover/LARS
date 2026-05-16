@@ -19,3 +19,4 @@ class ImportBatch(SQLModel, table=True):
     started_by: Optional[int] = Field(default=None, foreign_key="users.id")
     started_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
     finished_at: Optional[datetime] = None
+    data_source: str = Field(default="local")
