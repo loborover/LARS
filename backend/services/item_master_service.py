@@ -1,5 +1,4 @@
 import json
-import re
 from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any, Tuple
 import polars as pl
@@ -13,14 +12,7 @@ from models.bom import BomItem, BomModel
 from models.import_batch import ImportBatch
 from schemas.item_master import ItemMasterCreate, ItemMasterUpdate, ItemMasterRead, ItemBomUsage
 from core.redis_client import get_redis
-
-_VENDOR_PATTERN = re.compile(r'^[A-Z]+_(.+)_KR\d+$')
-
-def parse_vendor_name(vendor_raw: str | None) -> str | None:
-    if not vendor_raw:
-        return None
-    m = _VENDOR_PATTERN.match(vendor_raw)
-    return m.group(1) if m else vendor_raw
+from core.utils import parse_vendor_name
 
 def _to_read(item: ItemMaster) -> ItemMasterRead:
     # SQLModel model_dump() or pydantic model_dump()

@@ -1,10 +1,6 @@
 [submodule ".agent"]
 	path = .agent
 	url = https://github.com/loborover/.agent.git
-
-[submodule "WebUI"]
-	path = .WebUI
-	url = https://github.com/loborover/LARS.web.git
 [submodule ".WebUI"]
 	path = .WebUI
 	url = http://github.com/loborover/LARS.web.git

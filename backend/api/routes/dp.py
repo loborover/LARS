@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Depends, Query, HTTPException, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
 from datetime import date
 from sqlmodel import select
-from core.database import get_session
+from core.database import get_session, engine
 from core.deps import require_role
 from services import daily_plan_service
 from schemas.daily_plan import DailyPlanRead, DailyPlanLotRead, DailyPlanViewResponse
@@ -200,12 +200,39 @@ async def get_available_dates(session: AsyncSession = Depends(get_session)):
     return [d.date().isoformat() if hasattr(d, 'date') else str(d)[:10] for d in dates]
 
 @router.post("/set-target")
-async def set_target_batch(batch_id: int) -> dict:
-    """Target DP batch_id를 Redis에 저장"""
+async def set_target_batch(
+    batch_id: int,
+    background_tasks: BackgroundTasks,
+    session: AsyncSession = Depends(get_session)
+) -> dict:
+    """Target DP batch 설정 → 즉시 PartList 백그라운드 재계산 트리거"""
     from core.redis_client import get_redis
+    from services.part_list_service import recompute_background
+    from models.daily_plan import DailyPlan, DailyPlanLot
+    from sqlalchemy import func
+
     redis = await get_redis()
     await redis.set("dp:target_batch_id", str(batch_id))
-    return {"status": "ok", "target_batch_id": batch_id}
+
+    # 해당 배치의 고유 plan_date 목록 조회
+    stmt = (
+        select(func.distinct(DailyPlan.plan_date))
+        .join(DailyPlanLot, DailyPlanLot.plan_id == DailyPlan.id)
+        .where(DailyPlanLot.import_batch_id == batch_id)
+    )
+    res = await session.execute(stmt)
+    dates_raw = res.scalars().all()
+    dates = [d.date() if hasattr(d, "date") else d for d in dates_raw]
+
+    if dates:
+        background_tasks.add_task(recompute_background, engine, dates, batch_id)
+
+    return {
+        "status": "ok",
+        "target_batch_id": batch_id,
+        "recompute_triggered": len(dates) > 0,
+        "dates_count": len(dates),
+    }
 
 @router.get("/target-batch")
 async def get_target_batch(session: AsyncSession = Depends(get_session)) -> dict:

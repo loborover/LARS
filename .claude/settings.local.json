@@ -80,7 +80,10 @@
       "Bash(nohup venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000)",
       "Bash(echo \"frontend PID: $!\")",
       "Bash(venv/bin/python3 -c ' *)",
-      "Bash(awk '{print $1, $2, substr\\($0, index\\($0,$11\\)\\)}')"
+      "Bash(awk '{print $1, $2, substr\\($0, index\\($0,$11\\)\\)}')",
+      "Bash(/test/LARS/backend/venv/bin/pip install *)",
+      "Read(//root/.local/share/Trash/**)",
+      "Read(//root/**)"
     ]
   }
 }

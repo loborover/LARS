@@ -505,3 +505,290 @@ async def one_click_solution(session: AsyncSession, user_id: int) -> Dict[str, A
         "steps": steps,
         "elapsed_sec": round(elapsed, 2)
     }
+
+async def build_psi_matrix_v2(
+    session: AsyncSession,
+    date_from: date,
+    days: int = 7,
+    expeditor_user_id: Optional[int] = None,
+    supply_type: Optional[str] = None,
+    vendor_code: Optional[str] = None,
+) -> dict:
+    """
+    4행 블록 PSI 매트릭스 계산.
+    날짜 범위: date_from ~ date_from + (days - 1)
+    """
+    import polars as pl
+    from sqlalchemy import text
+
+    date_to = date_from + timedelta(days=days - 1)
+    date_list = [date_from + timedelta(days=i) for i in range(days)]
+    date_strs = [d.isoformat() for d in date_list]
+
+    # ─────────────────────────────────────────────────────────────────
+    # 1. 아이템 목록 조회 (ItemMaster + Vendor + UserAssignment 조인)
+    # ─────────────────────────────────────────────────────────────────
+    from models.item_master import ItemMaster
+    from models.vendor import Vendor
+    from models.assignment import UserAssignment
+
+    stmt = select(ItemMaster).where(ItemMaster.is_active == True)
+
+    if expeditor_user_id:
+        # user_assignments에서 해당 Expeditor의 vendor code 목록
+        assign_stmt = select(UserAssignment.resource_key).where(
+            UserAssignment.user_id == expeditor_user_id,
+            UserAssignment.resource_type == "vendor",
+        )
+        assign_res = await session.execute(assign_stmt)
+        vendor_codes = [r[0] for r in assign_res.all()]
+        if not vendor_codes:
+            return {"date_columns": date_strs, "rows": []}
+        # vendor code → vendor id
+        v_stmt = select(Vendor.id).where(Vendor.code.in_(vendor_codes))
+        v_res = await session.execute(v_stmt)
+        vendor_ids = [r[0] for r in v_res.all()]
+        if not vendor_ids:
+            return {"date_columns": date_strs, "rows": []}
+        stmt = stmt.where(ItemMaster.vendor_id.in_(vendor_ids))
+
+    if vendor_code:
+        v_stmt = select(Vendor.id).where(Vendor.code == vendor_code)
+        v_res = await session.execute(v_stmt)
+        v_row = v_res.scalar_one_or_none()
+        if not v_row:
+            return {"date_columns": date_strs, "rows": []}
+        stmt = stmt.where(ItemMaster.vendor_id == v_row)
+
+    res = await session.execute(stmt)
+    items = res.scalars().all()
+    if not items:
+        return {"date_columns": date_strs, "rows": []}
+
+    part_numbers = [it.part_number for it in items]
+
+    # ─────────────────────────────────────────────────────────────────
+    # 2. BOM 메타데이터 (supply_type, level, vendor_raw)
+    # ─────────────────────────────────────────────────────────────────
+    from models.bom import BomItem
+
+    bom_stmt = (
+        select(BomItem.part_number, BomItem.supply_type, BomItem.level,
+               BomItem.description, BomItem.uom)
+        .where(BomItem.part_number.in_(part_numbers))
+        .order_by(BomItem.part_number, BomItem.sort_order)
+    )
+    bom_res = await session.execute(bom_stmt)
+    bom_map: dict[str, dict] = {}
+    for pn, st, lv, desc, uom in bom_res.all():
+        if pn not in bom_map:
+            bom_map[pn] = {"supply_type": st, "level": str(lv) if lv is not None else None,
+                           "bom_desc": desc, "uom": uom or "EA"}
+
+    if supply_type:
+        part_numbers = [pn for pn in part_numbers if bom_map.get(pn, {}).get("supply_type") == supply_type]
+        items = [it for it in items if it.part_number in set(part_numbers)]
+        if not items:
+            return {"date_columns": date_strs, "rows": []}
+
+    # ─────────────────────────────────────────────────────────────────
+    # 3. 소요량 집계 (part_list_snapshots)
+    # ─────────────────────────────────────────────────────────────────
+    from models.part_list import PartListSnapshot
+
+    snap_stmt = (
+        select(
+            PartListSnapshot.part_number,
+            PartListSnapshot.snapshot_date,
+            func.sum(PartListSnapshot.required_qty).label("req_qty"),
+        )
+        .where(
+            PartListSnapshot.snapshot_date >= date_from,
+            PartListSnapshot.snapshot_date <= date_to,
+            PartListSnapshot.part_number.in_(part_numbers),
+        )
+        .group_by(PartListSnapshot.part_number, PartListSnapshot.snapshot_date)
+    )
+    snap_res = await session.execute(snap_stmt)
+    # {part_number: {date_str: required_qty}}
+    req_map: dict[str, dict[str, float]] = {}
+    for pn, dt, qty in snap_res.all():
+        dt_str = dt.isoformat() if hasattr(dt, "isoformat") else str(dt)
+        req_map.setdefault(pn, {})[dt_str] = float(qty)
+
+    # ─────────────────────────────────────────────────────────────────
+    # 4. 입고/불량 데이터 (psi_daily_records)
+    # ─────────────────────────────────────────────────────────────────
+    from models.psi import PsiDailyRecord
+
+    daily_stmt = select(PsiDailyRecord).where(
+        PsiDailyRecord.part_number.in_(part_numbers),
+        PsiDailyRecord.record_date >= date_from,
+        PsiDailyRecord.record_date <= date_to,
+    )
+    daily_res = await session.execute(daily_stmt)
+    # {part_number: {date_str: {incoming, defect}}}
+    daily_map: dict[str, dict[str, dict]] = {}
+    for rec in daily_res.scalars().all():
+        dt_str = rec.record_date.isoformat()
+        daily_map.setdefault(rec.part_number, {})[dt_str] = {
+            "incoming": float(rec.incoming_qty),
+            "defect": float(rec.defect_qty),
+        }
+
+    # ─────────────────────────────────────────────────────────────────
+    # 5. 기간 내 계획 수량 합산 (plan_qty)
+    # ─────────────────────────────────────────────────────────────────
+    plan_qty_map: dict[str, float] = {
+        pn: sum(req_map.get(pn, {}).values())
+        for pn in part_numbers
+    }
+
+    # ─────────────────────────────────────────────────────────────────
+    # 6. 4행 블록 데이터 계산
+    # ─────────────────────────────────────────────────────────────────
+    rows = []
+    for item in items:
+        pn = item.part_number
+        inventory = float(item.inventory_qty or 0.0)
+        binfo = bom_map.get(pn, {})
+
+        by_date: dict[str, dict] = {}
+        running_balance = inventory
+
+        for d_str in date_strs:
+            required = req_map.get(pn, {}).get(d_str, 0.0)
+            day_info = daily_map.get(pn, {}).get(d_str, {})
+            incoming = day_info.get("incoming", 0.0)
+            defect = day_info.get("defect", 0.0)
+
+            running_balance = running_balance - required + incoming - defect
+
+            by_date[d_str] = {
+                "required": required,
+                "incoming": incoming,
+                "defect": defect,
+                "balance": round(running_balance, 2),
+            }
+
+        rows.append({
+            "item_id": item.id,
+            "part_number": pn,
+            "description": item.description or binfo.get("bom_desc"),
+            "level": binfo.get("level"),
+            "supply_type": binfo.get("supply_type"),
+            "uom": binfo.get("uom", "EA"),
+            "vendor_primary": item.vendor_raw,
+            "vendor_secondary": item.lower_vendor_raw,
+            "plan_qty": plan_qty_map.get(pn, 0.0),
+            "inventory_qty": inventory,
+            "by_date": by_date,
+        })
+
+    # plan_qty 내림차순 정렬
+    rows.sort(key=lambda r: r["plan_qty"], reverse=True)
+
+    return {"date_columns": date_strs, "rows": rows}
+
+async def upsert_daily_record(
+    session: AsyncSession,
+    part_number: str,
+    record_date: date,
+    incoming_qty: float,
+    defect_qty: float,
+    note: Optional[str],
+    user_id: int,
+) -> dict:
+    """입고/불량 기록 upsert (part_number + record_date 기준)."""
+    from models.psi import PsiDailyRecord
+    from datetime import datetime
+
+    stmt = select(PsiDailyRecord).where(
+        PsiDailyRecord.part_number == part_number,
+        PsiDailyRecord.record_date == record_date,
+    )
+    res = await session.execute(stmt)
+    rec = res.scalar_one_or_none()
+
+    if rec:
+        rec.incoming_qty = incoming_qty
+        rec.defect_qty = defect_qty
+        if note is not None:
+            rec.note = note
+        rec.recorded_by = user_id
+        rec.updated_at = datetime.utcnow()
+    else:
+        rec = PsiDailyRecord(
+            part_number=part_number,
+            record_date=record_date,
+            incoming_qty=incoming_qty,
+            defect_qty=defect_qty,
+            note=note,
+            recorded_by=user_id,
+        )
+        session.add(rec)
+
+    await session.commit()
+    await session.refresh(rec)
+    return {"id": rec.id, "status": "ok"}
+
+
+async def patch_item_inventory(
+    session: AsyncSession,
+    item_id: int,
+    inventory_qty: float,
+    defect_qty: Optional[float] = None,
+) -> dict:
+    """PSI 고정컬럼에서 재고수량 직접 편집."""
+    from models.item_master import ItemMaster
+
+    stmt = select(ItemMaster).where(ItemMaster.id == item_id)
+    res = await session.execute(stmt)
+    item = res.scalar_one_or_none()
+    if not item:
+        raise ValueError(f"ItemMaster id={item_id} not found")
+
+    item.inventory_qty = inventory_qty
+    if defect_qty is not None:
+        item.defect_qty = defect_qty
+    session.add(item)
+    await session.commit()
+    return {"item_id": item_id, "inventory_qty": inventory_qty}
+
+
+async def get_daily_records(
+    session: AsyncSession,
+    part_number: Optional[str] = None,
+    date_from: Optional[date] = None,
+    date_to: Optional[date] = None,
+) -> list:
+    """입고/불량 기록 목록 조회 (탭 뷰용)."""
+    from models.psi import PsiDailyRecord
+    from models.user import User
+
+    stmt = (
+        select(PsiDailyRecord, User.display_name.label("recorded_by_name"))
+        .outerjoin(User, User.id == PsiDailyRecord.recorded_by)
+        .order_by(PsiDailyRecord.record_date.desc(), PsiDailyRecord.part_number)
+    )
+    if part_number:
+        stmt = stmt.where(PsiDailyRecord.part_number == part_number)
+    if date_from:
+        stmt = stmt.where(PsiDailyRecord.record_date >= date_from)
+    if date_to:
+        stmt = stmt.where(PsiDailyRecord.record_date <= date_to)
+
+    res = await session.execute(stmt)
+    return [
+        {
+            "id": rec.id,
+            "part_number": rec.part_number,
+            "record_date": rec.record_date.isoformat(),
+            "incoming_qty": rec.incoming_qty,
+            "defect_qty": rec.defect_qty,
+            "note": rec.note,
+            "recorded_by": rec.recorded_by,
+            "recorded_by_name": rname,
+        }
+        for rec, rname in res.all()
+    ]

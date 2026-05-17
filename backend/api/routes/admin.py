@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from pydantic import BaseModel
 from sqlmodel import select
 from core.database import get_session
@@ -8,8 +8,10 @@ from core.deps import require_role
 from core.security import hash_password
 from models.user import User
 from models.vendor import Vendor
+from models.assignment import UserAssignment
 from schemas.user import UserCreate, UserAdminUpdate
 from datetime import datetime
+from sqlalchemy import delete as sa_delete
 
 router = APIRouter(dependencies=[Depends(require_role("admin"))])
 
@@ -196,3 +198,140 @@ async def test_ai_connection():
         return {"success": bool(s.CLOUD_LLM_API_KEY), "message": "API Key " + ("설정됨" if s.CLOUD_LLM_API_KEY else "미설정")}
 
     return {"success": False, "message": "알 수 없는 AI 모드"}
+
+
+# ─────────────────────────────────────────────────────
+# 담당자 배정 (User Assignments)
+# ─────────────────────────────────────────────────────
+
+class AssignmentCreate(BaseModel):
+    user_id: int
+    resource_type: str   # 'vendor' | 'line' | 'model'
+    resource_key: str    # Vendor.code | line.code | model_number
+
+
+@router.get("/assignments")
+async def get_assignments(
+    resource_type: str,
+    session: AsyncSession = Depends(get_session)
+) -> List[Dict[str, Any]]:
+    """
+    resource_type별 전체 배정 목록.
+    vendor 타입이면 Vendor.name을 JOIN해서 함께 반환.
+    """
+    stmt = (
+        select(UserAssignment, User.display_name.label("user_name"))
+        .join(User, User.id == UserAssignment.user_id)
+        .where(UserAssignment.resource_type == resource_type)
+        .order_by(User.display_name, UserAssignment.resource_key)
+    )
+    res = await session.execute(stmt)
+    rows = res.all()
+
+    result = []
+    # vendor 타입이면 code→name 조회용 맵 생성
+    vendor_map: dict[str, str] = {}
+    if resource_type == "vendor":
+        v_res = await session.execute(select(Vendor))
+        for v in v_res.scalars().all():
+            vendor_map[v.code] = v.name
+
+    for assignment, user_name in rows:
+        item: Dict[str, Any] = {
+            "id": assignment.id,
+            "user_id": assignment.user_id,
+            "user_name": user_name,
+            "resource_type": assignment.resource_type,
+            "resource_key": assignment.resource_key,
+        }
+        if resource_type == "vendor":
+            item["resource_name"] = vendor_map.get(assignment.resource_key, "")
+        result.append(item)
+
+    return result
+
+
+@router.get("/assignments/user/{user_id}")
+async def get_user_assignments(
+    user_id: int,
+    resource_type: Optional[str] = None,
+    session: AsyncSession = Depends(get_session)
+) -> List[Dict[str, Any]]:
+    """특정 유저의 배정 목록. resource_type 필터 선택적."""
+    stmt = select(UserAssignment).where(UserAssignment.user_id == user_id)
+    if resource_type:
+        stmt = stmt.where(UserAssignment.resource_type == resource_type)
+    stmt = stmt.order_by(UserAssignment.resource_type, UserAssignment.resource_key)
+    res = await session.execute(stmt)
+    assignments = res.scalars().all()
+
+    # vendor name 조회
+    vendor_map: dict[str, str] = {}
+    if not resource_type or resource_type == "vendor":
+        v_res = await session.execute(select(Vendor))
+        for v in v_res.scalars().all():
+            vendor_map[v.code] = v.name
+
+    return [
+        {
+            "id": a.id,
+            "user_id": a.user_id,
+            "resource_type": a.resource_type,
+            "resource_key": a.resource_key,
+            "resource_name": vendor_map.get(a.resource_key, "") if a.resource_type == "vendor" else "",
+        }
+        for a in assignments
+    ]
+
+
+@router.post("/assignments")
+async def create_assignment(
+    data: AssignmentCreate,
+    session: AsyncSession = Depends(get_session)
+) -> Dict[str, Any]:
+    """배정 추가. 중복이면 200으로 기존 항목 반환(멱등)."""
+    stmt = select(UserAssignment).where(
+        UserAssignment.user_id == data.user_id,
+        UserAssignment.resource_type == data.resource_type,
+        UserAssignment.resource_key == data.resource_key,
+    )
+    res = await session.execute(stmt)
+    existing = res.scalar_one_or_none()
+    if existing:
+        return {"id": existing.id, "status": "already_exists"}
+
+    assignment = UserAssignment(
+        user_id=data.user_id,
+        resource_type=data.resource_type,
+        resource_key=data.resource_key,
+    )
+    session.add(assignment)
+    await session.commit()
+    await session.refresh(assignment)
+    return {"id": assignment.id, "status": "created"}
+
+
+@router.delete("/assignments/{assignment_id}")
+async def delete_assignment(
+    assignment_id: int,
+    session: AsyncSession = Depends(get_session)
+) -> Dict[str, Any]:
+    """배정 삭제."""
+    stmt = select(UserAssignment).where(UserAssignment.id == assignment_id)
+    res = await session.execute(stmt)
+    assignment = res.scalar_one_or_none()
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+    await session.delete(assignment)
+    await session.commit()
+    return {"status": "deleted", "id": assignment_id}
+
+
+@router.get("/lines")
+async def get_lines(session: AsyncSession = Depends(get_session)) -> List[Dict[str, Any]]:
+    """생산라인 목록 (배정 패널용)."""
+    from models.daily_plan import ProductionLine
+    stmt = select(ProductionLine).where(ProductionLine.is_active == True).order_by(ProductionLine.code)
+    res = await session.execute(stmt)
+    lines = res.scalars().all()
+    return [{"code": l.code, "name": l.name} for l in lines]

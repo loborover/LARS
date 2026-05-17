@@ -301,59 +301,108 @@
 
 ---
 
-## 현재 시스템 상태 (2026-05-17 기준)
+---
+
+- Date: 2026-05-17
+- Role: Chief / Coder (Gemini)
+- Action: Phase 19 완료 — Daily PartList 고도화
+- Reason: BOM Amount 기반 정확한 자재소요량 계산 및 다각도 분석 뷰(Lot View, PSI Matrix) 제공 필요
+- Result: recompute_for_dates() BOM 경로 누적 qty 적용, LotViewRow/LotViewResponse/PsiMatrixRow/PsiMatrixResponse 스키마 추가, get_lot_view()/get_psi_matrix() Polars 피벗 구현, GET /pl/lot-view + /pl/psi-matrix 엔드포인트 추가, DP set-target → BackgroundTask 자동 재계산, PartListPage.tsx 3탭(요약/Lot뷰/PSI매트릭스) 구현
+- Ref: Phase19_Coder_Instructions.md (삭제됨), Phase19_Coder_Report.md (삭제됨)
+
+---
+
+---
+
+- Date: 2026-05-17
+- Role: Chief / Coder (Gemini)
+- Action: Phase 20 완료 — User Assignment (Expeditor→Vendor 담당자 배정)
+- Reason: 담당자별 필터링 기능 제공 및 개인화 대시보드/알림 시스템 기반 마련
+- Result: UserAssignment SQLModel(user_assignments 테이블, UNIQUE user+resource_type+key), Alembic migration 20_user_assignments.py, Admin API (GET/POST/DELETE /admin/assignments, GET /admin/lines), AdminPage.tsx 4번째 탭 "담당 배정" 2패널 UI 구현
+- Ref: Phase20_Coder_Instructions.md (삭제됨), Phase20_Coder_Report.md (삭제됨)
+
+---
+
+---
+
+- Date: 2026-05-17
+- Role: Chief / Coder (Gemini)
+- Action: Phase 21 완료 — PSI 모듈 전면 재구성 (4행 블록 + 입출고 기록)
+- Reason: 엑셀 실물 PSI 양식과 동일한 4행 블록 구조(소요/입고/불량/잔량) 구현 및 실시간 재고 시뮬레이션 기능 제공
+- Result: PsiDailyRecord SQLModel(psi_daily_records), Alembic migration 21_psi_daily_records.py, build_psi_matrix_v2() balance 누적 계산, GET /psi/matrix-v2 + PUT /psi/daily-records/upsert + PATCH /psi/items/{id}/inventory API, PSIPage.tsx 2탭(매트릭스/입출고기록), PSIMatrixV2.tsx 4행 블록 rowSpan 인라인 편집, PSIRecordsTab.tsx CRUD
+- Ref: Phase21_Coder_Instructions.md (삭제됨), Phase21_Coder_Report.md (삭제됨)
+
+---
+
+---
+
+- Date: 2026-05-18
+- Role: Chief / Coder (Gemini)
+- Action: Phase 22 (Task A~H) 완료 — PartList UX 개선 & Vendor 파싱 수정
+- Reason: CN 코드 협력사 파싱 버그 수정 및 Lot View 가독성·BOM 연동 강화
+- Result: parse_vendor_name() split 기반 유틸(core/utils.py) 도입, LotViewResponse part_meta 스키마 확장, get_lot_view() description/uom 추가, LotView 2행 헤더(Description/품번+UOM), BOM 더블클릭 /bom/:model 이동, PSI Matrix UOM 고정 열 추가, PartList 필터 패널(Expeditor/SupplyType/Line), /pl/filter-options 엔드포인트
+- Ref: Phase22_Coder_Instructions.md, Phase22_Coder_Report.md
+
+---
+
+---
+
+- Date: 2026-05-18
+- Role: Chief (Claude)
+- Action: Phase 22 (Task I~N) 지시문 작성 완료 — PSI 다중 필터 & 열 재배치
+- Reason: PSI 매트릭스에 Line/Model.Suffix/WorkOrder 다중선택 필터 및 고정열 순서 변경 요구사항 반영
+- Result: 22-I GET /psi/filter-options 엔드포인트 설계, 22-J build_psi_matrix_v2() line/model/wo 필터 확장, 22-K 라우트 파라미터 확장, 22-L MultiSelectCombobox 컴포넌트 설계, 22-M PSIPage 필터 확장, 22-N PSIMatrixV2 열 재배치(협력사→2차협력사→품번→품명→재고, FIXED_COLS_WIDTH=512)
+- Ref: Phase22_Coder_Instructions.md (하단 섹션)
+
+---
+
+## 현재 시스템 상태 (2026-05-18 기준)
 
 ### 서버 프로세스
 | 서버 | 명령 | 포트 |
 |---|---|---|
-| 백엔드 | `venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000` | 8000 |
-| 프론트엔드 | `npx vite preview --port 3000 --host 0.0.0.0` | 3000 |
+| 백엔드 | `venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --reload` | 8000 |
+| 프론트엔드 | `vite --port=3000 --host=0.0.0.0` | 3000 |
 
 ### 백엔드 (backend/)
 | 구분 | 상태 |
 |---|---|
 | FastAPI + uvicorn | 정상 가동 |
-| PostgreSQL 16 + pgvector | 정상 |
-| Alembic 마이그레이션 | `f1a8e1b9`(data_source) 포함 최신 적용 |
+| PostgreSQL 16 | 정상 |
+| Alembic 마이그레이션 | 21_psi_daily_records 포함 최신 적용 |
 | JWT Auth | 완료 (admin@lars.local / admin1234) |
-| BOM API (`/api/v1/bom/`) | Tree + Amount View + Reverse Lookup |
-| DP API (`/api/v1/dp/`) | Batch 목록/조회/삭제, Target 관리 |
-| PSI API (`/api/v1/psi/`) | Model.Suffix 기반 매트릭스 |
-| ItemMaster API | Redis 캐싱, Background rebuild |
-| Import 파이프라인 | 폴더 스캔 + 파일 업로드 (data_source 태그) |
-| AI Chat/STT/TTS | 완료 (AI_MODE 환경변수 제어) |
+| BOM API | Tree + Amount View + Reverse Lookup |
+| DP API | Batch 목록/조회/삭제, Target 관리, /dp/lots-raw |
+| PartList API | /pl, /pl/lot-view, /pl/psi-matrix, /pl/filter-options, /pl/export |
+| PSI API | 4행 블록 매트릭스 V2, 입출고 기록 CRUD, /psi/filter-options |
+| ItemMaster API | Redis 캐싱, Background rebuild, parse_vendor_name() |
+| User Assignment | user_assignments 테이블, /admin/assignments |
+| core/utils.py | parse_vendor_name() 공유 유틸 |
 
 ### 프론트엔드 (.WebUI/)
 | 구분 | 상태 |
 |---|---|
-| React SPA | 전체 구현 완료, TypeScript 오류 0건 |
-| BOM 상세 | Tree View + Amount View 토글 |
-| BOM 대체품 렌더링 | 수정 완료 (본부품 직하단 siblings로 표시) |
-| DP Viewer | Batch 목록 + Raw Table + Print View |
-| DP Batch 관리 | 삭제(cascade) + Local/ERP 출처 태그 |
-| DP → BOM 링크 | Model.Suffix 더블클릭 → BOM 상세 이동 |
-| PSI 매트릭스 | 인라인 편집, Model.Suffix 필터 |
-| 사이드바 | 접기/펼치기, SystemStatusBar |
-| 유저 관리 | 프로필 페이지 + Admin 인라인 편집 |
+| BOM 상세 | Tree View + Amount View + 단일 suffix 단일행 표시 |
+| DP Viewer | Batch 콤팩트 선택바 + Raw Table 라인필터 + Print View |
+| PartList | 3탭(요약/Lot뷰/PSI매트릭스) + 필터 패널(Expeditor/SupplyType/Line) |
+| PartList Lot뷰 | 2행 헤더(Description/품번+UOM), BOM 더블클릭 이동 |
+| PartList PSI | Description→협력사→2차협력사→품번 고정열, 주차+요일 2행 날짜헤더, UOM열 |
+| PSI 매트릭스 V2 | 4행 블록 rowSpan 인라인 편집, Expeditor/SupplyType 필터 |
+| Admin | 담당자 배정 탭 (Vendor/Line/Model 배정 관리) |
 
 ### 실데이터 현황
 | 테이블 | 수량 |
 |---|---|
 | BOM 모델 | 196개 |
 | ItemMaster (활성) | 9,993개 |
-| PSI 모델 | 126개 (Model.Suffix 형식) |
-| DP 배치 | 5개 (Target: id 629, 2026-05-14~06-13) |
+| DP 배치 | 5개 (Target: id 629) |
 
 ### 미완료 / 다음 과제
 | 항목 | 우선도 | 비고 |
 |---|---|---|
-| DP × BOM Amount → 일일 자재소요량(Daily PSI) | **High** | Phase 17 Amount 기반 완비, 조인 로직 미구현 |
-| ERP 연동 import 엔드포인트 | High | data_source="erp" 태그 체계 완비, API 미구현 |
-| pytest 단위 테스트 | Medium | bom_parser, psi_service 복잡 로직 미검증 |
-| PSI 재계산 실데이터 정확도 검증 | Medium | Model.Suffix 보정 후 대조 필요 |
-| 파트너 사용자 권한 격리 | Medium | RBAC 구현됨, partner 페이지 격리 미구현 |
-| Cloud LLM 역할 구성 | Low | AI_MODE=cloud 수동 설정 필요 |
-| 음성/전화 통합 (SIP.js) | Low | 미착수 |
+| Phase 22-I~N 구현 | **High** | PSI 다중필터(Line/Model/WO) + PSIMatrixV2 열 재배치. 지시문: Phase22_Coder_Instructions.md |
+| ERP 연동 import | Medium | data_source="erp" 태그 체계 완비, API 미구현 |
+| pytest 단위 테스트 | Low | 미착수 |
 
 ---
 
